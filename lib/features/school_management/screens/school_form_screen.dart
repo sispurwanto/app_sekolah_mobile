@@ -1,0 +1,167 @@
+import 'package:flutter/material.dart';
+import '../../../core/models/school.dart';
+import '../services/school_service.dart';
+import '../../../core/utils/snackbar_utils.dart';
+
+class SchoolFormScreen extends StatefulWidget {
+  final School? school;
+
+  const SchoolFormScreen({super.key, this.school});
+
+  @override
+  State<SchoolFormScreen> createState() => _SchoolFormScreenState();
+}
+
+class _SchoolFormScreenState extends State<SchoolFormScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _schoolService = SchoolService();
+
+  late TextEditingController _idController;
+  late TextEditingController _nameController;
+  late TextEditingController _addressController;
+  late TextEditingController _phoneController;
+  late TextEditingController _emailController;
+  late TextEditingController _studentLimitController;
+
+  String _status = 'ACTIVE';
+  String _package = 'BASIC';
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _idController = TextEditingController(text: widget.school?.id ?? '');
+    _nameController = TextEditingController(text: widget.school?.name ?? '');
+    _addressController = TextEditingController(text: widget.school?.address ?? '');
+    _phoneController = TextEditingController(text: widget.school?.phone ?? '');
+    _emailController = TextEditingController(text: widget.school?.email ?? '');
+    _studentLimitController = TextEditingController(text: widget.school?.studentLimit.toString() ?? '100');
+    
+    if (widget.school != null) {
+      _status = widget.school!.status;
+      _package = widget.school!.package;
+    }
+  }
+
+  @override
+  void dispose() {
+    _idController.dispose();
+    _nameController.dispose();
+    _addressController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    _studentLimitController.dispose();
+    super.dispose();
+  }
+
+  void _save() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    final school = School(
+      id: widget.school == null ? _idController.text.trim() : widget.school!.id,
+      name: _nameController.text.trim(),
+      address: _addressController.text.trim(),
+      phone: _phoneController.text.trim(),
+      email: _emailController.text.trim(),
+      status: _status,
+      package: _package,
+      studentLimit: int.tryParse(_studentLimitController.text) ?? 100,
+      createdAt: widget.school?.createdAt, // SchoolService will use serverTimestamp if null
+    );
+
+    try {
+      if (widget.school == null) {
+        await _schoolService.addSchool(school);
+        SnackbarUtils.showSnackbar('Sekolah berhasil ditambahkan');
+      } else {
+        await _schoolService.updateSchool(school);
+        SnackbarUtils.showSnackbar('Sekolah berhasil diperbarui');
+      }
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      SnackbarUtils.showErrorSnackbar('Error: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isEditing = widget.school != null;
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(isEditing ? 'Edit Sekolah' : 'Tambah Sekolah'),
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    if (!isEditing)
+                      TextFormField(
+                        controller: _idController,
+                        decoration: const InputDecoration(labelText: 'School ID (Kosongi untuk Auto-Generate)'),
+                      ),
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(labelText: 'Nama Sekolah *'),
+                      validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
+                    ),
+                    TextFormField(
+                      controller: _addressController,
+                      decoration: const InputDecoration(labelText: 'Alamat'),
+                    ),
+                    TextFormField(
+                      controller: _phoneController,
+                      decoration: const InputDecoration(labelText: 'Telepon'),
+                      keyboardType: TextInputType.phone,
+                    ),
+                    TextFormField(
+                      controller: _emailController,
+                      decoration: const InputDecoration(labelText: 'Email'),
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    TextFormField(
+                      controller: _studentLimitController,
+                      decoration: const InputDecoration(labelText: 'Batas Siswa'),
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      initialValue: _status,
+                      decoration: const InputDecoration(labelText: 'Status'),
+                      items: ['ACTIVE', 'INACTIVE']
+                          .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                          .toList(),
+                      onChanged: (v) => setState(() => _status = v!),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      initialValue: _package,
+                      decoration: const InputDecoration(labelText: 'Paket'),
+                      items: ['BASIC', 'PREMIUM', 'PRO']
+                          .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                          .toList(),
+                      onChanged: (v) => setState(() => _package = v!),
+                    ),
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _save,
+                        child: const Text('Simpan'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+    );
+  }
+}
