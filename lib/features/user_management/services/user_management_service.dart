@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/models/app_user.dart';
 import '../../../core/services/secondary_app_service.dart';
 
@@ -53,7 +54,15 @@ class UserManagementService {
         .doc(schoolId)
         .collection('users')
         .doc(uid);
-    batch.set(schoolUserRef, appUser.toMap());
+        
+    final currentUserUid = FirebaseAuth.instance.currentUser?.uid;
+    final userData = appUser.toMap();
+    userData['created_at'] = FieldValue.serverTimestamp();
+    userData['created_by'] = currentUserUid;
+    userData['updated_at'] = FieldValue.serverTimestamp();
+    userData['updated_by'] = currentUserUid;
+    
+    batch.set(schoolUserRef, userData);
 
     // 3. Update global mapping
     final globalMappingRef = _db.collection('global_users_mapping').doc(uid);
@@ -92,7 +101,15 @@ class UserManagementService {
         .doc(schoolId)
         .collection('users')
         .doc(user.id);
-    batch.update(schoolUserRef, user.toMap());
+        
+    final currentUserUid = FirebaseAuth.instance.currentUser?.uid;
+    final userData = user.toMap();
+    userData.remove('created_at');
+    userData.remove('created_by');
+    userData['updated_at'] = FieldValue.serverTimestamp();
+    userData['updated_by'] = currentUserUid;
+    
+    batch.update(schoolUserRef, userData);
 
     // Update global mapping role if active, or remove if inactive (optional logic, but let's just update role)
     final globalMappingRef = _db.collection('global_users_mapping').doc(user.id);

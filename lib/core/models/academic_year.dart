@@ -1,45 +1,30 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class School {
+class AcademicYear {
   final String id;
   final String name;
-  final String address;
-  final String phone;
-  final String email;
-  final String status;
-  final String package;
-  final int studentLimit;
+  final bool isActive;
   final DateTime? createdAt;
   final String? createdBy;
   final DateTime? updatedAt;
   final String? updatedBy;
 
-  School({
+  AcademicYear({
     required this.id,
     required this.name,
-    required this.address,
-    required this.phone,
-    required this.email,
-    required this.status,
-    required this.package,
-    required this.studentLimit,
+    this.isActive = false,
     this.createdAt,
     this.createdBy,
     this.updatedAt,
     this.updatedBy,
   });
 
-  factory School.fromFirestore(DocumentSnapshot doc) {
+  factory AcademicYear.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-    return School(
+    return AcademicYear(
       id: doc.id,
       name: data['name'] ?? '',
-      address: data['address'] ?? '',
-      phone: data['phone'] ?? '',
-      email: data['email'] ?? '',
-      status: data['status'] ?? 'ACTIVE',
-      package: data['package'] ?? 'BASIC',
-      studentLimit: data['student_limit'] ?? 0,
+      isActive: data['is_active'] ?? false,
       createdAt: data['created_at'] != null ? (data['created_at'] as Timestamp).toDate() : null,
       createdBy: data['created_by'],
       updatedAt: data['updated_at'] != null ? (data['updated_at'] as Timestamp).toDate() : null,
@@ -50,12 +35,7 @@ class School {
   Map<String, dynamic> toMap() {
     return {
       'name': name,
-      'address': address,
-      'phone': phone,
-      'email': email,
-      'status': status,
-      'package': package,
-      'student_limit': studentLimit,
+      'is_active': isActive,
     };
   }
 }

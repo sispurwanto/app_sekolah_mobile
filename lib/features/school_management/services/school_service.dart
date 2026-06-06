@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/models/school.dart';
 
 class SchoolService {
@@ -14,16 +15,49 @@ class SchoolService {
 
   // Create school
   Future<void> addSchool(School school) async {
-    final docRef = _db.collection(_collection).doc();
-    // Use the generated ID or the one provided
-    final idToUse = school.id.isEmpty ? docRef.id : school.id;
+    final idToUse = school.id;
     
-    await _db.collection(_collection).doc(idToUse).set(school.toMap());
+    final batch = _db.batch();
+    
+    final schoolRef = _db.collection(_collection).doc(idToUse);
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final data = school.toMap();
+    data['created_at'] = FieldValue.serverTimestamp();
+    data['created_by'] = uid;
+    data['updated_at'] = FieldValue.serverTimestamp();
+    data['updated_by'] = uid;
+    
+    batch.set(schoolRef, data);
+
+    // Automatically map SUPER_ADMIN to current user
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final globalMappingRef = _db.collection('global_users_mapping').doc(user.uid);
+      batch.set(
+        globalMappingRef,
+        {
+          'registered_schools': {
+            idToUse: 'SUPER_ADMIN',
+          }
+        },
+        SetOptions(merge: true),
+      );
+    }
+
+    await batch.commit();
   }
 
-  // Update school
   Future<void> updateSchool(School school) async {
-    await _db.collection(_collection).doc(school.id).update(school.toMap());
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final data = school.toMap();
+    
+    data.remove('created_at');
+    data.remove('created_by');
+    
+    data['updated_at'] = FieldValue.serverTimestamp();
+    data['updated_by'] = uid;
+
+    await _db.collection('schools').doc(school.id).update(data);
   }
 
   // Delete school

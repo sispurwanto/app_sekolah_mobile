@@ -16,7 +16,6 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _schoolService = SchoolService();
 
-  late TextEditingController _idController;
   late TextEditingController _nameController;
   late TextEditingController _addressController;
   late TextEditingController _phoneController;
@@ -30,7 +29,6 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
   @override
   void initState() {
     super.initState();
-    _idController = TextEditingController(text: widget.school?.id ?? '');
     _nameController = TextEditingController(text: widget.school?.name ?? '');
     _addressController = TextEditingController(text: widget.school?.address ?? '');
     _phoneController = TextEditingController(text: widget.school?.phone ?? '');
@@ -45,7 +43,6 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
 
   @override
   void dispose() {
-    _idController.dispose();
     _nameController.dispose();
     _addressController.dispose();
     _phoneController.dispose();
@@ -59,8 +56,15 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
 
     setState(() => _isLoading = true);
 
+    String schoolId;
+    if (widget.school == null) {
+      schoolId = _nameController.text.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '_');
+    } else {
+      schoolId = widget.school!.id;
+    }
+
     final school = School(
-      id: widget.school == null ? _idController.text.trim() : widget.school!.id,
+      id: schoolId,
       name: _nameController.text.trim(),
       address: _addressController.text.trim(),
       phone: _phoneController.text.trim(),
@@ -103,11 +107,6 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    if (!isEditing)
-                      TextFormField(
-                        controller: _idController,
-                        decoration: const InputDecoration(labelText: 'School ID (Kosongi untuk Auto-Generate)'),
-                      ),
                     TextFormField(
                       controller: _nameController,
                       decoration: const InputDecoration(labelText: 'Nama Sekolah *'),

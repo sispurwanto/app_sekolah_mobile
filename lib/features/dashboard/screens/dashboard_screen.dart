@@ -7,6 +7,11 @@ import '../../auth/services/auth_service.dart';
 import '../../school_management/screens/school_list_screen.dart';
 import '../../user_management/screens/user_list_screen.dart';
 import '../../invoices/screens/invoice_list_screen.dart';
+import '../../student_management/screens/student_list_screen.dart';
+import '../../master_data/screens/class_list_screen.dart';
+import '../../master_data/screens/academic_year_list_screen.dart';
+import '../../master_data/screens/fee_template_list_screen.dart';
+import 'widgets/wali_dashboard_view.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -60,6 +65,17 @@ class DashboardScreen extends StatelessWidget {
               onTap: () => Navigator.pop(context),
             ),
             
+            // Tombol Ganti Sekolah (jika user punya lebih dari 1 sekolah)
+            if ((userMapping?.registeredSchools.length ?? 0) > 1)
+              ListTile(
+                leading: const Icon(Icons.swap_horiz),
+                title: const Text('Ganti Sekolah'),
+                onTap: () {
+                  Navigator.pop(context);
+                  context.read<SchoolProvider>().clearActiveSchool();
+                },
+              ),
+            
             // Menu khusus SUPER_ADMIN
             if (role == 'SUPER_ADMIN')
               ListTile(
@@ -91,6 +107,71 @@ class DashboardScreen extends StatelessWidget {
                   );
                 },
               ),
+
+            // Menu untuk SUPER_ADMIN dan ADMIN dikelompokkan ke Data Master
+            if (role == 'SUPER_ADMIN' || role == 'ADMIN')
+              ExpansionTile(
+                leading: const Icon(Icons.storage),
+                title: const Text('Data Master'),
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.face),
+                    title: const Text('Manajemen Siswa'),
+                    contentPadding: const EdgeInsets.only(left: 40),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => StudentListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.class_),
+                    title: const Text('Data Kelas'),
+                    contentPadding: const EdgeInsets.only(left: 40),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ClassListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.calendar_month),
+                    title: const Text('Tahun Ajaran'),
+                    contentPadding: const EdgeInsets.only(left: 40),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AcademicYearListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.request_quote),
+                    title: const Text('Master Tagihan'),
+                    contentPadding: const EdgeInsets.only(left: 40),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FeeTemplateListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
               
             const Divider(),
             ListTile(
@@ -104,29 +185,31 @@ class DashboardScreen extends StatelessWidget {
           ],
         ),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('Welcome to Dashboard!', style: TextStyle(fontSize: 24)),
-            const SizedBox(height: 16),
-            Text('Active School ID: $schoolId', style: const TextStyle(fontWeight: FontWeight.bold)),
-            Text('Your Role: $role', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => InvoiceListScreen(),
+      body: role == 'WALI'
+          ? const WaliDashboardView()
+          : Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('Welcome to Dashboard!', style: TextStyle(fontSize: 24)),
+                  const SizedBox(height: 16),
+                  Text('Active School ID: $schoolId', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text('Your Role: $role', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+                  const SizedBox(height: 32),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => InvoiceListScreen(),
+                        ),
+                      );
+                    },
+                    child: const Text('Lihat Tagihan'),
                   ),
-                );
-              },
-              child: const Text('Lihat Tagihan'),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
     );
   }
 }

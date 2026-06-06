@@ -7,8 +7,12 @@ class Invoice {
   final String title;
   final double amount;
   final String status; // 'UNPAID', 'PARTIAL', 'PAID'
+  final String schoolId;
   final DateTime dueDate;
   final DateTime? createdAt;
+  final String? createdBy;
+  final DateTime? updatedAt;
+  final String? updatedBy;
 
   Invoice({
     required this.id,
@@ -16,9 +20,13 @@ class Invoice {
     required this.studentName,
     required this.title,
     required this.amount,
-    required this.status,
     required this.dueDate,
+    this.status = 'UNPAID',
+    required this.schoolId,
     this.createdAt,
+    this.createdBy,
+    this.updatedAt,
+    this.updatedBy,
   });
 
   factory Invoice.fromFirestore(DocumentSnapshot doc) {
@@ -33,9 +41,11 @@ class Invoice {
       dueDate: data['due_date'] != null 
           ? (data['due_date'] as Timestamp).toDate() 
           : DateTime.now().add(const Duration(days: 30)),
-      createdAt: data['created_at'] != null 
-          ? (data['created_at'] as Timestamp).toDate() 
-          : null,
+      schoolId: data['school_id'] ?? '',
+      createdAt: data['created_at'] != null ? (data['created_at'] as Timestamp).toDate() : null,
+      createdBy: data['created_by'],
+      updatedAt: data['updated_at'] != null ? (data['updated_at'] as Timestamp).toDate() : null,
+      updatedBy: data['updated_by'],
     );
   }
 

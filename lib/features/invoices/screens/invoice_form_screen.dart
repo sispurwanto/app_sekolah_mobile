@@ -74,9 +74,10 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
       studentId: _studentIdController.text.trim(),
       studentName: _studentNameController.text.trim(),
       title: _titleController.text.trim(),
-      amount: double.tryParse(_amountController.text) ?? 0,
+      amount: double.tryParse(_amountController.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0.0,
       status: _status,
       dueDate: _dueDate,
+      schoolId: schoolId,
       createdAt: widget.invoice?.createdAt,
     );
 
@@ -111,7 +112,7 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
     if (confirm == true) {
       setState(() => _isLoading = true);
       try {
-        await _invoiceService.deleteInvoice(schoolId, widget.invoice!.id);
+        await _invoiceService.deleteInvoice(schoolId, widget.invoice!.studentId, widget.invoice!.id);
         SnackbarUtils.showSnackbar('Tagihan dihapus');
         if (mounted) Navigator.pop(context);
       } catch (e) {

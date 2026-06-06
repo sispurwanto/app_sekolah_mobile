@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/models/app_user.dart';
 import '../../../core/providers/school_provider.dart';
+import '../../../core/providers/user_provider.dart';
 import '../services/user_management_service.dart';
+import '../../student_management/services/student_service.dart';
+import '../../../core/models/student.dart';
 import '../../../core/utils/snackbar_utils.dart';
 
 class UserFormScreen extends StatefulWidget {
@@ -23,6 +26,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
   late TextEditingController _passwordController;
 
   String _role = 'WALI';
+  List<String> _availableRoles = [];
   bool _isActive = true;
   bool _isLoading = false;
 
@@ -36,6 +40,18 @@ class _UserFormScreenState extends State<UserFormScreen> {
     if (widget.user != null) {
       _role = widget.user!.role;
       _isActive = widget.user!.isActive;
+    }
+
+    final schoolId = context.read<SchoolProvider>().activeSchoolId ?? '';
+    final currentUserRole = context.read<UserProvider>().userMapping?.registeredSchools[schoolId] ?? '';
+
+    _availableRoles = ['ADMIN', 'BENDAHARA', 'GURU', 'WALI'];
+    if (currentUserRole == 'SUPER_ADMIN') {
+      _availableRoles.insert(0, 'SUPER_ADMIN');
+    }
+
+    if (!_availableRoles.contains(_role)) {
+      _role = _availableRoles.first;
     }
   }
 
@@ -77,6 +93,9 @@ class _UserFormScreenState extends State<UserFormScreen> {
           email: widget.user!.email, // Keep old email
           role: _role,
           isActive: _isActive,
+          childrens: widget.user!.childrens, // Preserve childrens
+          createdAt: widget.user!.createdAt, // Preserve created time
+          createdBy: widget.user!.createdBy,
         );
 
         await _userService.updateUser(
@@ -91,6 +110,55 @@ class _UserFormScreenState extends State<UserFormScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Widget _buildChildrenList(String schoolId) {
+    if (widget.user == null || widget.user!.childrens.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final childrenIds = widget.user!.childrens.keys.toList();
+    final studentService = StudentService();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Divider(),
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8.0),
+          child: Text(
+            'Daftar Anak (Read-Only)',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+        ),
+        ...childrenIds.map((studentId) {
+          return FutureBuilder<Student?>(
+            future: studentService.getStudentById(schoolId, studentId),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const ListTile(
+                  leading: CircularProgressIndicator(),
+                  title: Text('Memuat data anak...'),
+                );
+              }
+              if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+                return ListTile(
+                  leading: const Icon(Icons.person_off),
+                  title: Text('ID: $studentId'),
+                  subtitle: const Text('Data siswa tidak ditemukan'),
+                );
+              }
+              final student = snapshot.data!;
+              return ListTile(
+                leading: const Icon(Icons.person),
+                title: Text(student.name),
+                subtitle: Text('NIS: ${student.nis} | Kelas: ${student.classId}'),
+              );
+            },
+          );
+        }),
+      ],
+    );
   }
 
   @override
@@ -134,19 +202,23 @@ class _UserFormScreenState extends State<UserFormScreen> {
                     DropdownButtonFormField<String>(
                       initialValue: _role,
                       decoration: const InputDecoration(labelText: 'Role'),
-                      items: ['SUPER_ADMIN', 'ADMIN', 'BENDAHARA', 'GURU', 'WALI']
+                      items: _availableRoles
                           .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                           .toList(),
                       onChanged: (v) => setState(() => _role = v!),
                     ),
-                    if (isEditing) ...[
-                      const SizedBox(height: 16),
-                      SwitchListTile(
-                        title: const Text('Status Aktif'),
-                        value: _isActive,
-                        onChanged: (v) => setState(() => _isActive = v),
-                      ),
-                    ],
+                      if (isEditing) ...[
+                        const SizedBox(height: 16),
+                        SwitchListTile(
+                          title: const Text('Status Aktif'),
+                          value: _isActive,
+                          onChanged: (v) => setState(() => _isActive = v),
+                        ),
+                        if (_role == 'WALI') ...[
+                          const SizedBox(height: 16),
+                          _buildChildrenList(context.read<SchoolProvider>().activeSchoolId ?? ''),
+                        ],
+                      ],
                     const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,

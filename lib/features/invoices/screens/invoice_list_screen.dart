@@ -7,7 +7,9 @@ import '../services/invoice_service.dart';
 import 'invoice_form_screen.dart';
 
 class InvoiceListScreen extends StatelessWidget {
-  InvoiceListScreen({super.key});
+  final String? studentId;
+
+  InvoiceListScreen({super.key, this.studentId});
 
   final InvoiceService _invoiceService = InvoiceService();
 
@@ -21,10 +23,12 @@ class InvoiceListScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Daftar Tagihan'),
+        title: Text(studentId != null ? 'Tagihan Siswa' : 'Daftar Semua Tagihan'),
       ),
       body: StreamBuilder<List<Invoice>>(
-        stream: _invoiceService.getInvoices(schoolId),
+        stream: studentId != null 
+            ? _invoiceService.getStudentInvoices(schoolId, studentId!)
+            : _invoiceService.getAllInvoices(schoolId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());

@@ -65,12 +65,12 @@ class AuthWrapper extends StatelessWidget {
       return const LoginScreen();
     }
 
-    // 2. Jika sudah login, ambil GlobalUserMapping dari Firestore
-    return FutureBuilder<DocumentSnapshot>(
-      future: FirebaseFirestore.instance
+    // 2. Jika sudah login, ambil GlobalUserMapping dari Firestore secara realtime
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
           .collection('global_users_mapping')
           .doc(user.uid)
-          .get(),
+          .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
