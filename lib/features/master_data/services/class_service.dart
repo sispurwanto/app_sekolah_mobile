@@ -6,13 +6,19 @@ import '../../master_data/services/academic_year_service.dart';
 class ClassService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  Stream<List<AppClass>> getClasses(String schoolId) {
-    return _db
+  Stream<List<AppClass>> getClasses(String schoolId, {String? teacherId}) {
+    var query = _db
         .collection('schools')
         .doc(schoolId)
-        .collection('classes')
-        .snapshots()
-        .map((snapshot) {
+        .collection('classes');
+        
+    if (teacherId != null && teacherId.isNotEmpty) {
+      return query.where('teacher_id', isEqualTo: teacherId).snapshots().map((snapshot) {
+        return snapshot.docs.map((doc) => AppClass.fromFirestore(doc)).toList();
+      });
+    }
+
+    return query.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) => AppClass.fromFirestore(doc)).toList();
     });
   }

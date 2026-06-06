@@ -22,7 +22,8 @@ class StudentService {
     var query = _db
         .collection('schools')
         .doc(schoolId)
-        .collection('students');
+        .collection('students')
+        .where('status', isEqualTo: 'ACTIVE');
         
     if (classId.isNotEmpty) {
       return query.where('class_id', isEqualTo: classId).snapshots().map((snapshot) {

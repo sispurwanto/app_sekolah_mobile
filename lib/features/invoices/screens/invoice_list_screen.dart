@@ -3,10 +3,13 @@ import 'package:provider/provider.dart';
 import '../../../core/models/invoice.dart';
 import '../../../core/providers/school_provider.dart';
 import '../../../core/providers/user_provider.dart';
+import '../../../core/utils/currency_utils.dart';
 import '../services/invoice_service.dart';
 import '../../master_data/services/academic_year_service.dart';
 import '../../../core/models/academic_year.dart';
 import 'invoice_form_screen.dart';
+import 'payment_dialog.dart';
+import 'payment_history_dialog.dart';
 
 class InvoiceListScreen extends StatelessWidget {
   final String? studentId;
@@ -81,23 +84,59 @@ class InvoiceListScreen extends StatelessWidget {
                     margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: ListTile(
                       title: Text(invoice.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text(
-                        'Siswa: ${invoice.studentName}\nTotal: Rp ${invoice.amount.toStringAsFixed(0)} | Dibayar: Rp ${invoice.paidAmount.toStringAsFixed(0)}\nStatus: ${invoice.status}',
+                      subtitle: RichText(
+                        text: TextSpan(
+                          style: DefaultTextStyle.of(context).style.copyWith(height: 1.5),
+                          children: [
+                            TextSpan(text: 'Siswa: ${invoice.studentName}\nTotal: ${CurrencyUtils.formatRp(invoice.amount)} | Dibayar: ${CurrencyUtils.formatRp(invoice.paidAmount)}\nStatus: '),
+                            TextSpan(
+                              text: invoice.status,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: invoice.status == 'PAID' ? Colors.green : (invoice.status == 'UNPAID' ? Colors.red : Colors.orange),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       isThreeLine: true,
-                      trailing: canManageInvoices
-                          ? IconButton(
-                              icon: const Icon(Icons.edit, color: Colors.blue),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => InvoiceFormScreen(invoice: invoice),
-                                  ),
-                                );
-                              },
-                            )
-                          : null,
+                      trailing: PopupMenuButton<String>(
+                        onSelected: (value) {
+                          if (value == 'edit') {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => InvoiceFormScreen(invoice: invoice)),
+                            );
+                          } else if (value == 'pay') {
+                            showDialog(
+                              context: context,
+                              builder: (context) => PaymentDialog(invoice: invoice),
+                            );
+                          } else if (value == 'view_payments') {
+                            showDialog(
+                              context: context,
+                              builder: (context) => PaymentHistoryDialog(invoice: invoice),
+                            );
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          if (invoice.status != 'PAID')
+                            PopupMenuItem(
+                              value: 'pay',
+                              child: Text(canManageInvoices ? 'Terima Pembayaran' : 'Bayar via Transfer'),
+                            ),
+                          if (invoice.paidAmount > 0)
+                            const PopupMenuItem(
+                              value: 'view_payments',
+                              child: Text('Riwayat Pembayaran'),
+                            ),
+                          if (canManageInvoices && invoice.status != 'PAID')
+                            const PopupMenuItem(
+                              value: 'edit',
+                              child: Text('Edit Tagihan'),
+                            ),
+                        ],
+                      ),
                     ),
                   );
                 },

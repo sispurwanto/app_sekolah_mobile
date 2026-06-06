@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/utils/currency_utils.dart';
 import '../../../core/models/fee_template.dart';
 import '../../../core/providers/school_provider.dart';
 import '../services/fee_template_service.dart';
@@ -91,7 +92,7 @@ class _FeeTemplateListScreenState extends State<FeeTemplateListScreen> {
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: ListTile(
                   title: Text(template.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('Nominal: Rp ${template.amount.toStringAsFixed(0)}\n$targetClass'),
+                  subtitle: Text('Nominal: ${CurrencyUtils.formatRp(template.amount)}\n$targetClass'),
                   isThreeLine: true,
                   trailing: PopupMenuButton<String>(
                     onSelected: (value) {

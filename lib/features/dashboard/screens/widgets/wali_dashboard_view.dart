@@ -80,7 +80,11 @@ class WaliDashboardView extends StatelessWidget {
                             Navigator.push(
                               context, 
                               MaterialPageRoute(
-                                builder: (c) => InvoiceListScreen(studentId: childId),
+                                builder: (c) => InvoiceListScreen(
+                                  studentId: childId,
+                                  academicYearId: null, // Will automatically use active year in InvoiceListScreen
+                                  classId: student.classId,
+                                ),
                               ),
                             );
                           },
