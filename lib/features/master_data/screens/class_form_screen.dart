@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../../core/models/app_class.dart';
 import '../../../core/providers/school_provider.dart';
 import '../services/class_service.dart';
+import '../../user_management/services/user_management_service.dart';
+import '../../../core/models/app_user.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/utils/dialog_utils.dart';
 
@@ -23,6 +25,8 @@ class _ClassFormScreenState extends State<ClassFormScreen> {
   late TextEditingController _nameController;
   late TextEditingController _levelController;
   late TextEditingController _descriptionController;
+  String? _selectedTeacherId;
+  String? _selectedTeacherName;
   bool _isLoading = false;
 
   @override
@@ -32,6 +36,8 @@ class _ClassFormScreenState extends State<ClassFormScreen> {
     _nameController = TextEditingController(text: widget.appClass?.name ?? '');
     _levelController = TextEditingController(text: widget.appClass?.level ?? '');
     _descriptionController = TextEditingController(text: widget.appClass?.description ?? '');
+    _selectedTeacherId = widget.appClass?.teacherId;
+    _selectedTeacherName = widget.appClass?.teacherName;
   }
 
   @override
@@ -54,6 +60,8 @@ class _ClassFormScreenState extends State<ClassFormScreen> {
       name: _nameController.text.trim(),
       level: _levelController.text.trim(),
       description: _descriptionController.text.trim(),
+      teacherId: _selectedTeacherId,
+      teacherName: _selectedTeacherName,
     );
 
     try {
@@ -150,6 +158,39 @@ class _ClassFormScreenState extends State<ClassFormScreen> {
                       controller: _descriptionController,
                       decoration: const InputDecoration(labelText: 'Deskripsi / Catatan'),
                       maxLines: 3,
+                    ),
+                    const SizedBox(height: 16),
+                    FutureBuilder<List<AppUser>>(
+                      future: UserManagementService().getUsersByRole(context.read<SchoolProvider>().activeSchoolId!, 'GURU'),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const CircularProgressIndicator();
+                        }
+                        
+                        final users = snapshot.data ?? [];
+                        
+                        return DropdownButtonFormField<String>(
+                          value: _selectedTeacherId,
+                          decoration: const InputDecoration(labelText: 'Wali Kelas (Opsional)'),
+                          items: [
+                            const DropdownMenuItem(value: null, child: Text('-- Tidak Ada --')),
+                            ...users.map((user) => DropdownMenuItem(
+                                  value: user.id,
+                                  child: Text(user.name),
+                                )),
+                          ],
+                          onChanged: (val) {
+                            setState(() {
+                              _selectedTeacherId = val;
+                              if (val != null) {
+                                _selectedTeacherName = users.firstWhere((u) => u.id == val).name;
+                              } else {
+                                _selectedTeacherName = null;
+                              }
+                            });
+                          },
+                        );
+                      },
                     ),
                     const SizedBox(height: 32),
                     SizedBox(

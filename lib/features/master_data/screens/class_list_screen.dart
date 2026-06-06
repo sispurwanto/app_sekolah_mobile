@@ -43,7 +43,11 @@ class ClassListScreen extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: ListTile(
                   title: Text(appClass.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('Tingkat: ${appClass.level}\n${appClass.description}'),
+                  subtitle: Text(
+                    'Tingkat: ${appClass.level}\n'
+                    'Wali Kelas: ${appClass.teacherName ?? "Belum Ditentukan"}\n'
+                    '${appClass.description}'
+                  ),
                   isThreeLine: true,
                   trailing: IconButton(
                     icon: const Icon(Icons.edit, color: Colors.blue),

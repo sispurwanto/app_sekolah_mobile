@@ -4,12 +4,21 @@ import '../../../core/models/invoice.dart';
 import '../../../core/providers/school_provider.dart';
 import '../../../core/providers/user_provider.dart';
 import '../services/invoice_service.dart';
+import '../../master_data/services/academic_year_service.dart';
+import '../../../core/models/academic_year.dart';
 import 'invoice_form_screen.dart';
 
 class InvoiceListScreen extends StatelessWidget {
   final String? studentId;
+  final String? academicYearId;
+  final String? classId;
 
-  InvoiceListScreen({super.key, this.studentId});
+  InvoiceListScreen({
+    super.key, 
+    this.studentId, 
+    this.academicYearId, 
+    this.classId,
+  });
 
   final InvoiceService _invoiceService = InvoiceService();
 
@@ -25,58 +34,77 @@ class InvoiceListScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(studentId != null ? 'Tagihan Siswa' : 'Daftar Semua Tagihan'),
       ),
-      body: StreamBuilder<List<Invoice>>(
-        stream: studentId != null 
-            ? _invoiceService.getStudentInvoices(schoolId, studentId!)
-            : _invoiceService.getAllInvoices(schoolId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+      body: FutureBuilder<AcademicYear?>(
+        future: AcademicYearService().getActiveAcademicYear(schoolId),
+        builder: (context, yearSnapshot) {
+          if (yearSnapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
+          
+          final activeYear = yearSnapshot.data;
+          
+          final yearIdToUse = academicYearId ?? activeYear?.id;
 
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+          if (yearIdToUse == null || yearIdToUse.isEmpty) {
+            return const Center(child: Text('Tahun Ajaran Aktif tidak ditemukan.'));
           }
 
-          final invoices = snapshot.data ?? [];
-
-          // TODO: If role == WALI, filter invoices by student_id
-          // For now, it shows all.
-
-          if (invoices.isEmpty) {
-            return const Center(child: Text('Belum ada data tagihan.'));
+          // If showing for specific student, make sure class is provided
+          if (studentId != null && (classId == null || classId!.isEmpty)) {
+            return const Center(child: Text('Data Kelas Siswa tidak lengkap untuk mengambil tagihan.'));
           }
 
-          return ListView.builder(
-            itemCount: invoices.length,
-            itemBuilder: (context, index) {
-              final invoice = invoices[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: ListTile(
-                  title: Text(invoice.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(
-                    'Siswa: ${invoice.studentName}\nTotal: Rp ${invoice.amount.toStringAsFixed(0)} | Status: ${invoice.status}',
-                  ),
-                  isThreeLine: true,
-                  trailing: canManageInvoices
-                      ? IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => InvoiceFormScreen(invoice: invoice),
-                              ),
-                            );
-                          },
-                        )
-                      : null,
-                ),
+          return StreamBuilder<List<Invoice>>(
+            stream: studentId != null 
+                ? _invoiceService.getStudentInvoices(schoolId, yearIdToUse, classId!, studentId!)
+                : _invoiceService.getAllInvoices(schoolId, yearIdToUse),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              }
+
+              final invoices = snapshot.data ?? [];
+
+              if (invoices.isEmpty) {
+                return const Center(child: Text('Belum ada data tagihan.'));
+              }
+
+              return ListView.builder(
+                itemCount: invoices.length,
+                itemBuilder: (context, index) {
+                  final invoice = invoices[index];
+                  return Card(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: ListTile(
+                      title: Text(invoice.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text(
+                        'Siswa: ${invoice.studentName}\nTotal: Rp ${invoice.amount.toStringAsFixed(0)} | Dibayar: Rp ${invoice.paidAmount.toStringAsFixed(0)}\nStatus: ${invoice.status}',
+                      ),
+                      isThreeLine: true,
+                      trailing: canManageInvoices
+                          ? IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.blue),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => InvoiceFormScreen(invoice: invoice),
+                                  ),
+                                );
+                              },
+                            )
+                          : null,
+                    ),
+                  );
+                },
               );
             },
           );
-        },
+        }
       ),
       floatingActionButton: canManageInvoices
           ? FloatingActionButton(

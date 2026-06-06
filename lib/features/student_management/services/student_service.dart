@@ -17,6 +17,26 @@ class StudentService {
     });
   }
 
+  // Get stream of students by class
+  Stream<List<Student>> getStudentsByClass(String schoolId, String classId) {
+    var query = _db
+        .collection('schools')
+        .doc(schoolId)
+        .collection('students');
+        
+    if (classId.isNotEmpty) {
+      return query.where('class_id', isEqualTo: classId).snapshots().map((snapshot) {
+        return snapshot.docs.map((doc) => Student.fromFirestore(doc)).toList();
+      });
+    } else {
+      // If classId is empty string, we can either return all, or limit it to avoid massive reads.
+      // We will just limit to 100 for safety when viewing "Semua Kelas".
+      return query.limit(100).snapshots().map((snapshot) {
+        return snapshot.docs.map((doc) => Student.fromFirestore(doc)).toList();
+      });
+    }
+  }
+
   Future<Student?> getStudentById(String schoolId, String studentId) async {
     final doc = await _db
         .collection('schools')
@@ -77,6 +97,33 @@ class StudentService {
       );
     }
 
+    if (student.academicYearId.isNotEmpty && student.classId.isNotEmpty) {
+      final classDocRef = _db
+          .collection('schools')
+          .doc(schoolId)
+          .collection('transactions_year')
+          .doc(student.academicYearId)
+          .collection('class_data')
+          .doc(student.classId);
+
+      // Create placeholder for class_data so it exists in Firebase Console
+      batch.set(classDocRef, {
+        'status': 'ACTIVE',
+        'created_at': FieldValue.serverTimestamp(),
+        'created_by': uid,
+        'updated_at': FieldValue.serverTimestamp(),
+        'updated_by': uid,
+      }, SetOptions(merge: true));
+
+      final classDataRef = classDocRef.collection('students').doc(idToUse);
+
+      final studentClassData = studentData; // Use the same data as the master student
+      studentClassData['status'] = 'ACTIVE';
+      studentClassData['joined_at'] = FieldValue.serverTimestamp();
+
+      batch.set(classDataRef, studentClassData);
+    }
+
     await batch.commit();
   }
 
@@ -100,6 +147,32 @@ class StudentService {
         },
         SetOptions(merge: true)
       );
+    }
+
+    if (student.academicYearId.isNotEmpty && student.classId.isNotEmpty) {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      final classDocRef = _db
+          .collection('schools')
+          .doc(schoolId)
+          .collection('transactions_year')
+          .doc(student.academicYearId)
+          .collection('class_data')
+          .doc(student.classId);
+
+      // Update placeholder for class_data
+      batch.set(classDocRef, {
+        'status': 'ACTIVE',
+        'updated_at': FieldValue.serverTimestamp(),
+        'updated_by': uid,
+      }, SetOptions(merge: true));
+
+      final classDataRef = classDocRef.collection('students').doc(student.id);
+
+      final studentClassData = student.toMap();
+      studentClassData['status'] = 'ACTIVE';
+      studentClassData['updated_at'] = FieldValue.serverTimestamp();
+
+      batch.set(classDataRef, studentClassData, SetOptions(merge: true));
     }
 
     await batch.commit();

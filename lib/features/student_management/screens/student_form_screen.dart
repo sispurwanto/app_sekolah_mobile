@@ -33,6 +33,7 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
   late TextEditingController _nameController;
 
   String? _selectedGuardianId;
+  String? _selectedGuardianName;
   String? _selectedClassId;
   String? _selectedAcademicYearId;
 
@@ -50,6 +51,7 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
 
     final guardianId = widget.student?.guardianId ?? '';
     _selectedGuardianId = guardianId.isNotEmpty ? guardianId : null;
+    _selectedGuardianName = widget.student?.guardianName;
     
     final classId = widget.student?.classId ?? '';
     _selectedClassId = classId.isNotEmpty ? classId : null;
@@ -99,6 +101,7 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
       birthDate: _birthDate,
       classId: _selectedClassId ?? '',
       guardianId: _selectedGuardianId ?? '',
+      guardianName: _selectedGuardianName ?? '',
       academicYearId: _selectedAcademicYearId ?? '',
       status: _status,
     );
@@ -357,7 +360,16 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                                   child: Text('${w.name} (${w.email})'),
                                 )),
                           ],
-                          onChanged: (v) => setState(() => _selectedGuardianId = v),
+                          onChanged: (v) {
+                            setState(() {
+                              _selectedGuardianId = v;
+                              if (v != null) {
+                                _selectedGuardianName = walis.firstWhere((w) => w.id == v).name;
+                              } else {
+                                _selectedGuardianName = null;
+                              }
+                            });
+                          },
                         );
                       },
                     ),

@@ -25,7 +25,10 @@ class _FeeTemplateFormScreenState extends State<FeeTemplateFormScreen> {
   late TextEditingController _idController;
   late TextEditingController _titleController;
   late TextEditingController _amountController;
+  late TextEditingController _dueDateDayController;
   String? _classId;
+  String _frequency = 'ONCE';
+  DateTime? _exactDueDate;
   bool _isLoading = false;
 
   @override
@@ -34,7 +37,10 @@ class _FeeTemplateFormScreenState extends State<FeeTemplateFormScreen> {
     _idController = TextEditingController(text: widget.template?.id ?? '');
     _titleController = TextEditingController(text: widget.template?.title ?? '');
     _amountController = TextEditingController(text: widget.template?.amount.toStringAsFixed(0) ?? '');
+    _dueDateDayController = TextEditingController(text: widget.template?.dueDateDay?.toString() ?? '');
     _classId = widget.template?.classId;
+    _frequency = widget.template?.frequency ?? 'ONCE';
+    _exactDueDate = widget.template?.exactDueDate;
   }
 
   @override
@@ -42,6 +48,7 @@ class _FeeTemplateFormScreenState extends State<FeeTemplateFormScreen> {
     _idController.dispose();
     _titleController.dispose();
     _amountController.dispose();
+    _dueDateDayController.dispose();
     super.dispose();
   }
 
@@ -50,12 +57,24 @@ class _FeeTemplateFormScreenState extends State<FeeTemplateFormScreen> {
 
     setState(() => _isLoading = true);
     final schoolId = context.read<SchoolProvider>().activeSchoolId!;
+    
+    int? dueDateDay;
+    if (_frequency == 'MONTHLY' && _dueDateDayController.text.isNotEmpty) {
+      dueDateDay = int.tryParse(_dueDateDayController.text);
+      if (dueDateDay != null && (dueDateDay < 1 || dueDateDay > 28)) {
+        SnackbarUtils.showErrorSnackbar('Tanggal jatuh tempo harus antara 1 s.d 28');
+        return;
+      }
+    }
 
     final template = FeeTemplate(
       id: _idController.text.trim(),
       title: _titleController.text.trim(),
       amount: double.tryParse(_amountController.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0.0,
       classId: _classId,
+      frequency: _frequency,
+      dueDateDay: dueDateDay,
+      exactDueDate: _frequency != 'MONTHLY' ? _exactDueDate : null,
     );
 
     try {
@@ -146,6 +165,51 @@ class _FeeTemplateFormScreenState extends State<FeeTemplateFormScreen> {
                       keyboardType: TextInputType.number,
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: _frequency,
+                      decoration: const InputDecoration(labelText: 'Frekuensi Tagihan'),
+                      items: const [
+                        DropdownMenuItem(value: 'ONCE', child: Text('Sekali Bayar (Misal: Uang Pangkal)')),
+                        DropdownMenuItem(value: 'MONTHLY', child: Text('Bulanan (Misal: SPP)')),
+                        DropdownMenuItem(value: 'YEARLY', child: Text('Tahunan (Misal: Daftar Ulang)')),
+                      ],
+                      onChanged: (v) {
+                        setState(() {
+                          _frequency = v ?? 'ONCE';
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    if (_frequency == 'MONTHLY')
+                      TextFormField(
+                        controller: _dueDateDayController,
+                        decoration: const InputDecoration(
+                          labelText: 'Tanggal Jatuh Tempo Tiap Bulan (1-28)',
+                          helperText: 'Tagihan akan jatuh tempo pada tanggal ini setiap bulannya.',
+                        ),
+                        keyboardType: TextInputType.number,
+                      )
+                    else
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Tanggal Jatuh Tempo'),
+                        subtitle: Text(_exactDueDate != null 
+                            ? '${_exactDueDate!.day}/${_exactDueDate!.month}/${_exactDueDate!.year}' 
+                            : 'Belum diatur (Opsional)'),
+                        trailing: const Icon(Icons.calendar_today),
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: _exactDueDate ?? DateTime.now(),
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime(2100),
+                          );
+                          if (picked != null) {
+                            setState(() => _exactDueDate = picked);
+                          }
+                        },
+                      ),
                     const SizedBox(height: 16),
                     StreamBuilder<List<AppClass>>(
                       stream: _classService.getClasses(schoolId),

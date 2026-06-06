@@ -9,6 +9,7 @@ class Student {
   final DateTime birthDate;
   final String classId;
   final String guardianId;
+  final String guardianName;
   final String academicYearId;
   final String status;
   final DateTime? createdAt;
@@ -25,6 +26,7 @@ class Student {
     required this.birthDate,
     required this.classId,
     required this.guardianId,
+    this.guardianName = '',
     required this.academicYearId,
     required this.status,
     this.createdAt,
@@ -46,6 +48,7 @@ class Student {
           : DateTime.now(),
       classId: data['class_id'] ?? '',
       guardianId: data['guardian_id'] ?? '',
+      guardianName: data['guardian_name'] ?? '',
       academicYearId: data['academic_year_id'] ?? '',
       status: data['status'] ?? 'ACTIVE',
       createdAt: data['created_at'] != null ? (data['created_at'] as Timestamp).toDate() : null,
@@ -64,6 +67,7 @@ class Student {
       'birth_date': Timestamp.fromDate(birthDate),
       'class_id': classId,
       'guardian_id': guardianId,
+      'guardian_name': guardianName,
       'academic_year_id': academicYearId,
       'status': status,
     };

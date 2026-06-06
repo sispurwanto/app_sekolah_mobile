@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../../core/models/invoice.dart';
 import '../../../core/providers/school_provider.dart';
 import '../services/invoice_service.dart';
+import '../../master_data/services/academic_year_service.dart';
+import '../../student_management/services/student_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/utils/dialog_utils.dart';
 
@@ -69,19 +71,41 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
     setState(() => _isLoading = true);
     final schoolId = context.read<SchoolProvider>().activeSchoolId!;
 
-    final invoice = Invoice(
-      id: widget.invoice?.id ?? '',
-      studentId: _studentIdController.text.trim(),
-      studentName: _studentNameController.text.trim(),
-      title: _titleController.text.trim(),
-      amount: double.tryParse(_amountController.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0.0,
-      status: _status,
-      dueDate: _dueDate,
-      schoolId: schoolId,
-      createdAt: widget.invoice?.createdAt,
-    );
-
     try {
+      // Fetch Active Academic Year
+      final activeYear = await AcademicYearService().getActiveAcademicYear(schoolId);
+      if (activeYear == null) {
+        throw Exception('Tidak ada Tahun Ajaran yang Aktif! Silakan aktifkan di Master Data.');
+      }
+
+      final studentId = _studentIdController.text.trim();
+      if (studentId.isEmpty) {
+        throw Exception('ID Siswa wajib diisi untuk mencari data kelas.');
+      }
+
+      // Fetch Student Data to get Class ID
+      final student = await StudentService().getStudentById(schoolId, studentId);
+      if (student == null) {
+        throw Exception('Siswa dengan ID $studentId tidak ditemukan.');
+      }
+      if (student.classId.isEmpty) {
+        throw Exception('Siswa ini belum dimasukkan ke dalam Kelas mana pun.');
+      }
+
+      final invoice = Invoice(
+        id: widget.invoice?.id ?? '',
+        studentId: studentId,
+        studentName: student.name, // Auto override with real name
+        title: _titleController.text.trim(),
+        amount: double.tryParse(_amountController.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0.0,
+        status: _status,
+        dueDate: _dueDate,
+        schoolId: schoolId,
+        academicYearId: activeYear.id,
+        classId: student.classId,
+        createdAt: widget.invoice?.createdAt,
+      );
+
       if (widget.invoice == null) {
         await _invoiceService.addInvoice(schoolId, invoice);
         SnackbarUtils.showSnackbar('Tagihan berhasil dibuat');
@@ -112,7 +136,13 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
     if (confirm == true) {
       setState(() => _isLoading = true);
       try {
-        await _invoiceService.deleteInvoice(schoolId, widget.invoice!.studentId, widget.invoice!.id);
+        await _invoiceService.deleteInvoice(
+          schoolId,
+          widget.invoice!.academicYearId,
+          widget.invoice!.classId,
+          widget.invoice!.studentId,
+          widget.invoice!.id,
+        );
         SnackbarUtils.showSnackbar('Tagihan dihapus');
         if (mounted) Navigator.pop(context);
       } catch (e) {
@@ -158,7 +188,8 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
                     ),
                     TextFormField(
                       controller: _studentIdController,
-                      decoration: const InputDecoration(labelText: 'ID Siswa (Opsional)'),
+                      decoration: const InputDecoration(labelText: 'ID Siswa (NIS) *'),
+                      validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
                     TextFormField(
                       controller: _amountController,

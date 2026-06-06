@@ -3,12 +3,56 @@ import 'package:provider/provider.dart';
 import '../../../core/models/fee_template.dart';
 import '../../../core/providers/school_provider.dart';
 import '../services/fee_template_service.dart';
+import '../../invoices/services/invoice_service.dart';
+import '../../master_data/services/academic_year_service.dart';
+import '../../../core/utils/snackbar_utils.dart';
+import '../../../core/utils/dialog_utils.dart';
 import 'fee_template_form_screen.dart';
 
-class FeeTemplateListScreen extends StatelessWidget {
-  FeeTemplateListScreen({super.key});
+class FeeTemplateListScreen extends StatefulWidget {
+  const FeeTemplateListScreen({super.key});
 
+  @override
+  State<FeeTemplateListScreen> createState() => _FeeTemplateListScreenState();
+}
+
+class _FeeTemplateListScreenState extends State<FeeTemplateListScreen> {
   final FeeTemplateService _service = FeeTemplateService();
+  bool _isGenerating = false;
+
+  Future<void> _handleBulkGenerate(BuildContext context, String schoolId, FeeTemplate template) async {
+    final activeYear = await AcademicYearService().getActiveAcademicYear(schoolId);
+    if (activeYear == null) {
+      SnackbarUtils.showErrorSnackbar('Tidak ada Tahun Ajaran aktif.');
+      return;
+    }
+
+    final targetMsg = (template.classId != null && template.classId!.isNotEmpty)
+        ? 'kelas ${template.classId}'
+        : 'SEMUA KELAS';
+
+    final confirm = await DialogUtils.showConfirmationDialog(
+      title: 'Generate Tagihan Massal',
+      content: 'Generate tagihan "${template.title}" untuk siswa di $targetMsg pada tahun ajaran ${activeYear.name}?\n\nIni mungkin membutuhkan waktu beberapa saat.',
+      confirmText: 'Generate',
+    );
+
+    if (confirm == true) {
+      setState(() => _isGenerating = true);
+      try {
+        await InvoiceService().generateInvoicesForTemplate(
+          schoolId: schoolId,
+          academicYearId: activeYear.id,
+          template: template,
+        );
+        SnackbarUtils.showSnackbar('Tagihan massal berhasil di-generate!');
+      } catch (e) {
+        SnackbarUtils.showErrorSnackbar('Gagal: $e');
+      } finally {
+        if (mounted) setState(() => _isGenerating = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,16 +93,29 @@ class FeeTemplateListScreen extends StatelessWidget {
                   title: Text(template.title, style: const TextStyle(fontWeight: FontWeight.bold)),
                   subtitle: Text('Nominal: Rp ${template.amount.toStringAsFixed(0)}\n$targetClass'),
                   isThreeLine: true,
-                  trailing: IconButton(
-                    icon: const Icon(Icons.edit, color: Colors.blue),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => FeeTemplateFormScreen(template: template),
-                        ),
-                      );
+                  trailing: PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => FeeTemplateFormScreen(template: template),
+                          ),
+                        );
+                      } else if (value == 'generate') {
+                        _handleBulkGenerate(context, schoolId, template);
+                      }
                     },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Text('Edit Master Tagihan'),
+                      ),
+                      const PopupMenuItem(
+                        value: 'generate',
+                        child: Text('Generate Tagihan Massal'),
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -66,6 +123,9 @@ class FeeTemplateListScreen extends StatelessWidget {
           );
         },
       ),
+      bottomNavigationBar: _isGenerating
+          ? const LinearProgressIndicator()
+          : null,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(

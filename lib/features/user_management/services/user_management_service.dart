@@ -18,6 +18,19 @@ class UserManagementService {
     });
   }
 
+  // Get users by specific role
+  Future<List<AppUser>> getUsersByRole(String schoolId, String role) async {
+    final snapshot = await _db
+        .collection('schools')
+        .doc(schoolId)
+        .collection('users')
+        .where('role', isEqualTo: role)
+        .where('is_active', isEqualTo: true)
+        .get();
+        
+    return snapshot.docs.map((doc) => AppUser.fromFirestore(doc)).toList();
+  }
+
   // Add new user
   Future<void> addUser({
     required String schoolId,

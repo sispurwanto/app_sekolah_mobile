@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/models/app_class.dart';
+import '../../master_data/services/academic_year_service.dart';
 
 class ClassService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -26,12 +27,38 @@ class ClassService {
     data['updated_at'] = FieldValue.serverTimestamp();
     data['updated_by'] = uid;
 
-    await _db
+    final batch = _db.batch();
+
+    final classRef = _db
         .collection('schools')
         .doc(schoolId)
         .collection('classes')
-        .doc(idToUse)
-        .set(data);
+        .doc(idToUse);
+        
+    batch.set(classRef, data);
+
+    final activeYear = await AcademicYearService().getActiveAcademicYear(schoolId);
+    if (activeYear != null) {
+      final classDataRef = _db
+          .collection('schools')
+          .doc(schoolId)
+          .collection('transactions_year')
+          .doc(activeYear.id)
+          .collection('class_data')
+          .doc(idToUse);
+          
+      batch.set(classDataRef, {
+        'status': 'ACTIVE',
+        'updated_at': FieldValue.serverTimestamp(),
+        'updated_by': uid,
+        'teacher': appClass.teacherId != null ? {
+          'id': appClass.teacherId,
+          'name': appClass.teacherName,
+        } : null,
+      }, SetOptions(merge: true));
+    }
+
+    await batch.commit();
   }
 
   Future<void> updateClass(String schoolId, AppClass appClass) async {
@@ -45,12 +72,38 @@ class ClassService {
     data['updated_at'] = FieldValue.serverTimestamp();
     data['updated_by'] = uid;
 
-    await _db
+    final batch = _db.batch();
+
+    final classRef = _db
         .collection('schools')
         .doc(schoolId)
         .collection('classes')
-        .doc(appClass.id)
-        .update(data);
+        .doc(appClass.id);
+        
+    batch.update(classRef, data);
+
+    final activeYear = await AcademicYearService().getActiveAcademicYear(schoolId);
+    if (activeYear != null) {
+      final classDataRef = _db
+          .collection('schools')
+          .doc(schoolId)
+          .collection('transactions_year')
+          .doc(activeYear.id)
+          .collection('class_data')
+          .doc(appClass.id);
+          
+      batch.set(classDataRef, {
+        'status': 'ACTIVE',
+        'updated_at': FieldValue.serverTimestamp(),
+        'updated_by': uid,
+        'teacher': appClass.teacherId != null ? {
+          'id': appClass.teacherId,
+          'name': appClass.teacherName,
+        } : null,
+      }, SetOptions(merge: true));
+    }
+
+    await batch.commit();
   }
 
   Future<void> deleteClass(String schoolId, String classId) async {
