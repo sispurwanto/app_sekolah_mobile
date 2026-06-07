@@ -12,6 +12,7 @@ import '../../master_data/screens/class_list_screen.dart';
 import '../../master_data/screens/academic_year_list_screen.dart';
 import '../../master_data/screens/fee_template_list_screen.dart';
 import 'widgets/wali_dashboard_view.dart';
+import '../../reports/screens/financial_report_screen.dart';
 import 'widgets/bendahara_dashboard_view.dart';
 import 'widgets/guru_dashboard_view.dart';
 
@@ -175,6 +176,26 @@ class DashboardScreen extends StatelessWidget {
                 ],
               ),
               
+            if (role == 'SUPER_ADMIN' || role == 'ADMIN' || role == 'BENDAHARA' || role == 'KEPALA_SEKOLAH')
+              Column(
+                children: [
+                  const Divider(),
+                  ListTile(
+                    leading: const Icon(Icons.analytics),
+                    title: const Text('Laporan Keuangan'),
+                    onTap: () {
+                      Navigator.pop(context); // Close drawer
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const FinancialReportScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+
             const Divider(),
             ListTile(
               leading: const Icon(Icons.person_outline),
@@ -205,9 +226,9 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Widget _buildDashboardBody(String role, String schoolId, BuildContext context) {
-    if (role == 'WALI') return const WaliDashboardView();
+    if (role == 'WALI' || role == 'SISWA') return const WaliDashboardView();
     if (role == 'GURU') return const GuruDashboardView();
-    if (role == 'BENDAHARA' || role == 'ADMIN' || role == 'SUPER_ADMIN') {
+    if (role == 'BENDAHARA' || role == 'ADMIN' || role == 'SUPER_ADMIN' || role == 'KEPALA_SEKOLAH') {
       return SingleChildScrollView(
         child: Column(
           children: [

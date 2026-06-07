@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/models/invoice.dart';
+import 'package:intl/intl.dart';
 import '../../../core/providers/school_provider.dart';
 import '../../../core/providers/user_provider.dart';
 import '../../../core/utils/currency_utils.dart';
@@ -33,6 +34,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
   final InvoiceService _invoiceService = InvoiceService();
   final Set<String> _selectedInvoiceIds = {};
   final List<Invoice> _selectedInvoices = [];
+  String _filterStatus = 'SEMUA'; // SEMUA, BELUM LUNAS, LUNAS
 
   void _toggleSelection(Invoice invoice) {
     setState(() {
@@ -115,16 +117,45 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
 
               final invoices = snapshot.data ?? [];
 
-              if (invoices.isEmpty) {
-                return const Center(child: Text('Belum ada data tagihan.'));
+              var filteredInvoices = invoices;
+              if (_filterStatus == 'BELUM LUNAS') {
+                filteredInvoices = invoices.where((i) => i.status != 'PAID').toList();
+              } else if (_filterStatus == 'LUNAS') {
+                filteredInvoices = invoices.where((i) => i.status == 'PAID').toList();
               }
 
-              return ListView.builder(
-                itemCount: invoices.length,
-                itemBuilder: (context, index) {
-                  final invoice = invoices[index];
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(value: 'SEMUA', label: Text('Semua')),
+                        ButtonSegment(value: 'BELUM LUNAS', label: Text('Tunggakan')),
+                        ButtonSegment(value: 'LUNAS', label: Text('Lunas')),
+                      ],
+                      selected: {_filterStatus},
+                      onSelectionChanged: (Set<String> newSelection) {
+                        setState(() {
+                          _filterStatus = newSelection.first;
+                          _clearSelection(); // Clear selection when filter changes
+                        });
+                      },
+                    ),
+                  ),
+                  if (filteredInvoices.isEmpty)
+                    const Expanded(child: Center(child: Text('Tidak ada tagihan untuk filter ini.')))
+                  else
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: filteredInvoices.length,
+                        itemBuilder: (context, index) {
+                          final invoice = filteredInvoices[index];
                   final isSelected = _selectedInvoiceIds.contains(invoice.id);
                   final isSelectable = invoice.status != 'PAID';
+                  final dueStr = invoice.dueDate != null ? DateFormat('dd/MM/yy').format(invoice.dueDate!) : '-';
+                  final isOverdue = invoice.dueDate != null && invoice.dueDate!.isBefore(DateTime.now());
+                  final dueColor = isOverdue && invoice.status != 'PAID' ? Colors.red : null;
 
                   return Card(
                     color: isSelected ? Colors.blue.shade50 : null,
@@ -149,6 +180,14 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: invoice.status == 'PAID' ? Colors.green : (invoice.status == 'UNPAID' ? Colors.red : Colors.orange),
+                              ),
+                            ),
+                            const TextSpan(text: '\nJatuh Tempo: '),
+                            TextSpan(
+                              text: dueStr,
+                              style: TextStyle(
+                                color: dueColor, 
+                                fontWeight: isOverdue && invoice.status != 'PAID' ? FontWeight.bold : null,
                               ),
                             ),
                           ],
@@ -196,6 +235,9 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                     ),
                   );
                 },
+                      ),
+                    ),
+                ],
               );
             },
           );

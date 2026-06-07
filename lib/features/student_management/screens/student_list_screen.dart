@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/student_service.dart';
 import '../../master_data/services/class_service.dart';
 import '../../../core/models/app_class.dart';
+import '../../../core/models/invoice.dart';
 import '../../invoices/services/invoice_service.dart';
 import '../../invoices/screens/invoice_list_screen.dart';
 import '../../../core/utils/snackbar_utils.dart';
@@ -171,6 +172,13 @@ class _StudentListScreenState extends State<StudentListScreen> {
             }).toList();
           }
 
+          // Sort by class_id first, then by name
+          students.sort((a, b) {
+            int classComp = a.classId.compareTo(b.classId);
+            if (classComp != 0) return classComp;
+            return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+          });
+
           if (students.isEmpty) {
             return const Center(child: Text('Belum ada data siswa.'));
           }
@@ -181,55 +189,84 @@ class _StudentListScreenState extends State<StudentListScreen> {
               final student = students[index];
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    child: Text(student.gender == 'L' ? 'L' : 'P'),
-                  ),
-                  title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(
-                    'NIS: ${student.nis} | Kelas: ${student.classId.isNotEmpty ? student.classId : "-"}\n'
-                    'Wali: ${student.guardianName.isNotEmpty ? student.guardianName : (student.guardianId.isNotEmpty ? student.guardianId : "-")}'
-                  ),
-                  isThreeLine: true,
-                  trailing: PopupMenuButton<String>(
-                    onSelected: (value) {
-                      if (value == 'edit') {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => StudentFormScreen(student: student),
+                child: StreamBuilder<List<Invoice>>(
+                  stream: (student.academicYearId.isNotEmpty && student.classId.isNotEmpty) 
+                      ? InvoiceService().getStudentInvoices(schoolId, student.academicYearId, student.classId, student.id)
+                      : Stream.value([]),
+                  builder: (context, invSnapshot) {
+                    final invoices = invSnapshot.data ?? [];
+                    int total = invoices.length;
+                    int paid = invoices.where((i) => i.status == 'PAID').length;
+                    int partial = invoices.where((i) => i.status == 'PARTIAL').length;
+                    int unpaid = invoices.where((i) => i.status == 'UNPAID').length;
+
+                    return ListTile(
+                      leading: CircleAvatar(
+                        child: Text(student.gender == 'L' ? 'L' : 'P'),
+                      ),
+                      title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: RichText(
+                        text: TextSpan(
+                          style: DefaultTextStyle.of(context).style.copyWith(height: 1.5),
+                          children: [
+                            TextSpan(text: 'NIS: ${student.nis} | Kelas: ${student.classId.isNotEmpty ? student.classId : "-"}\n'),
+                            if (total == 0)
+                              const TextSpan(text: 'Belum ada tagihan', style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic))
+                            else ...[
+                              const TextSpan(text: 'Tagihan: ', style: TextStyle(color: Colors.black87)),
+                              TextSpan(text: '$total', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
+                              const TextSpan(text: ' | Lunas: ', style: TextStyle(color: Colors.black87)),
+                              TextSpan(text: '$paid', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                              const TextSpan(text: ' | Sebagian: ', style: TextStyle(color: Colors.black87)),
+                              TextSpan(text: '$partial', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
+                              const TextSpan(text: ' | Tunggakan: ', style: TextStyle(color: Colors.black87)),
+                              TextSpan(text: '$unpaid', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                            ],
+                          ],
+                        ),
+                      ),
+                      isThreeLine: true,
+                      trailing: PopupMenuButton<String>(
+                        onSelected: (value) {
+                          if (value == 'edit') {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => StudentFormScreen(student: student),
+                              ),
+                            );
+                          } else if (value == 'generate') {
+                            _handleGenerateInvoice(context, schoolId, student);
+                          } else if (value == 'view_invoices') {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => InvoiceListScreen(
+                                  studentId: student.id,
+                                  academicYearId: student.academicYearId.isNotEmpty ? student.academicYearId : null,
+                                  classId: student.classId.isNotEmpty ? student.classId : null,
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                            value: 'edit',
+                            child: Text('Edit Siswa'),
                           ),
-                        );
-                      } else if (value == 'generate') {
-                        _handleGenerateInvoice(context, schoolId, student);
-                      } else if (value == 'view_invoices') {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => InvoiceListScreen(
-                              studentId: student.id,
-                              academicYearId: student.academicYearId.isNotEmpty ? student.academicYearId : null,
-                              classId: student.classId.isNotEmpty ? student.classId : null,
-                            ),
+                          const PopupMenuItem(
+                            value: 'generate',
+                            child: Text('Generate Tagihan'),
                           ),
-                        );
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: Text('Edit Siswa'),
+                          const PopupMenuItem(
+                            value: 'view_invoices',
+                            child: Text('Lihat Tagihan'),
+                          ),
+                        ],
                       ),
-                      const PopupMenuItem(
-                        value: 'generate',
-                        child: Text('Generate Tagihan'),
-                      ),
-                      const PopupMenuItem(
-                        value: 'view_invoices',
-                        child: Text('Lihat Tagihan'),
-                      ),
-                    ],
-                  ),
+                    );
+                  }
                 ),
               );
             },

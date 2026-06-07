@@ -247,6 +247,35 @@ class PaymentService {
     });
   }
 
+  // Get approved payments within a specific academic year and date range
+  Future<List<Payment>> getApprovedPaymentsByDateRange(String schoolId, String academicYearId, DateTime startDate, DateTime endDate) async {
+    final startTimestamp = Timestamp.fromDate(DateTime(startDate.year, startDate.month, startDate.day, 0, 0, 0));
+    final endTimestamp = Timestamp.fromDate(DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59));
+
+    final snapshot = await _db
+        .collection('schools')
+        .doc(schoolId)
+        .collection('transactions_year')
+        .doc(academicYearId)
+        .collection('payments')
+        .where('status', isEqualTo: 'APPROVED')
+        .get();
+
+    final payments = snapshot.docs.map((doc) => Payment.fromFirestore(doc)).toList();
+    
+    // Filter by date range
+    final filtered = payments.where((p) {
+      if (p.createdAt == null) return false;
+      return p.createdAt!.isAfter(startTimestamp.toDate().subtract(const Duration(seconds: 1))) && 
+             p.createdAt!.isBefore(endTimestamp.toDate().add(const Duration(seconds: 1)));
+    }).toList();
+
+    // Sort descending (newest first)
+    filtered.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
+
+    return filtered;
+  }
+
   // Get stream of payments for a specific invoice
   Stream<List<Payment>> getPaymentsForInvoice(String schoolId, String academicYearId, String invoiceId) {
     return _db

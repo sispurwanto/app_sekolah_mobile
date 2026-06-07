@@ -19,6 +19,56 @@ class InvoiceService {
     });
   }
 
+  // Get arrears (tunggakan) invoices across the school within a due_date range
+  Future<List<Invoice>> getArrearsByDateRange(String schoolId, String academicYearId, DateTime startDate, DateTime endDate) async {
+    final startTimestamp = Timestamp.fromDate(DateTime(startDate.year, startDate.month, startDate.day, 0, 0, 0));
+    final endTimestamp = Timestamp.fromDate(DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59));
+
+    // Bypassing collectionGroup to avoid Firebase Index requirement:
+    // We will fetch all students in the school, then fetch their invoices concurrently.
+    final studentsSnapshot = await _db.collection('schools').doc(schoolId).collection('students').get();
+    
+    List<Invoice> invoices = [];
+    
+    final futures = studentsSnapshot.docs.map((studentDoc) async {
+      final studentId = studentDoc.id;
+      final classId = studentDoc.data()['class_id'] as String?;
+      if (classId == null || classId.isEmpty) return <Invoice>[];
+
+      final invSnapshot = await _db
+          .collection('schools')
+          .doc(schoolId)
+          .collection('transactions_year')
+          .doc(academicYearId)
+          .collection('invoices')
+          .doc(classId)
+          .collection('invoices_class_data')
+          .doc(studentId)
+          .collection('invoice_data')
+          .get();
+          
+      return invSnapshot.docs.map((doc) => Invoice.fromFirestore(doc)).toList();
+    });
+
+    final results = await Future.wait(futures);
+    for (var list in results) {
+      invoices.addAll(list);
+    }
+    
+    // Filter by due_date range and status locally to avoid composite index requirement
+    final filtered = invoices.where((inv) {
+      if (inv.status != 'UNPAID' && inv.status != 'PARTIAL') return false;
+      if (inv.dueDate == null) return false;
+      return inv.dueDate!.isAfter(startTimestamp.toDate().subtract(const Duration(seconds: 1))) && 
+             inv.dueDate!.isBefore(endTimestamp.toDate().add(const Duration(seconds: 1)));
+    }).toList();
+
+    // Sort by due date
+    filtered.sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
+
+    return filtered;
+  }
+
   // Get stream of invoices for a specific student in a specific academic year and class
   // Path: schools/{schoolId}/transactions_year/{academicYearId}/invoices/{classId}/invoices_class_data/{studentId}/invoice_data
   Stream<List<Invoice>> getStudentInvoices(String schoolId, String academicYearId, String classId, String studentId) {

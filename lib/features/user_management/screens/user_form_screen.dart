@@ -48,7 +48,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
     final schoolId = context.read<SchoolProvider>().activeSchoolId ?? '';
     final currentUserRole = context.read<UserProvider>().userMapping?.registeredSchools[schoolId] ?? '';
 
-    _availableRoles = ['ADMIN', 'BENDAHARA', 'GURU', 'WALI'];
+    _availableRoles = ['ADMIN', 'KEPALA_SEKOLAH', 'BENDAHARA', 'GURU', 'WALI', 'SISWA'];
     if (currentUserRole == 'SUPER_ADMIN') {
       _availableRoles.insert(0, 'SUPER_ADMIN');
     }
@@ -250,7 +250,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
                             },
                           ),
                         ),
-                        if (_role == 'WALI') ...[
+                        if (_role == 'WALI' || _role == 'SISWA') ...[
                           const SizedBox(height: 16),
                           _buildChildrenList(context.read<SchoolProvider>().activeSchoolId ?? ''),
                         ],
