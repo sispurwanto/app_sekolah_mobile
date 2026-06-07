@@ -21,6 +21,9 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
   late TextEditingController _phoneController;
   late TextEditingController _emailController;
   late TextEditingController _studentLimitController;
+  late TextEditingController _bankNameController;
+  late TextEditingController _bankAccountNumberController;
+  late TextEditingController _bankAccountNameController;
 
   String _status = 'ACTIVE';
   String _package = 'BASIC';
@@ -34,6 +37,9 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
     _phoneController = TextEditingController(text: widget.school?.phone ?? '');
     _emailController = TextEditingController(text: widget.school?.email ?? '');
     _studentLimitController = TextEditingController(text: widget.school?.studentLimit.toString() ?? '100');
+    _bankNameController = TextEditingController(text: widget.school?.bankName ?? '');
+    _bankAccountNumberController = TextEditingController(text: widget.school?.bankAccountNumber ?? '');
+    _bankAccountNameController = TextEditingController(text: widget.school?.bankAccountName ?? '');
     
     if (widget.school != null) {
       _status = widget.school!.status;
@@ -48,6 +54,9 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
     _phoneController.dispose();
     _emailController.dispose();
     _studentLimitController.dispose();
+    _bankNameController.dispose();
+    _bankAccountNumberController.dispose();
+    _bankAccountNameController.dispose();
     super.dispose();
   }
 
@@ -72,6 +81,9 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
       status: _status,
       package: _package,
       studentLimit: int.tryParse(_studentLimitController.text) ?? 100,
+      bankName: _bankNameController.text.trim().isEmpty ? null : _bankNameController.text.trim(),
+      bankAccountNumber: _bankAccountNumberController.text.trim().isEmpty ? null : _bankAccountNumberController.text.trim(),
+      bankAccountName: _bankAccountNameController.text.trim().isEmpty ? null : _bankAccountNameController.text.trim(),
       createdAt: widget.school?.createdAt, // SchoolService will use serverTimestamp if null
     );
 
@@ -130,6 +142,21 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
                       controller: _studentLimitController,
                       decoration: const InputDecoration(labelText: 'Batas Siswa'),
                       keyboardType: TextInputType.number,
+                    ),
+                    const Divider(height: 32),
+                    const Text('Informasi Rekening Sekolah', style: TextStyle(fontWeight: FontWeight.bold)),
+                    TextFormField(
+                      controller: _bankNameController,
+                      decoration: const InputDecoration(labelText: 'Nama Bank (misal: BCA, BNI)'),
+                    ),
+                    TextFormField(
+                      controller: _bankAccountNumberController,
+                      decoration: const InputDecoration(labelText: 'Nomor Rekening'),
+                      keyboardType: TextInputType.number,
+                    ),
+                    TextFormField(
+                      controller: _bankAccountNameController,
+                      decoration: const InputDecoration(labelText: 'Atas Nama (A/N)'),
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(

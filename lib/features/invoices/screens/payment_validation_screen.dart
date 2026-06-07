@@ -44,27 +44,34 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen> {
         // We will fetch it manually here or add a method.
         // For simplicity, let's just do a direct Firebase call or add `getInvoice` to `InvoiceService`.
         // Actually, Payment has classId, studentId, invoiceId, academicYearId.
-        final invoiceDoc = await FirebaseFirestore.instance
-            .collection('schools')
-            .doc(schoolId)
-            .collection('transactions_year')
-            .doc(payment.academicYearId)
-            .collection('invoices')
-            .doc(payment.classId)
-            .collection('invoices_class_data')
-            .doc(payment.studentId)
-            .collection('invoice_data')
-            .doc(payment.invoiceId)
-            .get();
-            
-        if (!invoiceDoc.exists) {
-          SnackbarUtils.showErrorSnackbar('Data tagihan asli tidak ditemukan.');
-          return;
-        }
+        if (payment.invoiceIds != null && payment.invoiceIds!.isNotEmpty) {
+          // Bulk Payment: No need to fetch single invoice, PaymentService handles it
+          await _paymentService.approvePayment(schoolId, payment);
+          SnackbarUtils.showSnackbar('Pembayaran disetujui');
+        } else {
+          // Single Payment
+          final invoiceDoc = await FirebaseFirestore.instance
+              .collection('schools')
+              .doc(schoolId)
+              .collection('transactions_year')
+              .doc(payment.academicYearId)
+              .collection('invoices')
+              .doc(payment.classId)
+              .collection('invoices_class_data')
+              .doc(payment.studentId)
+              .collection('invoice_data')
+              .doc(payment.invoiceId)
+              .get();
+              
+          if (!invoiceDoc.exists) {
+            SnackbarUtils.showErrorSnackbar('Data tagihan asli tidak ditemukan.');
+            return;
+          }
 
-        final invoice = Invoice.fromFirestore(invoiceDoc);
-        await _paymentService.approvePayment(schoolId, payment, invoice);
-        SnackbarUtils.showSnackbar('Pembayaran disetujui');
+          final invoice = Invoice.fromFirestore(invoiceDoc);
+          await _paymentService.approvePayment(schoolId, payment, invoice);
+          SnackbarUtils.showSnackbar('Pembayaran disetujui');
+        }
       } else {
         await _paymentService.rejectPayment(schoolId, payment);
         SnackbarUtils.showSnackbar('Pembayaran ditolak');
@@ -115,6 +122,8 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen> {
                         text: TextSpan(
                           style: DefaultTextStyle.of(context).style.copyWith(height: 1.5),
                           children: [
+                            if (payment.invoiceTitles != null && payment.invoiceTitles!.isNotEmpty)
+                              TextSpan(text: 'Rincian: ${payment.invoiceTitles!.join(", ")}\n', style: const TextStyle(fontStyle: FontStyle.italic)),
                             TextSpan(text: 'Nominal: ${CurrencyUtils.formatRp(payment.amount)}\nMetode: ${payment.method} | '),
                             const TextSpan(text: 'Catatan: ', style: TextStyle(fontWeight: FontWeight.bold)),
                             TextSpan(

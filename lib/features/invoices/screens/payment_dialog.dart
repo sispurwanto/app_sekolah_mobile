@@ -7,6 +7,8 @@ import '../../../core/providers/school_provider.dart';
 import '../../../core/providers/user_provider.dart';
 import '../services/payment_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
+import '../../school_management/services/school_service.dart';
+import '../../../core/models/school.dart';
 
 class PaymentDialog extends StatefulWidget {
   final Invoice invoice;
@@ -64,6 +66,9 @@ class _PaymentDialogState extends State<PaymentDialog> {
       id: '', // Auto ID
       invoiceId: widget.invoice.id,
       invoiceTitle: widget.invoice.title,
+      invoiceIds: [widget.invoice.id],
+      invoiceTitles: [widget.invoice.title],
+      invoiceAmounts: [amount],
       studentId: widget.invoice.studentId,
       studentName: widget.invoice.studentName,
       classId: widget.invoice.classId,
@@ -101,8 +106,23 @@ class _PaymentDialogState extends State<PaymentDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Tagihan: ${widget.invoice.title}'),
-            Text('Sisa Pembayaran: ${CurrencyUtils.formatRp(remaining)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50, 
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade100),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.invoice.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  const SizedBox(height: 4),
+                  Text('Sisa Tagihan: ${CurrencyUtils.formatRp(remaining)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 16)),
+                ],
+              ),
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: _amountController,
@@ -114,7 +134,39 @@ class _PaymentDialogState extends State<PaymentDialog> {
               keyboardType: TextInputType.number,
             ),
             const SizedBox(height: 16),
-            if (!isBendahara)
+            if (!isBendahara) ...[
+              FutureBuilder<School?>(
+                future: SchoolService().getSchool(schoolId),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData || snapshot.data == null) return const SizedBox();
+                  final school = snapshot.data!;
+                  if (school.bankAccountNumber == null || school.bankAccountNumber!.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.only(bottom: 16.0),
+                      child: Text('Informasi rekening sekolah belum diatur.', style: TextStyle(color: Colors.red)),
+                    );
+                  }
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Silakan Transfer ke:', style: TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 4),
+                        Text('Bank: ${school.bankName ?? "-"}'),
+                        Text('No. Rekening: ${school.bankAccountNumber}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        Text('A/N: ${school.bankAccountName ?? "-"}'),
+                      ],
+                    ),
+                  );
+                },
+              ),
               TextField(
                 controller: _noteController,
                 decoration: const InputDecoration(
@@ -122,8 +174,8 @@ class _PaymentDialogState extends State<PaymentDialog> {
                   helperText: 'Agar Bendahara mudah mengecek mutasi',
                 ),
                 maxLines: 2,
-              )
-            else
+              ),
+            ] else
               TextField(
                 controller: _noteController,
                 decoration: const InputDecoration(

@@ -13,6 +13,13 @@ class SchoolService {
     });
   }
 
+  // Get single school by ID
+  Future<School?> getSchool(String id) async {
+    final doc = await _db.collection(_collection).doc(id).get();
+    if (!doc.exists) return null;
+    return School.fromFirestore(doc);
+  }
+
   // Create school
   Future<void> addSchool(School school) async {
     final idToUse = school.id;

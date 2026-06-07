@@ -12,6 +12,19 @@ class PaymentHistoryDialog extends StatelessWidget {
 
   const PaymentHistoryDialog({super.key, required this.invoice});
 
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 14, color: Colors.grey),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text('$label: $value', style: const TextStyle(color: Colors.black87, fontSize: 13)),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final schoolId = context.watch<SchoolProvider>().activeSchoolId ?? '';
@@ -77,20 +90,90 @@ class PaymentHistoryDialog extends StatelessWidget {
                           statusColor = Colors.grey;
                       }
 
+                      final isBulk = payment.invoiceIds != null && payment.invoiceIds!.length > 1;
+                      final titles = payment.invoiceTitles ?? [];
+                      final amounts = payment.invoiceAmounts ?? [];
+
                       return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        child: ListTile(
-                          title: Text(CurrencyUtils.formatRp(payment.amount)),
-                          subtitle: Text(
-                            'Metode: ${payment.method}\nCatatan: ${payment.referenceNote.isEmpty ? "-" : payment.referenceNote}\nTanggal: $dateStr',
-                          ),
-                          isThreeLine: true,
-                          trailing: Text(
-                            payment.status,
-                            style: TextStyle(
-                              color: statusColor,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        margin: const EdgeInsets.symmetric(vertical: 6),
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    CurrencyUtils.formatRp(payment.amount),
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: statusColor.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: statusColor),
+                                    ),
+                                    child: Text(
+                                      payment.status,
+                                      style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Divider(height: 16),
+                              _buildDetailRow(Icons.payment, 'Metode', payment.method),
+                              const SizedBox(height: 4),
+                              _buildDetailRow(Icons.calendar_today, 'Tanggal', dateStr),
+                              if (payment.referenceNote.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                _buildDetailRow(Icons.note, 'Catatan', payment.referenceNote),
+                              ],
+                              if (isBulk) ...[
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.shade50,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: Colors.blue.shade200),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Row(
+                                        children: [
+                                          Icon(Icons.collections_bookmark, size: 14, color: Colors.blue),
+                                          SizedBox(width: 4),
+                                          Text('Rincian Kolektif:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 13)),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 6),
+                                      ...List.generate(titles.length, (i) {
+                                        return Padding(
+                                          padding: const EdgeInsets.only(bottom: 4),
+                                          child: Row(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              const Text('• ', style: TextStyle(color: Colors.blue)),
+                                              Expanded(
+                                                child: Text(
+                                                  '${titles[i]} ${i < amounts.length ? "(${CurrencyUtils.formatRp(amounts[i])})" : ""}',
+                                                  style: const TextStyle(fontSize: 12, color: Colors.black87),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      }),
+                                    ],
+                                  ),
+                                ),
+                              ]
+                            ],
                           ),
                         ),
                       );

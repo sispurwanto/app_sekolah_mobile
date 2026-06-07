@@ -4,6 +4,9 @@ class Payment {
   final String id;
   final String invoiceId;
   final String invoiceTitle;
+  final List<String>? invoiceIds;
+  final List<String>? invoiceTitles;
+  final List<double>? invoiceAmounts;
   final String studentId;
   final String studentName;
   final String classId;
@@ -22,6 +25,9 @@ class Payment {
     required this.id,
     required this.invoiceId,
     required this.invoiceTitle,
+    this.invoiceIds,
+    this.invoiceTitles,
+    this.invoiceAmounts,
     required this.studentId,
     required this.studentName,
     required this.classId,
@@ -43,6 +49,11 @@ class Payment {
       id: doc.id,
       invoiceId: data['invoice_id'] ?? '',
       invoiceTitle: data['invoice_title'] ?? '',
+      invoiceIds: data['invoice_ids'] != null ? List<String>.from(data['invoice_ids']) : null,
+      invoiceTitles: data['invoice_titles'] != null ? List<String>.from(data['invoice_titles']) : null,
+      invoiceAmounts: data['invoice_amounts'] != null 
+          ? List<dynamic>.from(data['invoice_amounts']).map((e) => (e as num).toDouble()).toList() 
+          : null,
       studentId: data['student_id'] ?? '',
       studentName: data['student_name'] ?? '',
       classId: data['class_id'] ?? '',
@@ -60,7 +71,7 @@ class Payment {
   }
 
   Map<String, dynamic> toMap() {
-    return {
+    final Map<String, dynamic> result = {
       'invoice_id': invoiceId,
       'invoice_title': invoiceTitle,
       'student_id': studentId,
@@ -74,5 +85,9 @@ class Payment {
       'academic_year_id': academicYearId,
       'created_at': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
     };
+    if (invoiceIds != null) result['invoice_ids'] = invoiceIds;
+    if (invoiceTitles != null) result['invoice_titles'] = invoiceTitles;
+    if (invoiceAmounts != null) result['invoice_amounts'] = invoiceAmounts;
+    return result;
   }
 }
