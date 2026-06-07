@@ -14,6 +14,7 @@ import 'features/auth/services/auth_service.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/school_selection/screens/school_selection_screen.dart';
 import 'features/dashboard/screens/dashboard_screen.dart';
+import 'core/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,10 +43,7 @@ class MyApp extends StatelessWidget {
         title: 'App Sekolah',
         navigatorKey: DialogUtils.navigatorKey,
         scaffoldMessengerKey: SnackbarUtils.scaffoldMessengerKey,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-          useMaterial3: true,
-        ),
+        theme: AppTheme.lightTheme,
         home: const AuthWrapper(),
       ),
     );

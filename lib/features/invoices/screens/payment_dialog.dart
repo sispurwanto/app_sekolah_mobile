@@ -9,6 +9,9 @@ import '../services/payment_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../school_management/services/school_service.dart';
 import '../../../core/models/school.dart';
+import '../../../core/components/custom_dialog.dart';
+import '../../../core/components/custom_text_field.dart';
+import '../../../core/components/custom_button.dart';
 
 class PaymentDialog extends StatefulWidget {
   final Invoice invoice;
@@ -99,102 +102,94 @@ class _PaymentDialogState extends State<PaymentDialog> {
     
     final remaining = widget.invoice.amount - widget.invoice.paidAmount;
 
-    return AlertDialog(
-      title: Text(isBendahara ? 'Penerimaan Kasir' : 'Konfirmasi Transfer'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50, 
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade100),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(widget.invoice.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  const SizedBox(height: 4),
-                  Text('Sisa Tagihan: ${CurrencyUtils.formatRp(remaining)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 16)),
-                ],
-              ),
+    return CustomDialog(
+      headerIcon: Icons.payment,
+      title: isBendahara ? 'Penerimaan Kasir' : 'Konfirmasi Transfer',
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50, 
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue.shade100),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _amountController,
-              decoration: const InputDecoration(
-                labelText: 'Nominal Bayar (Rp)',
-                helperText: 'Bisa diedit jika ingin membayar sebagian/cicilan',
-                helperStyle: TextStyle(color: Colors.blue),
-              ),
-              keyboardType: TextInputType.number,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(widget.invoice.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                const SizedBox(height: 4),
+                Text('Sisa Tagihan: ${CurrencyUtils.formatRp(remaining)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 16)),
+              ],
             ),
-            const SizedBox(height: 16),
-            if (!isBendahara) ...[
-              FutureBuilder<School?>(
-                future: SchoolService().getSchool(schoolId),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData || snapshot.data == null) return const SizedBox();
-                  final school = snapshot.data!;
-                  if (school.bankAccountNumber == null || school.bankAccountNumber!.isEmpty) {
-                    return const Padding(
-                      padding: EdgeInsets.only(bottom: 16.0),
-                      child: Text('Informasi rekening sekolah belum diatur.', style: TextStyle(color: Colors.red)),
-                    );
-                  }
-                  return Container(
-                    padding: const EdgeInsets.all(12),
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue.shade200),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Silakan Transfer ke:', style: TextStyle(fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 4),
-                        Text('Bank: ${school.bankName ?? "-"}'),
-                        Text('No. Rekening: ${school.bankAccountNumber}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        Text('A/N: ${school.bankAccountName ?? "-"}'),
-                      ],
-                    ),
+          ),
+          const SizedBox(height: 16),
+          CustomTextField(
+            controller: _amountController,
+            labelText: 'Nominal Bayar (Rp)',
+            helperText: 'Bisa diedit jika ingin membayar sebagian/cicilan',
+            keyboardType: TextInputType.number,
+          ),
+          if (!isBendahara) ...[
+            FutureBuilder<School?>(
+              future: SchoolService().getSchool(schoolId),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData || snapshot.data == null) return const SizedBox();
+                final school = snapshot.data!;
+                if (school.bankAccountNumber == null || school.bankAccountNumber!.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.only(bottom: 16.0),
+                    child: Text('Informasi rekening sekolah belum diatur.', style: TextStyle(color: Colors.red)),
                   );
-                },
-              ),
-              TextField(
-                controller: _noteController,
-                decoration: const InputDecoration(
-                  labelText: 'Nama Pengirim / Bank / No Ref',
-                  helperText: 'Agar Bendahara mudah mengecek mutasi',
-                ),
-                maxLines: 2,
-              ),
-            ] else
-              TextField(
-                controller: _noteController,
-                decoration: const InputDecoration(
-                  labelText: 'Catatan Kasir (Opsional)',
-                ),
-              ),
-          ],
-        ),
+                }
+                return Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Silakan Transfer ke:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text('Bank: ${school.bankName ?? "-"}'),
+                      Text('No. Rekening: ${school.bankAccountNumber}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text('A/N: ${school.bankAccountName ?? "-"}'),
+                    ],
+                  ),
+                );
+              },
+            ),
+            CustomTextField(
+              controller: _noteController,
+              labelText: 'Nama Pengirim / Bank / No Ref',
+              helperText: 'Agar Bendahara mudah mengecek mutasi',
+              maxLines: 2,
+            ),
+          ] else
+            CustomTextField(
+              controller: _noteController,
+              labelText: 'Catatan Kasir (Opsional)',
+            ),
+        ],
       ),
       actions: [
-        TextButton(
-          onPressed: _isLoading ? null : () => Navigator.pop(context),
-          child: const Text('Batal'),
+        CustomButton(
+          text: 'Batal',
+          onPressed: () => Navigator.pop(context),
+          isSecondary: true,
         ),
-        ElevatedButton(
-          onPressed: _isLoading ? null : () => _submitPayment(role, schoolId),
-          child: _isLoading 
-            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-            : Text(isBendahara ? 'Bayar Tunai' : 'Kirim Bukti'),
+        const SizedBox(width: 8),
+        CustomButton(
+          text: isBendahara ? 'Bayar Tunai' : 'Kirim Bukti',
+          onPressed: () => _submitPayment(role, schoolId),
+          isLoading: _isLoading,
         ),
       ],
     );

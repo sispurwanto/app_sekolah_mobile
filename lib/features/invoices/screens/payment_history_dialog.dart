@@ -6,6 +6,8 @@ import '../../../core/utils/currency_utils.dart';
 import '../../../core/models/invoice.dart';
 import '../../../core/providers/school_provider.dart';
 import '../services/payment_service.dart';
+import '../../../core/components/custom_dialog.dart';
+import '../../../core/components/custom_button.dart';
 
 class PaymentHistoryDialog extends StatelessWidget {
   final Invoice invoice;
@@ -30,20 +32,15 @@ class PaymentHistoryDialog extends StatelessWidget {
     final schoolId = context.watch<SchoolProvider>().activeSchoolId ?? '';
     final paymentService = PaymentService();
 
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        constraints: const BoxConstraints(maxHeight: 500, maxWidth: 400),
+    return CustomDialog(
+      headerIcon: Icons.history,
+      title: 'Riwayat Pembayaran',
+      content: SizedBox(
+        height: 400,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Riwayat Pembayaran',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
             Text(
               invoice.title,
               style: const TextStyle(color: Colors.grey),
@@ -113,7 +110,7 @@ class PaymentHistoryDialog extends StatelessWidget {
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     decoration: BoxDecoration(
-                                      color: statusColor.withOpacity(0.1),
+                                      color: statusColor.withAlpha((255 * 0.1).toInt()),
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(color: statusColor),
                                     ),
@@ -182,17 +179,16 @@ class PaymentHistoryDialog extends StatelessWidget {
                 },
               ),
             ),
-            const SizedBox(height: 16),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Tutup'),
-              ),
-            ),
           ],
         ),
       ),
+      actions: [
+        CustomButton(
+          text: 'Tutup',
+          onPressed: () => Navigator.pop(context),
+          isSecondary: true,
+        ),
+      ],
     );
   }
 }

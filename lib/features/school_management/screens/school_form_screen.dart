@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/models/school.dart';
 import '../services/school_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
+import '../../../core/components/custom_button.dart';
 
 class SchoolFormScreen extends StatefulWidget {
   final School? school;
@@ -124,20 +125,24 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
                       decoration: const InputDecoration(labelText: 'Nama Sekolah *'),
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _addressController,
                       decoration: const InputDecoration(labelText: 'Alamat'),
                     ),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _phoneController,
                       decoration: const InputDecoration(labelText: 'Telepon'),
                       keyboardType: TextInputType.phone,
                     ),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _emailController,
                       decoration: const InputDecoration(labelText: 'Email'),
                       keyboardType: TextInputType.emailAddress,
                     ),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _studentLimitController,
                       decoration: const InputDecoration(labelText: 'Batas Siswa'),
@@ -145,15 +150,18 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
                     ),
                     const Divider(height: 32),
                     const Text('Informasi Rekening Sekolah', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _bankNameController,
                       decoration: const InputDecoration(labelText: 'Nama Bank (misal: BCA, BNI)'),
                     ),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _bankAccountNumberController,
                       decoration: const InputDecoration(labelText: 'Nomor Rekening'),
                       keyboardType: TextInputType.number,
                     ),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _bankAccountNameController,
                       decoration: const InputDecoration(labelText: 'Atas Nama (A/N)'),
@@ -179,9 +187,10 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
                     const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton(
+                      child: CustomButton(
+                        text: 'Simpan',
                         onPressed: _save,
-                        child: const Text('Simpan'),
+                        isLoading: _isLoading,
                       ),
                     ),
                   ],

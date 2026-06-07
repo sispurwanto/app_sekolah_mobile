@@ -11,6 +11,7 @@ import '../../master_data/services/class_service.dart';
 import '../../../core/models/app_class.dart';
 import '../../master_data/services/academic_year_service.dart';
 import '../../../core/models/academic_year.dart';
+import '../../../core/components/custom_button.dart';
 
 class StudentFormScreen extends StatefulWidget {
   final Student? student;
@@ -176,6 +177,7 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                       decoration: const InputDecoration(labelText: 'Nama Lengkap *'),
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _nisController,
                       decoration: const InputDecoration(
@@ -185,6 +187,7 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                       readOnly: isEditing,
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _nisnController,
                       decoration: const InputDecoration(labelText: 'NISN'),
@@ -207,6 +210,7 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                       trailing: const Icon(Icons.calendar_today),
                       onTap: _pickBirthDate,
                     ),
+                    const SizedBox(height: 16),
                     StreamBuilder<List<AppClass>>(
                       stream: _classService.getClasses(context.read<SchoolProvider>().activeSchoolId!),
                       builder: (context, snapshot) {
@@ -257,6 +261,7 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                         );
                       },
                     ),
+                    const SizedBox(height: 16),
                     StreamBuilder<List<AcademicYear>>(
                       stream: _academicYearService.getAcademicYears(context.read<SchoolProvider>().activeSchoolId!),
                       builder: (context, snapshot) {
@@ -307,6 +312,7 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                         );
                       },
                     ),
+                    const SizedBox(height: 16),
                     StreamBuilder<List<AppUser>>(
                       stream: _userService.getUsers(context.read<SchoolProvider>().activeSchoolId!),
                       builder: (context, snapshot) {
@@ -385,9 +391,10 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                     const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton(
+                      child: CustomButton(
+                        text: 'Simpan',
                         onPressed: _save,
-                        child: const Text('Simpan'),
+                        isLoading: _isLoading,
                       ),
                     ),
                   ],
