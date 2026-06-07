@@ -7,6 +7,8 @@ import '../services/user_management_service.dart';
 import '../../student_management/services/student_service.dart';
 import '../../../core/models/student.dart';
 import '../../../core/utils/snackbar_utils.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../../core/components/custom_button.dart';
 
 class UserFormScreen extends StatefulWidget {
   final AppUser? user;
@@ -29,6 +31,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
   List<String> _availableRoles = [];
   bool _isActive = true;
   bool _isLoading = false;
+  bool _obscurePassword = true;
 
   @override
   void initState() {
@@ -194,8 +197,20 @@ class _UserFormScreenState extends State<UserFormScreen> {
                     if (!isEditing) // Only show password for new user
                       TextFormField(
                         controller: _passwordController,
-                        decoration: const InputDecoration(labelText: 'Password Sementara *'),
-                        obscureText: true,
+                        decoration: InputDecoration(
+                          labelText: 'Password Sementara *',
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
+                        ),
+                        obscureText: _obscurePassword,
                         validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                       ),
                     const SizedBox(height: 16),
@@ -214,6 +229,27 @@ class _UserFormScreenState extends State<UserFormScreen> {
                           value: _isActive,
                           onChanged: (v) => setState(() => _isActive = v),
                         ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: CustomButton(
+                            text: 'Kirim Link Reset Password',
+                            icon: Icons.lock_reset,
+                            isSecondary: true,
+                            onPressed: () async {
+                              try {
+                                await FirebaseAuth.instance.sendPasswordResetEmail(email: widget.user!.email);
+                                if (mounted) {
+                                  SnackbarUtils.showSnackbar('Link reset password telah dikirim ke ${widget.user!.email}');
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  SnackbarUtils.showErrorSnackbar('Gagal mengirim link: $e');
+                                }
+                              }
+                            },
+                          ),
+                        ),
                         if (_role == 'WALI') ...[
                           const SizedBox(height: 16),
                           _buildChildrenList(context.read<SchoolProvider>().activeSchoolId ?? ''),
@@ -222,9 +258,10 @@ class _UserFormScreenState extends State<UserFormScreen> {
                     const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton(
+                      child: CustomButton(
+                        text: 'Simpan',
                         onPressed: _save,
-                        child: const Text('Simpan'),
+                        isLoading: _isLoading,
                       ),
                     ),
                   ],

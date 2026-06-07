@@ -6,7 +6,7 @@ import '../../../core/utils/dialog_utils.dart';
 import '../../auth/services/auth_service.dart';
 import '../../school_management/screens/school_list_screen.dart';
 import '../../user_management/screens/user_list_screen.dart';
-import '../../invoices/screens/invoice_list_screen.dart';
+import '../../user_management/screens/profile_screen.dart';
 import '../../student_management/screens/student_list_screen.dart';
 import '../../master_data/screens/class_list_screen.dart';
 import '../../master_data/screens/academic_year_list_screen.dart';
@@ -78,8 +78,8 @@ class DashboardScreen extends StatelessWidget {
                 },
               ),
             
-            // Menu khusus SUPER_ADMIN
-            if (role == 'SUPER_ADMIN')
+            // Menu khusus SUPER_ADMIN dan ADMIN
+            if (role == 'SUPER_ADMIN' || role == 'ADMIN')
               ListTile(
                 leading: const Icon(Icons.business),
                 title: const Text('Manajemen Sekolah'),
@@ -176,6 +176,19 @@ class DashboardScreen extends StatelessWidget {
               ),
               
             const Divider(),
+            ListTile(
+              leading: const Icon(Icons.person_outline),
+              title: const Text('Profil Saya'),
+              onTap: () {
+                Navigator.pop(context); // Close drawer
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProfileScreen(),
+                  ),
+                );
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
               title: const Text('Logout', style: TextStyle(color: Colors.red)),

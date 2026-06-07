@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../core/models/school.dart';
 import '../services/school_service.dart';
 import 'school_form_screen.dart';
 import '../../../core/utils/dialog_utils.dart';
 import '../../../core/utils/snackbar_utils.dart';
+import '../../../core/providers/user_provider.dart';
+import '../../../core/providers/school_provider.dart';
 
 class SchoolListScreen extends StatelessWidget {
   SchoolListScreen({super.key});
@@ -12,6 +15,10 @@ class SchoolListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final activeSchoolId = context.watch<SchoolProvider>().activeSchoolId ?? '';
+    final role = context.watch<UserProvider>().userMapping?.registeredSchools[activeSchoolId] ?? '';
+    final isSuperAdmin = role == 'SUPER_ADMIN';
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Manajemen Sekolah'),
@@ -27,7 +34,12 @@ class SchoolListScreen extends StatelessWidget {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
 
-          final schools = snapshot.data ?? [];
+          var schools = snapshot.data ?? [];
+
+          // If not SUPER_ADMIN, only show the active school
+          if (!isSuperAdmin) {
+            schools = schools.where((s) => s.id == activeSchoolId).toList();
+          }
 
           if (schools.isEmpty) {
             return const Center(child: Text('Belum ada data sekolah.'));
@@ -57,8 +69,9 @@ class SchoolListScreen extends StatelessWidget {
                           );
                         },
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
+                      if (isSuperAdmin)
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
                         onPressed: () async {
                           final confirm = await DialogUtils.showConfirmationDialog(
                             title: 'Hapus Sekolah',
@@ -84,17 +97,19 @@ class SchoolListScreen extends StatelessWidget {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const SchoolFormScreen(),
-            ),
-          );
-        },
-        child: const Icon(Icons.add),
-      ),
+      floatingActionButton: isSuperAdmin 
+        ? FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SchoolFormScreen(),
+                ),
+              );
+            },
+            child: const Icon(Icons.add),
+          )
+        : null,
     );
   }
 }

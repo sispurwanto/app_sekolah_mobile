@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../../../core/models/school.dart';
 import '../services/school_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/components/custom_button.dart';
+import '../../../core/providers/user_provider.dart';
+import '../../../core/providers/school_provider.dart';
 
 class SchoolFormScreen extends StatefulWidget {
   final School? school;
@@ -108,6 +111,11 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.school != null;
+    
+    final activeSchoolId = context.watch<SchoolProvider>().activeSchoolId ?? '';
+    final targetSchoolId = widget.school?.id ?? activeSchoolId;
+    final role = context.watch<UserProvider>().userMapping?.registeredSchools[targetSchoolId] ?? '';
+    final isSuperAdmin = role == 'SUPER_ADMIN';
 
     return Scaffold(
       appBar: AppBar(
@@ -177,7 +185,7 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
                       items: ['ACTIVE', 'INACTIVE']
                           .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                           .toList(),
-                      onChanged: (v) => setState(() => _status = v!),
+                      onChanged: isSuperAdmin ? (v) => setState(() => _status = v!) : null,
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
@@ -186,7 +194,7 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
                       items: ['BASIC', 'PREMIUM', 'PRO']
                           .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                           .toList(),
-                      onChanged: (v) => setState(() => _package = v!),
+                      onChanged: isSuperAdmin ? (v) => setState(() => _package = v!) : null,
                     ),
                     const SizedBox(height: 32),
                     SizedBox(

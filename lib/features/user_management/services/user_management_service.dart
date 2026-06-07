@@ -140,4 +140,36 @@ class UserManagementService {
 
     await batch.commit();
   }
+
+  // Update own user profile
+  Future<void> updateUserProfile({
+    required String uid,
+    required String newName,
+    required Map<String, dynamic> registeredSchools,
+  }) async {
+    final batch = _db.batch();
+
+    // 1. Update global mapping
+    final globalMappingRef = _db.collection('global_users_mapping').doc(uid);
+    batch.update(globalMappingRef, {
+      'name': newName,
+    });
+
+    // 2. Update user document in every registered school
+    for (final schoolId in registeredSchools.keys) {
+      final schoolUserRef = _db
+          .collection('schools')
+          .doc(schoolId)
+          .collection('users')
+          .doc(uid);
+      
+      batch.update(schoolUserRef, {
+        'name': newName,
+        'updated_at': FieldValue.serverTimestamp(),
+        'updated_by': uid, // Self updated
+      });
+    }
+
+    await batch.commit();
+  }
 }
