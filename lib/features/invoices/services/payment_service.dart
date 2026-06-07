@@ -133,10 +133,15 @@ class PaymentService {
       'updated_by': uid,
     });
 
-    // 2. Update Invoice(s) paidAmount and status
     if (payment.invoiceIds != null && payment.invoiceIds!.isNotEmpty) {
-      // BULK PAYMENT: update all associated invoices to PAID
-      for (final invId in payment.invoiceIds!) {
+      // MULTIPLE OR SINGLE PAYMENT WITHOUT INVOICE OBJECT
+      // We iterate over the invoiceIds and use the corresponding amount in invoiceAmounts
+      for (int i = 0; i < payment.invoiceIds!.length; i++) {
+        final invId = payment.invoiceIds![i];
+        final amountPaidForThisInvoice = payment.invoiceAmounts != null && payment.invoiceAmounts!.length > i 
+            ? payment.invoiceAmounts![i] 
+            : payment.amount;
+
         final invoiceRef = _db
             .collection('schools')
             .doc(schoolId)
@@ -149,18 +154,21 @@ class PaymentService {
             .collection('invoice_data')
             .doc(invId);
 
-        // For bulk payments, we enforce full payment of the remaining amount,
-        // so we can safely set status to PAID. To get the exact amount we would need a transaction,
-        // but since bulk only allows fully paying the invoice, we update the status directly.
-        // We will increment the paid_amount using FieldValue.increment to avoid fetching if possible,
-        // but wait, since bulk pays the EXACT remaining, we don't know the exact remaining here without fetching.
-        // It's safer to fetch. Since approve is a single action, we fetch first.
         final snap = await invoiceRef.get();
         if (snap.exists) {
           final invData = Invoice.fromFirestore(snap);
+          final double newPaidAmount = invData.paidAmount + amountPaidForThisInvoice;
+          String newStatus = invData.status;
+
+          if (newPaidAmount >= invData.amount) {
+            newStatus = 'PAID';
+          } else if (newPaidAmount > 0) {
+            newStatus = 'PARTIAL';
+          }
+
           batch.update(invoiceRef, {
-            'paid_amount': invData.amount, // Fully paid
-            'status': 'PAID',
+            'paid_amount': newPaidAmount,
+            'status': newStatus,
             'updated_at': FieldValue.serverTimestamp(),
             'updated_by': uid,
           });

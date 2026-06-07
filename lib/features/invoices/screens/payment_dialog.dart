@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../core/models/invoice.dart';
 import '../../../core/models/payment.dart';
@@ -132,6 +133,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
             labelText: 'Nominal Bayar (Rp)',
             helperText: 'Bisa diedit jika ingin membayar sebagian/cicilan',
             keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           ),
           if (!isBendahara) ...[
             FutureBuilder<School?>(

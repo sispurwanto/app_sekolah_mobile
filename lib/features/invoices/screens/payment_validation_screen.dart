@@ -26,7 +26,7 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen> {
     final confirm = await DialogUtils.showConfirmationDialog(
       title: isApprove ? 'Setujui Pembayaran' : 'Tolak Pembayaran',
       content: isApprove 
-          ? 'Anda yakin uang sudah masuk ke rekening untuk tagihan ${payment.invoiceTitle} sebesar ${CurrencyUtils.formatRp(payment.amount)}?'
+          ? 'Anda yakin uang sudah masuk ke rekening untuk tagihan ${payment.invoiceTitle} sebesar ${CurrencyUtils.formatRp(payment.amount)}?\n\nMetode: ${payment.method}\nReferensi: ${payment.referenceNote.isEmpty ? "-" : payment.referenceNote}'
           : 'Yakin ingin menolak pembayaran ini?',
       confirmText: isApprove ? 'Setujui' : 'Tolak',
       isDestructive: !isApprove,

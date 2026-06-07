@@ -7,6 +7,8 @@ import '../services/fee_template_service.dart';
 import '../services/class_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/utils/dialog_utils.dart';
+import 'package:flutter/services.dart';
+import '../../../core/components/custom_button.dart';
 
 class FeeTemplateFormScreen extends StatefulWidget {
   final FeeTemplate? template;
@@ -163,6 +165,7 @@ class _FeeTemplateFormScreenState extends State<FeeTemplateFormScreen> {
                       controller: _amountController,
                       decoration: const InputDecoration(labelText: 'Nominal (Rp) *'),
                       keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
                     const SizedBox(height: 16),
@@ -189,6 +192,7 @@ class _FeeTemplateFormScreenState extends State<FeeTemplateFormScreen> {
                           helperText: 'Tagihan akan jatuh tempo pada tanggal ini setiap bulannya.',
                         ),
                         keyboardType: TextInputType.number,
+                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       )
                     else
                       ListTile(
@@ -252,9 +256,10 @@ class _FeeTemplateFormScreenState extends State<FeeTemplateFormScreen> {
                     const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton(
+                      child: CustomButton(
+                        text: 'Simpan',
                         onPressed: _save,
-                        child: const Text('Simpan'),
+                        isLoading: _isLoading,
                       ),
                     ),
                   ],

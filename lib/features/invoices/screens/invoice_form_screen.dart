@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../core/models/invoice.dart';
 import '../../../core/providers/school_provider.dart';
@@ -7,11 +8,13 @@ import '../../master_data/services/academic_year_service.dart';
 import '../../student_management/services/student_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/utils/dialog_utils.dart';
+import '../../../core/components/custom_button.dart';
 
 class InvoiceFormScreen extends StatefulWidget {
   final Invoice? invoice;
+  final String? studentId;
 
-  const InvoiceFormScreen({super.key, this.invoice});
+  const InvoiceFormScreen({super.key, this.invoice, this.studentId});
 
   @override
   State<InvoiceFormScreen> createState() => _InvoiceFormScreenState();
@@ -29,18 +32,38 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
   String _status = 'UNPAID';
   DateTime _dueDate = DateTime.now().add(const Duration(days: 30));
   bool _isLoading = false;
+  bool _isStudentLocked = false;
 
   @override
   void initState() {
     super.initState();
     _studentNameController = TextEditingController(text: widget.invoice?.studentName ?? '');
-    _studentIdController = TextEditingController(text: widget.invoice?.studentId ?? '');
+    _studentIdController = TextEditingController(text: widget.invoice?.studentId ?? widget.studentId ?? '');
     _titleController = TextEditingController(text: widget.invoice?.title ?? '');
     _amountController = TextEditingController(text: widget.invoice?.amount.toStringAsFixed(0) ?? '');
 
     if (widget.invoice != null) {
       _status = widget.invoice!.status;
       _dueDate = widget.invoice!.dueDate;
+      _isStudentLocked = true;
+    } else if (widget.studentId != null) {
+      _isStudentLocked = true;
+      _loadStudentData(widget.studentId!);
+    }
+  }
+
+  Future<void> _loadStudentData(String studentId) async {
+    setState(() => _isLoading = true);
+    try {
+      final schoolId = context.read<SchoolProvider>().activeSchoolId!;
+      final student = await StudentService().getStudentById(schoolId, studentId);
+      if (student != null) {
+        _studentNameController.text = student.name;
+      }
+    } catch (e) {
+      // Ignore
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -181,20 +204,26 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
                       decoration: const InputDecoration(labelText: 'Judul Tagihan (misal: SPP Juli 2026) *'),
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
-                    TextFormField(
-                      controller: _studentNameController,
-                      decoration: const InputDecoration(labelText: 'Nama Siswa *'),
-                      validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
-                    ),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _studentIdController,
                       decoration: const InputDecoration(labelText: 'ID Siswa (NIS) *'),
+                      readOnly: _isStudentLocked,
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _studentNameController,
+                      decoration: const InputDecoration(labelText: 'Nama Siswa *', helperText: 'Otomatis tersimpan berdasarkan NIS'),
+                      readOnly: _isStudentLocked,
+                      validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
+                    ),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _amountController,
                       decoration: const InputDecoration(labelText: 'Nominal (Rp) *'),
                       keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
                     const SizedBox(height: 16),
@@ -217,9 +246,10 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
                     const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton(
+                      child: CustomButton(
+                        text: 'Simpan',
                         onPressed: _save,
-                        child: const Text('Simpan'),
+                        isLoading: _isLoading,
                       ),
                     ),
                   ],

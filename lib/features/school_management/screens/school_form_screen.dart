@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../core/models/school.dart';
 import '../services/school_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
@@ -135,6 +136,7 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
                       controller: _phoneController,
                       decoration: const InputDecoration(labelText: 'Telepon'),
                       keyboardType: TextInputType.phone,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -147,6 +149,7 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
                       controller: _studentLimitController,
                       decoration: const InputDecoration(labelText: 'Batas Siswa'),
                       keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
                     const Divider(height: 32),
                     const Text('Informasi Rekening Sekolah', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -160,6 +163,7 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
                       controller: _bankAccountNumberController,
                       decoration: const InputDecoration(labelText: 'Nomor Rekening'),
                       keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
                     const SizedBox(height: 16),
                     TextFormField(

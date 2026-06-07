@@ -221,7 +221,9 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const InvoiceFormScreen(),
+                        builder: (context) => InvoiceFormScreen(
+                          studentId: widget.studentId,
+                        ),
                       ),
                     );
                   },
