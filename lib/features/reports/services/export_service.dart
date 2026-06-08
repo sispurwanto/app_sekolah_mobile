@@ -8,6 +8,7 @@ import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../../core/models/payment.dart';
 import '../../../core/models/invoice.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../core/utils/currency_utils.dart';
 import '../../../core/utils/snackbar_utils.dart';
 
@@ -94,7 +95,8 @@ class ExportService {
           ..writeAsBytesSync(fileBytes);
         
         if (context.mounted) {
-          SnackbarUtils.showSnackbar('Excel disimpan di: $path');
+          SnackbarUtils.showSnackbar('Membuka file Excel...');
+          await Share.shareXFiles([XFile(path)], text: 'Laporan Pemasukan');
         }
       }
     } catch (e) {
@@ -186,7 +188,8 @@ class ExportService {
           ..writeAsBytesSync(fileBytes);
         
         if (context.mounted) {
-          SnackbarUtils.showSnackbar('Excel disimpan di: $path');
+          SnackbarUtils.showSnackbar('Membuka file Excel...');
+          await Share.shareXFiles([XFile(path)], text: 'Laporan Tunggakan');
         }
       }
     } catch (e) {

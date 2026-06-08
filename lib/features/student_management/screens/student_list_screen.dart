@@ -26,6 +26,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
   final ClassService _classService = ClassService();
   bool _isGenerating = false;
   String _selectedClassFilter = '';
+  String _statusFilter = 'ACTIVE';
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
@@ -36,6 +37,10 @@ class _StudentListScreenState extends State<StudentListScreen> {
   }
 
   Future<void> _handleGenerateInvoice(BuildContext context, String schoolId, Student student) async {
+    if (student.status != 'ACTIVE') {
+      SnackbarUtils.showErrorSnackbar('Tagihan hanya bisa dibuat untuk siswa aktif');
+      return;
+    }
     if (student.academicYearId.isEmpty || student.classId.isEmpty) {
       SnackbarUtils.showErrorSnackbar('Siswa belum memiliki Kelas atau Tahun Ajaran aktif');
       return;
@@ -164,6 +169,10 @@ class _StudentListScreenState extends State<StudentListScreen> {
           }
 
           var students = snapshot.data ?? [];
+          
+          if (_statusFilter != 'SEMUA') {
+            students = students.where((s) => s.status == _statusFilter).toList();
+          }
 
           if (_searchQuery.isNotEmpty) {
             students = students.where((s) {
@@ -179,14 +188,32 @@ class _StudentListScreenState extends State<StudentListScreen> {
             return a.name.toLowerCase().compareTo(b.name.toLowerCase());
           });
 
-          if (students.isEmpty) {
-            return const Center(child: Text('Belum ada data siswa.'));
-          }
-
-          return ListView.builder(
-            itemCount: students.length,
-            itemBuilder: (context, index) {
-              final student = students[index];
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: 'SEMUA', label: Text('Semua', style: TextStyle(fontSize: 12))),
+                    ButtonSegment(value: 'ACTIVE', label: Text('Aktif', style: TextStyle(fontSize: 12))),
+                    ButtonSegment(value: 'INACTIVE', label: Text('Nonaktif', style: TextStyle(fontSize: 12))),
+                    ButtonSegment(value: 'GRADUATED', label: Text('Lulus', style: TextStyle(fontSize: 12))),
+                  ],
+                  selected: {_statusFilter},
+                  onSelectionChanged: (Set<String> newSelection) {
+                    setState(() {
+                      _statusFilter = newSelection.first;
+                    });
+                  },
+                ),
+              ),
+              Expanded(
+                child: students.isEmpty 
+                  ? const Center(child: Text('Belum ada data siswa.'))
+                  : ListView.builder(
+                    itemCount: students.length,
+                    itemBuilder: (context, index) {
+                      final student = students[index];
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: StreamBuilder<List<Invoice>>(
@@ -231,6 +258,43 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                 ],
                               ),
                             ),
+                            const SizedBox(height: 12),
+                            // Action Buttons
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: [
+                                  _buildActionButton(context, Icons.receipt_long, 'Tagihan', () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => InvoiceListScreen(
+                                          studentId: student.id,
+                                          academicYearId: student.academicYearId.isNotEmpty ? student.academicYearId : null,
+                                          classId: student.classId.isNotEmpty ? student.classId : null,
+                                        ),
+                                      ),
+                                    );
+                                  }, Colors.blue),
+                                  const SizedBox(width: 8),
+                                  _buildActionButton(context, Icons.assignment, 'Ulangan', () {
+                                    SnackbarUtils.showErrorSnackbar('Modul Ulangan sedang dalam pengembangan');
+                                  }, Colors.green),
+                                  const SizedBox(width: 8),
+                                  _buildActionButton(context, Icons.library_books, 'Raport', () {
+                                    SnackbarUtils.showErrorSnackbar('Modul Raport sedang dalam pengembangan');
+                                  }, Colors.orange),
+                                  const SizedBox(width: 8),
+                                  _buildActionButton(context, Icons.fact_check, 'Absensi', () {
+                                    SnackbarUtils.showErrorSnackbar('Modul Absensi sedang dalam pengembangan');
+                                  }, Colors.purple),
+                                  const SizedBox(width: 8),
+                                  _buildActionButton(context, Icons.account_balance_wallet, 'Tabungan', () {
+                                    SnackbarUtils.showErrorSnackbar('Modul Tabungan sedang dalam pengembangan');
+                                  }, Colors.teal),
+                                ],
+                              ),
+                            ),
                         ],
                       ),
                       trailing: PopupMenuButton<String>(
@@ -244,31 +308,24 @@ class _StudentListScreenState extends State<StudentListScreen> {
                             );
                           } else if (value == 'generate') {
                             _handleGenerateInvoice(context, schoolId, student);
-                          } else if (value == 'view_invoices') {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => InvoiceListScreen(
-                                  studentId: student.id,
-                                  academicYearId: student.academicYearId.isNotEmpty ? student.academicYearId : null,
-                                  classId: student.classId.isNotEmpty ? student.classId : null,
-                                ),
-                              ),
-                            );
                           }
                         },
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(
+                        itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                          const PopupMenuItem<String>(
                             value: 'edit',
-                            child: Text('Edit Siswa'),
+                            child: ListTile(
+                              leading: Icon(Icons.edit),
+                              title: Text('Edit Siswa'),
+                              contentPadding: EdgeInsets.zero,
+                            ),
                           ),
-                          const PopupMenuItem(
+                          const PopupMenuItem<String>(
                             value: 'generate',
-                            child: Text('Generate Tagihan'),
-                          ),
-                          const PopupMenuItem(
-                            value: 'view_invoices',
-                            child: Text('Lihat Tagihan'),
+                            child: ListTile(
+                              leading: Icon(Icons.add_card),
+                              title: Text('Generate Tagihan'),
+                              contentPadding: EdgeInsets.zero,
+                            ),
                           ),
                         ],
                       ),
@@ -277,6 +334,9 @@ class _StudentListScreenState extends State<StudentListScreen> {
                 ),
               );
             },
+          ),
+              )
+            ],
           );
         },
       ),
@@ -306,6 +366,24 @@ class _StudentListScreenState extends State<StudentListScreen> {
         const SizedBox(height: 2),
         Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
       ],
+    );
+  }
+
+  Widget _buildActionButton(BuildContext context, IconData icon, String label, VoidCallback onTap, Color color) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 4),
+            Text(label, style: const TextStyle(fontSize: 10)),
+          ],
+        ),
+      ),
     );
   }
 }

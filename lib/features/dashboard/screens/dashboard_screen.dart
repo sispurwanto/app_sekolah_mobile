@@ -42,7 +42,11 @@ class DashboardScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Dashboard - $schoolId'),
+        title: Text(
+          'Dashboard - ${schoolId.split('_').map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '').join(' ')}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -222,6 +226,28 @@ class DashboardScreen extends StatelessWidget {
         ),
       ),
       body: _buildDashboardBody(role, schoolId, context),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withValues(alpha: 0.2),
+              blurRadius: 4,
+              offset: const Offset(0, -2),
+            )
+          ],
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Active School: ${schoolId.split('_').map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '').join(' ')}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              Text('Your Role: $role', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 12)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -229,35 +255,20 @@ class DashboardScreen extends StatelessWidget {
     if (role == 'WALI' || role == 'SISWA') return const WaliDashboardView();
     if (role == 'GURU') return const GuruDashboardView();
     if (role == 'BENDAHARA' || role == 'ADMIN' || role == 'SUPER_ADMIN' || role == 'KEPALA_SEKOLAH') {
-      return SingleChildScrollView(
+      return const SingleChildScrollView(
         child: Column(
           children: [
-            const BendaharaDashboardView(),
-            const Divider(),
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Text('Active School ID: $schoolId', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text('Your Role: $role', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
-                  ],
-                ),
-              ),
-            ),
+            BendaharaDashboardView(),
           ],
         ),
       );
     }
     
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text('Welcome to Dashboard!', style: TextStyle(fontSize: 24)),
-          const SizedBox(height: 16),
-          Text('Active School ID: $schoolId', style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text('Your Role: $role', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+          Text('Welcome to Dashboard!', style: TextStyle(fontSize: 24)),
         ],
       ),
     );

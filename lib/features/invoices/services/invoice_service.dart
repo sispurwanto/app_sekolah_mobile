@@ -82,10 +82,16 @@ class InvoiceService {
         .collection('invoices_class_data')
         .doc(studentId)
         .collection('invoice_data')
-        .orderBy('due_date', descending: false)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) => Invoice.fromFirestore(doc)).toList();
+      var invoices = snapshot.docs.map((doc) => Invoice.fromFirestore(doc)).toList();
+      invoices.sort((a, b) {
+        int weight(String status) => status == 'PAID' ? 0 : status == 'PARTIAL' ? 1 : 2;
+        int statusCmp = weight(a.status).compareTo(weight(b.status));
+        if (statusCmp != 0) return statusCmp;
+        return (a.dueDate ?? DateTime.now()).compareTo(b.dueDate ?? DateTime.now());
+      });
+      return invoices;
     });
   }
 
@@ -361,8 +367,9 @@ class InvoiceService {
         final studentId = studentDoc.id;
         final studentName = data['name'] ?? '';
         final classId = data['class_id'] ?? '';
+        final status = data['status'] ?? 'ACTIVE';
         
-        if (classId.isEmpty) continue;
+        if (classId.isEmpty || status != 'ACTIVE') continue;
         
         final classInvoiceRef = _db
             .collection('schools')
