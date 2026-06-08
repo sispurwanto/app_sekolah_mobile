@@ -32,6 +32,8 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
   late TextEditingController _nisController;
   late TextEditingController _nisnController;
   late TextEditingController _nameController;
+  late TextEditingController _phoneController;
+  late TextEditingController _addressController;
 
   String? _selectedGuardianId;
   String? _selectedGuardianName;
@@ -49,6 +51,8 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
     _nisController = TextEditingController(text: widget.student?.nis ?? '');
     _nisnController = TextEditingController(text: widget.student?.nisn ?? '');
     _nameController = TextEditingController(text: widget.student?.name ?? '');
+    _phoneController = TextEditingController(text: widget.student?.phone ?? '');
+    _addressController = TextEditingController(text: widget.student?.address ?? '');
 
     final guardianId = widget.student?.guardianId ?? '';
     _selectedGuardianId = guardianId.isNotEmpty ? guardianId : null;
@@ -72,6 +76,8 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
     _nisController.dispose();
     _nisnController.dispose();
     _nameController.dispose();
+    _phoneController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
@@ -98,6 +104,8 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
       nis: _nisController.text.trim(),
       nisn: _nisnController.text.trim(),
       name: _nameController.text.trim(),
+      phone: _phoneController.text.trim(),
+      address: _addressController.text.trim(),
       gender: _gender,
       birthDate: _birthDate,
       classId: _selectedClassId ?? '',
@@ -209,6 +217,18 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                       subtitle: Text('${_birthDate.day}/${_birthDate.month}/${_birthDate.year}'),
                       trailing: const Icon(Icons.calendar_today),
                       onTap: _pickBirthDate,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _phoneController,
+                      decoration: const InputDecoration(labelText: 'No. Telepon / HP'),
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _addressController,
+                      decoration: const InputDecoration(labelText: 'Alamat Lengkap'),
+                      maxLines: 2,
                     ),
                     const SizedBox(height: 16),
                     StreamBuilder<List<AppClass>>(

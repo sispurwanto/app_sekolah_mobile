@@ -205,27 +205,34 @@ class _StudentListScreenState extends State<StudentListScreen> {
                         child: Text(student.gender == 'L' ? 'L' : 'P'),
                       ),
                       title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: RichText(
-                        text: TextSpan(
-                          style: DefaultTextStyle.of(context).style.copyWith(height: 1.5),
-                          children: [
-                            TextSpan(text: 'NIS: ${student.nis} | Kelas: ${student.classId.isNotEmpty ? student.classId : "-"}\n'),
-                            if (total == 0)
-                              const TextSpan(text: 'Belum ada tagihan', style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic))
-                            else ...[
-                              const TextSpan(text: 'Tagihan: ', style: TextStyle(color: Colors.black87)),
-                              TextSpan(text: '$total', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black)),
-                              const TextSpan(text: ' | Lunas: ', style: TextStyle(color: Colors.black87)),
-                              TextSpan(text: '$paid', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
-                              const TextSpan(text: ' | Sebagian: ', style: TextStyle(color: Colors.black87)),
-                              TextSpan(text: '$partial', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
-                              const TextSpan(text: ' | Tunggakan: ', style: TextStyle(color: Colors.black87)),
-                              TextSpan(text: '$unpaid', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
-                            ],
-                          ],
-                        ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 4),
+                          Text('NIS: ${student.nis} | Kelas: ${student.classId.isNotEmpty ? student.classId : "-"}'),
+                          const SizedBox(height: 8),
+                          if (total == 0)
+                            const Text('Belum ada tagihan', style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic))
+                          else
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey.shade200),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  _buildStatItem('Tagihan', total.toString(), Colors.black87),
+                                  _buildStatItem('Lunas', paid.toString(), Colors.green),
+                                  _buildStatItem('Sebagian', partial.toString(), Colors.orange),
+                                  _buildStatItem('Tunggak', unpaid.toString(), Colors.red),
+                                ],
+                              ),
+                            ),
+                        ],
                       ),
-                      isThreeLine: true,
                       trailing: PopupMenuButton<String>(
                         onSelected: (value) {
                           if (value == 'edit') {
@@ -288,6 +295,17 @@ class _StudentListScreenState extends State<StudentListScreen> {
         },
         child: const Icon(Icons.add),
       ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, Color color) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+        const SizedBox(height: 2),
+        Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: color)),
+      ],
     );
   }
 }

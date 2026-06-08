@@ -10,6 +10,8 @@ class Student {
   final String classId;
   final String guardianId;
   final String guardianName;
+  final String phone;
+  final String address;
   final String academicYearId;
   final String status;
   final DateTime? createdAt;
@@ -27,6 +29,8 @@ class Student {
     required this.classId,
     required this.guardianId,
     this.guardianName = '',
+    this.phone = '',
+    this.address = '',
     required this.academicYearId,
     required this.status,
     this.createdAt,
@@ -49,6 +53,8 @@ class Student {
       classId: data['class_id'] ?? '',
       guardianId: data['guardian_id'] ?? '',
       guardianName: data['guardian_name'] ?? '',
+      phone: data['phone'] ?? '',
+      address: data['address'] ?? '',
       academicYearId: data['academic_year_id'] ?? '',
       status: data['status'] ?? 'ACTIVE',
       createdAt: data['created_at'] != null ? (data['created_at'] as Timestamp).toDate() : null,
@@ -68,6 +74,8 @@ class Student {
       'class_id': classId,
       'guardian_id': guardianId,
       'guardian_name': guardianName,
+      'phone': phone,
+      'address': address,
       'academic_year_id': academicYearId,
       'status': status,
     };
