@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../../core/models/payment.dart';
 import '../../../core/utils/currency_utils.dart';
+import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/models/invoice.dart';
 import '../../../core/providers/school_provider.dart';
 import '../services/payment_service.dart';
@@ -61,7 +62,11 @@ class PaymentHistoryDialog extends StatelessWidget {
                   final payments = snapshot.data ?? [];
 
                   if (payments.isEmpty) {
-                    return const Center(child: Text('Belum ada data pembayaran.'));
+                    return const EmptyStateWidget(
+                      icon: Icons.history,
+                      title: 'Belum ada riwayat',
+                      subtitle: 'Belum ada data pembayaran.',
+                    );
                   }
 
                   return ListView.builder(

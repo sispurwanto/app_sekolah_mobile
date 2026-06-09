@@ -4,6 +4,7 @@ import '../../../core/models/app_user.dart';
 import '../../../core/providers/school_provider.dart';
 import '../services/user_management_service.dart';
 import 'user_form_screen.dart';
+import '../../../core/widgets/empty_state_widget.dart';
 
 class UserListScreen extends StatelessWidget {
   UserListScreen({super.key});
@@ -32,7 +33,11 @@ class UserListScreen extends StatelessWidget {
           final users = snapshot.data ?? [];
 
           if (users.isEmpty) {
-            return const Center(child: Text('Belum ada user di sekolah ini.'));
+            return const EmptyStateWidget(
+              icon: Icons.person_off_outlined,
+              title: 'Belum ada user',
+              subtitle: 'Tambahkan user baru di sekolah ini.',
+            );
           }
 
           return ListView.builder(

@@ -258,16 +258,15 @@ class PaymentService {
         .collection('transactions_year')
         .doc(academicYearId)
         .collection('payments')
-        .where('status', isEqualTo: 'APPROVED')
+        .where('created_at', isGreaterThanOrEqualTo: startTimestamp)
+        .where('created_at', isLessThanOrEqualTo: endTimestamp)
         .get();
 
     final payments = snapshot.docs.map((doc) => Payment.fromFirestore(doc)).toList();
     
-    // Filter by date range
+    // Filter by status locally
     final filtered = payments.where((p) {
-      if (p.createdAt == null) return false;
-      return p.createdAt!.isAfter(startTimestamp.toDate().subtract(const Duration(seconds: 1))) && 
-             p.createdAt!.isBefore(endTimestamp.toDate().add(const Duration(seconds: 1)));
+      return p.status == 'APPROVED';
     }).toList();
 
     // Sort descending (newest first)

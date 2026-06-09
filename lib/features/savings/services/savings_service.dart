@@ -16,15 +16,15 @@ class SavingsService {
         .map((doc) => doc.exists ? SavingsSummary.fromFirestore(doc) : null);
   }
 
-  // Get all active savings summaries for reporting
-  Stream<List<SavingsSummary>> getAllSavingsSummaries(String schoolId) {
-    return _db
+  // Fetch all active savings summaries for reporting (Future)
+  Future<List<SavingsSummary>> fetchAllSavingsSummaries(String schoolId, {Source source = Source.serverAndCache}) async {
+    final snapshot = await _db
         .collection('schools')
         .doc(schoolId)
         .collection('savings')
         .where('balance', isGreaterThan: 0)
-        .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => SavingsSummary.fromFirestore(doc)).toList());
+        .get(GetOptions(source: source));
+    return snapshot.docs.map((doc) => SavingsSummary.fromFirestore(doc)).toList();
   }
 
   // Get stream of recent transactions for a student

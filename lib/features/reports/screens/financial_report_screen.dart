@@ -19,7 +19,7 @@ class FinancialReportScreen extends StatefulWidget {
 }
 
 class _FinancialReportScreenState extends State<FinancialReportScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+
   final PaymentService _paymentService = PaymentService();
   final InvoiceService _invoiceService = InvoiceService();
   final AcademicYearService _academicYearService = AcademicYearService();
@@ -32,16 +32,21 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
   DateTime _endDate = DateTime.now();
 
+  late TabController _tabController;
+  Future<({List<Payment> payments, List<Invoice> arrears})>? _summaryFuture;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _loadAcademicYears();
+    
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadAcademicYears();
+    });
   }
 
   Future<void> _loadAcademicYears() async {
     // School ID is needed to load years. We can get it from context via read.
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
       final schoolId = context.read<SchoolProvider>().activeSchoolId;
       if (schoolId == null) return;
 
@@ -54,6 +59,7 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
           _academicYears = years;
           if (years.isNotEmpty) {
             _selectedAcademicYearId = activeYear.id;
+            _loadData(schoolId);
           }
           _isLoadingYears = false;
         });
@@ -62,13 +68,20 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
           _isLoadingYears = false;
         });
       }
-    });
   }
+
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _loadData(String schoolId) {
+    if (_selectedAcademicYearId == null) return;
+    setState(() {
+      _summaryFuture = _invoiceService.getFinancialSummaryByDateRange(schoolId, _selectedAcademicYearId!, _startDate, _endDate);
+    });
   }
 
   Future<void> _selectDateRange(BuildContext context) async {
@@ -97,6 +110,10 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
         _startDate = picked.start;
         _endDate = picked.end;
       });
+      final schoolId = context.read<SchoolProvider>().activeSchoolId;
+      if (schoolId != null) {
+        _loadData(schoolId);
+      }
     }
   }
 
@@ -126,7 +143,7 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
           indicatorColor: Colors.white,
           tabs: const [
             Tab(text: 'Pemasukan (Lunas)'),
-            Tab(text: 'Tunggakan (Piutang)'),
+            Tab(text: 'Tidak Bayar'),
           ],
         ),
       ),
@@ -134,13 +151,30 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
         children: [
           _buildFilterHeader(context),
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildIncomeTab(schoolId),
-                _buildArrearsTab(schoolId),
-              ],
-            ),
+            child: _summaryFuture == null
+                ? const Center(child: Text('Pilih Tahun Ajaran'))
+                : FutureBuilder<({List<Payment> payments, List<Invoice> arrears})>(
+                    future: _summaryFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (snapshot.hasError) {
+                        return Center(child: Text('Terjadi kesalahan: ${snapshot.error}'));
+                      }
+                      
+                      final data = snapshot.data;
+                      if (data == null) return const SizedBox.shrink();
+
+                      return TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildIncomeTab(data.payments),
+                          _buildArrearsTab(data.arrears),
+                        ],
+                      );
+                    },
+                  ),
           ),
         ],
       ),
@@ -174,6 +208,10 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
                       setState(() {
                         _selectedAcademicYearId = val;
                       });
+                      final schoolId = context.read<SchoolProvider>().activeSchoolId;
+                      if (schoolId != null) {
+                        _loadData(schoolId);
+                      }
                     }
                   },
                 ),
@@ -209,167 +247,79 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
     );
   }
 
-  Widget _buildIncomeTab(String schoolId) {
-    if (_selectedAcademicYearId == null) return const Center(child: Text('Pilih Tahun Ajaran'));
+  Widget _buildIncomeTab(List<Payment> payments) {
+    final double totalIncome = payments.fold(0, (sum, item) => sum + item.amount);
 
-    return FutureBuilder<List<Payment>>(
-      future: _paymentService.getApprovedPaymentsByDateRange(schoolId, _selectedAcademicYearId!, _startDate, _endDate),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(child: Text('Terjadi kesalahan: ${snapshot.error}'));
-        }
-
-        final payments = snapshot.data ?? [];
-        final double totalIncome = payments.fold(0, (sum, item) => sum + item.amount);
-
-        return Column(
-          children: [
-            _buildSummaryCard('Total Pemasukan', totalIncome, Colors.green),
-            if (payments.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton.icon(
-                      icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
-                      label: const Text('PDF', style: TextStyle(color: Colors.red)),
-                      onPressed: () => _exportService.exportIncomePdf(context, payments, _startDate, _endDate),
-                    ),
-                    TextButton.icon(
-                      icon: const Icon(Icons.table_chart, color: Colors.green),
-                      label: const Text('Excel', style: TextStyle(color: Colors.green)),
-                      onPressed: () => _exportService.exportIncomeExcel(context, payments, _startDate, _endDate),
-                    ),
-                  ],
-                ),
+    return ListView(
+      padding: const EdgeInsets.all(16.0),
+      children: [
+        _buildSummaryCard('Total Pemasukan', totalIncome, Colors.green),
+        if (payments.isNotEmpty)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton.icon(
+                icon: const Icon(Icons.picture_as_pdf, color: Colors.green),
+                label: const Text('PDF Pemasukan', style: TextStyle(color: Colors.green)),
+                onPressed: () => _exportService.exportIncomePdf(context, payments, _startDate, _endDate),
               ),
-            Expanded(
-              child: payments.isEmpty
-                  ? const Center(child: Text('Tidak ada pemasukan di periode ini.'))
-                  : ListView.builder(
-                      itemCount: payments.length,
-                      itemBuilder: (context, index) {
-                        final p = payments[index];
-                        final dateStr = p.createdAt != null ? DateFormat('dd/MM/yy HH:mm').format(p.createdAt!) : '-';
-                        return ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.green.shade100,
-                            child: const Icon(Icons.attach_money, color: Colors.green),
-                          ),
-                          title: Text(p.studentName),
-                          subtitle: Text('${p.invoiceTitle}\n$dateStr'),
-                          trailing: Text(
-                            CurrencyUtils.formatRp(p.amount),
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
-                          ),
-                          isThreeLine: true,
-                        );
-                      },
-                    ),
+              TextButton.icon(
+                icon: const Icon(Icons.table_chart, color: Colors.green),
+                label: const Text('Excel Pemasukan', style: TextStyle(color: Colors.green)),
+                onPressed: () => _exportService.exportIncomeExcel(context, payments, _startDate, _endDate),
+              ),
+            ],
+          ),
+        if (payments.isNotEmpty)
+          ...payments.map((p) => ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            title: Text(p.studentName, style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text(p.invoiceTitle.isNotEmpty ? p.invoiceTitle : 'Pembayaran'),
+            trailing: Text(
+              CurrencyUtils.formatRp(p.amount),
+              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
             ),
-          ],
-        );
-      },
+          )).toList(),
+      ],
     );
   }
 
-  Widget _buildArrearsTab(String schoolId) {
-    if (_selectedAcademicYearId == null) return const Center(child: Text('Pilih Tahun Ajaran'));
-
-    return FutureBuilder<List<Invoice>>(
-      future: _invoiceService.getArrearsByDateRange(schoolId, _selectedAcademicYearId!, _startDate, _endDate),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(child: Text('Terjadi kesalahan: ${snapshot.error}'));
-        }
-
-        final invoices = snapshot.data ?? [];
-        final double totalArrears = invoices.fold(0, (sum, item) => sum + (item.amount - item.paidAmount));
-
-        return Column(
-          children: [
-            _buildSummaryCard('Total Tunggakan', totalArrears, Colors.red),
-            if (invoices.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton.icon(
-                      icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
-                      label: const Text('PDF', style: TextStyle(color: Colors.red)),
-                      onPressed: () => _exportService.exportArrearsPdf(context, invoices, _startDate, _endDate),
-                    ),
-                    TextButton.icon(
-                      icon: const Icon(Icons.table_chart, color: Colors.green),
-                      label: const Text('Excel', style: TextStyle(color: Colors.green)),
-                      onPressed: () => _exportService.exportArrearsExcel(context, invoices, _startDate, _endDate),
-                    ),
-                  ],
-                ),
+  Widget _buildArrearsTab(List<Invoice> arrears) {
+    return ListView(
+      padding: const EdgeInsets.all(16.0),
+      children: [
+        _buildSummaryCard('Total Siswa Tidak Bayar', 0, Colors.red, customValue: '${arrears.length} Siswa'),
+        if (arrears.isNotEmpty)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton.icon(
+                icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
+                label: const Text('PDF Tidak Bayar', style: TextStyle(color: Colors.red)),
+                onPressed: () => _exportService.exportArrearsPdf(context, arrears, _startDate, _endDate),
               ),
-            Expanded(
-              child: invoices.isEmpty
-                  ? const Center(child: Text('Tidak ada tunggakan jatuh tempo di periode ini.'))
-                  : ListView.builder(
-                      itemCount: invoices.length,
-                      itemBuilder: (context, index) {
-                        final inv = invoices[index];
-                        final dueStr = inv.dueDate != null ? DateFormat('dd/MM/yy').format(inv.dueDate!) : '-';
-                        final isOverdue = inv.dueDate != null && inv.dueDate!.isBefore(DateTime.now());
-                        final dueColor = isOverdue ? Colors.red : Colors.grey.shade700;
-                        final double sisa = inv.amount - inv.paidAmount;
-                        return ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.red.shade100,
-                            child: const Icon(Icons.warning, color: Colors.red),
-                          ),
-                          title: Text(
-                            inv.studentName,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: RichText(
-                            text: TextSpan(
-                              style: DefaultTextStyle.of(context).style,
-                              children: [
-                                TextSpan(text: '${inv.title}\nJatuh Tempo: '),
-                                TextSpan(
-                                  text: dueStr,
-                                  style: TextStyle(color: dueColor, fontWeight: isOverdue ? FontWeight.bold : null),
-                                ),
-                              ],
-                            ),
-                          ),
-                          trailing: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                CurrencyUtils.formatRp(sisa),
-                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
-                              ),
-                              Text(inv.status, style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                            ],
-                          ),
-                          isThreeLine: true,
-                        );
-                      },
-                    ),
+              TextButton.icon(
+                icon: const Icon(Icons.table_chart, color: Colors.red),
+                label: const Text('Excel Tidak Bayar', style: TextStyle(color: Colors.red)),
+                onPressed: () => _exportService.exportArrearsExcel(context, arrears, _startDate, _endDate),
+              ),
+            ],
+          ),
+        if (arrears.isNotEmpty)
+          ...arrears.map((a) => ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            title: Text(a.studentName, style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: const Text('Belum ada pembayaran periode ini'),
+            trailing: const Text(
+              'Tidak Bayar',
+              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
             ),
-          ],
-        );
-      },
+          )).toList(),
+      ],
     );
   }
 
-  Widget _buildSummaryCard(String title, double amount, Color color) {
+  Widget _buildSummaryCard(String title, double amount, Color color, {String? customValue}) {
     return Card(
       margin: const EdgeInsets.all(16.0),
       color: color.withOpacity(0.1),
@@ -388,7 +338,7 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
             ),
             Text(
-              CurrencyUtils.formatRp(amount),
+              customValue ?? CurrencyUtils.formatRp(amount),
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color),
             ),
           ],

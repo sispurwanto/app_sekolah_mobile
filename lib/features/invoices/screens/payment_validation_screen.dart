@@ -6,6 +6,7 @@ import '../../../core/models/invoice.dart';
 import '../../../core/utils/currency_utils.dart';
 import '../../../core/providers/school_provider.dart';
 import '../services/payment_service.dart';
+import '../../../core/widgets/empty_state_widget.dart';
 import '../services/invoice_service.dart';
 import '../../master_data/services/academic_year_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
@@ -107,7 +108,11 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen> {
 
               final payments = snapshot.data ?? [];
               if (payments.isEmpty) {
-                return const Center(child: Text('Tidak ada pembayaran tertunda.'));
+                return const EmptyStateWidget(
+                  icon: Icons.check_circle_outline,
+                  title: 'Semua Lunas',
+                  subtitle: 'Tidak ada pembayaran tertunda.',
+                );
               }
 
               return ListView.builder(

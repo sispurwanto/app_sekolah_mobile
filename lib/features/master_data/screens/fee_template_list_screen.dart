@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../core/utils/currency_utils.dart';
 import '../../../core/models/fee_template.dart';
 import '../../../core/providers/school_provider.dart';
+import '../../../core/widgets/empty_state_widget.dart';
 import '../services/fee_template_service.dart';
 import '../../invoices/services/invoice_service.dart';
 import '../../master_data/services/academic_year_service.dart';
@@ -77,7 +78,11 @@ class _FeeTemplateListScreenState extends State<FeeTemplateListScreen> {
           final templates = snapshot.data ?? [];
 
           if (templates.isEmpty) {
-            return const Center(child: Text('Belum ada data Master Tagihan.'));
+            return const EmptyStateWidget(
+              icon: Icons.account_balance_wallet_outlined,
+              title: 'Belum ada Master Tagihan',
+              subtitle: 'Tambahkan tagihan baru menggunakan tombol di bawah.',
+            );
           }
 
           return ListView.builder(

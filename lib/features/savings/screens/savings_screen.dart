@@ -8,6 +8,7 @@ import '../../../../core/utils/currency_input_formatter.dart';
 import '../../../../core/providers/school_provider.dart';
 import '../../../../core/providers/user_provider.dart';
 import '../services/savings_service.dart';
+import '../../../../core/widgets/empty_state_widget.dart';
 
 class SavingsScreen extends StatefulWidget {
   final String studentId;
@@ -230,8 +231,10 @@ class _SavingsScreenState extends State<SavingsScreen> {
 
                 final transactions = snapshot.data ?? [];
                 if (transactions.isEmpty) {
-                  return const Center(
-                    child: Text('Belum ada riwayat transaksi.', style: TextStyle(color: Colors.grey)),
+                  return const EmptyStateWidget(
+                    icon: Icons.account_balance_wallet_outlined,
+                    title: 'Belum ada transaksi',
+                    subtitle: 'Tabungan akan muncul di sini setelah transaksi dilakukan.',
                   );
                 }
 

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../core/models/academic_year.dart';
 import '../../../core/providers/school_provider.dart';
 import '../services/academic_year_service.dart';
+import '../../../core/widgets/empty_state_widget.dart';
 import 'academic_year_form_screen.dart';
 
 class AcademicYearListScreen extends StatelessWidget {
@@ -32,7 +33,11 @@ class AcademicYearListScreen extends StatelessWidget {
           final years = snapshot.data ?? [];
 
           if (years.isEmpty) {
-            return const Center(child: Text('Belum ada data Tahun Ajaran.'));
+            return const EmptyStateWidget(
+              icon: Icons.calendar_today_outlined,
+              title: 'Belum ada Tahun Ajaran',
+              subtitle: 'Tambahkan Tahun Ajaran baru untuk mulai.',
+            );
           }
 
           return ListView.builder(

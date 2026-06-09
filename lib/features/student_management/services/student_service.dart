@@ -17,23 +17,26 @@ class StudentService {
     });
   }
 
-  // Get stream of students by class
-  Stream<List<Student>> getStudentsByClass(String schoolId, String classId) {
+  // Fetch students by class (Future for efficiency)
+  Future<List<Student>> fetchStudentsByClass(String schoolId, String classId, {String statusFilter = 'SEMUA', Source source = Source.serverAndCache}) async {
     var query = _db
         .collection('schools')
         .doc(schoolId)
         .collection('students');
         
+    // Base Query with status filter (if not ALL)
+    Query<Map<String, dynamic>> finalQuery = query;
+    if (statusFilter != 'SEMUA') {
+      finalQuery = finalQuery.where('status', isEqualTo: statusFilter);
+    }
+        
     if (classId.isNotEmpty) {
-      return query.where('class_id', isEqualTo: classId).snapshots().map((snapshot) {
-        return snapshot.docs.map((doc) => Student.fromFirestore(doc)).toList();
-      });
+      final snapshot = await finalQuery.where('class_id', isEqualTo: classId).get(GetOptions(source: source));
+      return snapshot.docs.map((doc) => Student.fromFirestore(doc)).toList();
     } else {
-      // If classId is empty string, we can either return all, or limit it to avoid massive reads.
-      // We will just limit to 100 for safety when viewing "Semua Kelas".
-      return query.limit(100).snapshots().map((snapshot) {
-        return snapshot.docs.map((doc) => Student.fromFirestore(doc)).toList();
-      });
+      // Limit to avoid massive reads
+      final snapshot = await finalQuery.limit(500).get(GetOptions(source: source));
+      return snapshot.docs.map((doc) => Student.fromFirestore(doc)).toList();
     }
   }
 

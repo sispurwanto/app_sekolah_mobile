@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/models/school.dart';
 import '../services/school_service.dart';
+import '../../../core/widgets/empty_state_widget.dart';
 import 'school_form_screen.dart';
 import '../../../core/utils/dialog_utils.dart';
 import '../../../core/utils/snackbar_utils.dart';
@@ -42,7 +43,11 @@ class SchoolListScreen extends StatelessWidget {
           }
 
           if (schools.isEmpty) {
-            return const Center(child: Text('Belum ada data sekolah.'));
+            return const EmptyStateWidget(
+              icon: Icons.school_outlined,
+              title: 'Belum ada data sekolah',
+              subtitle: 'Silakan hubungi administrator untuk menambahkan sekolah.',
+            );
           }
 
           return ListView.builder(

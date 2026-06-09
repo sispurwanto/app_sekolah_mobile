@@ -4,6 +4,7 @@ import '../../../core/models/app_class.dart';
 import '../../../core/providers/school_provider.dart';
 import '../services/class_service.dart';
 import 'class_form_screen.dart';
+import '../../../core/widgets/empty_state_widget.dart';
 
 class ClassListScreen extends StatelessWidget {
   ClassListScreen({super.key});
@@ -32,7 +33,11 @@ class ClassListScreen extends StatelessWidget {
           final classes = snapshot.data ?? [];
 
           if (classes.isEmpty) {
-            return const Center(child: Text('Belum ada data Kelas.'));
+            return const EmptyStateWidget(
+              icon: Icons.class_outlined,
+              title: 'Belum ada data Kelas',
+              subtitle: 'Tambahkan kelas melalui menu di bawah.',
+            );
           }
 
           return ListView.builder(

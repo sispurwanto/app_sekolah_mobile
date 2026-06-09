@@ -16,25 +16,31 @@ class SavingsReportScreen extends StatefulWidget {
 class _SavingsReportScreenState extends State<SavingsReportScreen> {
   final SavingsService _savingsService = SavingsService();
   String _searchQuery = '';
-  late Stream<List<SavingsSummary>> _summariesStream;
+  Future<List<SavingsSummary>>? _summariesFuture;
   String _currentSchoolId = '';
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final schoolId = context.watch<SchoolProvider>().activeSchoolId ?? '';
-    if (schoolId != _currentSchoolId) {
-      _currentSchoolId = schoolId;
-      _summariesStream = _savingsService.getAllSavingsSummaries(schoolId);
+    if (_summariesFuture == null) {
+      _loadData();
     }
+  }
+
+  void _loadData() {
+    final schoolId = context.read<SchoolProvider>().activeSchoolId ?? '';
+    setState(() {
+      _currentSchoolId = schoolId;
+      _summariesFuture = _savingsService.fetchAllSavingsSummaries(schoolId);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<List<SavingsSummary>>(
-      stream: _summariesStream,
+    return FutureBuilder<List<SavingsSummary>>(
+      future: _summariesFuture,
       builder: (context, snapshot) {
-        final allSummaries = snapshot.data ?? [];
+        final allSummaries = (snapshot.data ?? []).where((s) => s.balance > 0).toList();
         final double totalBalance = allSummaries.fold(0.0, (sum, item) => sum + item.balance);
 
         var filteredSummaries = allSummaries;
@@ -63,11 +69,16 @@ class _SavingsReportScreenState extends State<SavingsReportScreen> {
               ),
             ],
           ),
-          body: snapshot.connectionState == ConnectionState.waiting
-              ? const Center(child: CircularProgressIndicator())
-              : snapshot.hasError
-                  ? Center(child: Text('Error: ${snapshot.error}'))
-                  : Column(
+          body: RefreshIndicator(
+            onRefresh: () async {
+              _loadData();
+              await _summariesFuture;
+            },
+            child: snapshot.connectionState == ConnectionState.waiting
+                ? const Center(child: CircularProgressIndicator())
+                : snapshot.hasError
+                    ? Center(child: Text('Error: ${snapshot.error}'))
+                    : Column(
             children: [
               Container(
                 width: double.infinity,
@@ -131,9 +142,10 @@ class _SavingsReportScreenState extends State<SavingsReportScreen> {
                 ),
               ),
             ],
-          ), // Closes Column (body)
+          ), // Closes Column
+          ), // Closes RefreshIndicator
         ); // Closes Scaffold
       }, // Closes builder
-    ); // Closes StreamBuilder
+    ); // Closes FutureBuilder
   }
 }

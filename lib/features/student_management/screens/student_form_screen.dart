@@ -34,6 +34,7 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
   late TextEditingController _addressController;
+  late TextEditingController _parentNameController;
 
   String? _selectedGuardianId;
   String? _selectedGuardianName;
@@ -53,10 +54,10 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
     _nameController = TextEditingController(text: widget.student?.name ?? '');
     _phoneController = TextEditingController(text: widget.student?.phone ?? '');
     _addressController = TextEditingController(text: widget.student?.address ?? '');
+    _parentNameController = TextEditingController(text: widget.student?.guardianName ?? '');
 
     final guardianId = widget.student?.guardianId ?? '';
     _selectedGuardianId = guardianId.isNotEmpty ? guardianId : null;
-    _selectedGuardianName = widget.student?.guardianName;
     
     final classId = widget.student?.classId ?? '';
     _selectedClassId = classId.isNotEmpty ? classId : null;
@@ -78,6 +79,7 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
     _nameController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
+    _parentNameController.dispose();
     super.dispose();
   }
 
@@ -110,7 +112,7 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
       birthDate: _birthDate,
       classId: _selectedClassId ?? '',
       guardianId: _selectedGuardianId ?? '',
-      guardianName: _selectedGuardianName ?? '',
+      guardianName: _parentNameController.text.trim(),
       academicYearId: _selectedAcademicYearId ?? '',
       status: _status,
     );
@@ -217,6 +219,12 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                       subtitle: Text('${_birthDate.day}/${_birthDate.month}/${_birthDate.year}'),
                       trailing: const Icon(Icons.calendar_today),
                       onTap: _pickBirthDate,
+                    ),
+                    const SizedBox(height: 16),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _parentNameController,
+                      decoration: const InputDecoration(labelText: 'Nama Orang Tua / Wali'),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -390,9 +398,8 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                             setState(() {
                               _selectedGuardianId = v;
                               if (v != null) {
-                                _selectedGuardianName = walis.firstWhere((w) => w.id == v).name;
-                              } else {
-                                _selectedGuardianName = null;
+                                final selectedWali = walis.firstWhere((w) => w.id == v);
+                                _parentNameController.text = selectedWali.name;
                               }
                             });
                           },

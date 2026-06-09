@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/models/invoice.dart';
 import '../../../core/models/fee_template.dart';
+import '../../../core/models/payment.dart';
 
 class InvoiceService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -19,54 +20,85 @@ class InvoiceService {
     });
   }
 
-  // Get arrears (tunggakan) invoices across the school within a due_date range
-  Future<List<Invoice>> getArrearsByDateRange(String schoolId, String academicYearId, DateTime startDate, DateTime endDate) async {
+  // Fetch all invoices for Bendahara/Admin (Future for efficiency)
+  Future<List<Invoice>> fetchAllInvoices(String schoolId, String academicYearId, {Source source = Source.serverAndCache}) async {
+    final snapshot = await _db
+        .collectionGroup('invoice_data')
+        .where('school_id', isEqualTo: schoolId)
+        .where('academic_year_id', isEqualTo: academicYearId)
+        .orderBy('due_date', descending: false)
+        .get(GetOptions(source: source));
+    return snapshot.docs.map((doc) => Invoice.fromFirestore(doc)).toList();
+  }
+
+  // Get financial summary (payments & arrears) across the school within a due_date range
+  Future<({List<Payment> payments, List<Invoice> arrears})> getFinancialSummaryByDateRange(String schoolId, String academicYearId, DateTime startDate, DateTime endDate) async {
+    // 1. Kunci maksimal 31 hari
+    if (endDate.difference(startDate).inDays > 31) {
+      endDate = startDate.add(const Duration(days: 31));
+    }
+    
     final startTimestamp = Timestamp.fromDate(DateTime(startDate.year, startDate.month, startDate.day, 0, 0, 0));
     final endTimestamp = Timestamp.fromDate(DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59));
 
-    // Bypassing collectionGroup to avoid Firebase Index requirement:
-    // We will fetch all students in the school, then fetch their invoices concurrently.
-    final studentsSnapshot = await _db.collection('schools').doc(schoolId).collection('students').get();
-    
-    List<Invoice> invoices = [];
-    
-    final futures = studentsSnapshot.docs.map((studentDoc) async {
-      final studentId = studentDoc.id;
-      final classId = studentDoc.data()['class_id'] as String?;
-      if (classId == null || classId.isEmpty) return <Invoice>[];
+    // 2. Fetch semua siswa aktif
+    final studentsSnapshot = await _db
+        .collection('schools')
+        .doc(schoolId)
+        .collection('students')
+        .where('status', isEqualTo: 'ACTIVE')
+        .get();
 
-      final invSnapshot = await _db
-          .collection('schools')
-          .doc(schoolId)
-          .collection('transactions_year')
-          .doc(academicYearId)
-          .collection('invoices')
-          .doc(classId)
-          .collection('invoices_class_data')
-          .doc(studentId)
-          .collection('invoice_data')
-          .get();
-          
-      return invSnapshot.docs.map((doc) => Invoice.fromFirestore(doc)).toList();
-    });
+    // 3. Fetch semua pembayaran di rentang tanggal ini
+    final paymentsSnapshot = await _db
+        .collection('schools')
+        .doc(schoolId)
+        .collection('transactions_year')
+        .doc(academicYearId)
+        .collection('payments')
+        .where('created_at', isGreaterThanOrEqualTo: startTimestamp)
+        .where('created_at', isLessThanOrEqualTo: endTimestamp)
+        .get();
 
-    final results = await Future.wait(futures);
-    for (var list in results) {
-      invoices.addAll(list);
+    // 4. Filter pembayaran yang Lunas (lokal) dan parsing
+    final parsedPayments = paymentsSnapshot.docs
+        .map((d) => Payment.fromFirestore(d))
+        .where((p) => p.status == 'APPROVED')
+        .toList();
+
+    parsedPayments.sort((a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
+
+    // 5. Cari student_id yang ADA pembayarannya di periode tersebut
+    final paidStudentIds = parsedPayments.map((p) => p.studentId).toSet();
+
+    // 6. Buat daftar tunggakan untuk siswa yang TIDAK ADA di paidStudentIds
+    List<Invoice> arrears = [];
+    for (var doc in studentsSnapshot.docs) {
+      final studentId = doc.id;
+      if (!paidStudentIds.contains(studentId)) {
+        final data = doc.data();
+        arrears.add(
+          Invoice(
+            id: 'arrear_$studentId',
+            title: 'Belum ada pembayaran di periode ini',
+            amount: 0,
+            paidAmount: 0,
+            dueDate: endTimestamp.toDate(),
+            studentId: studentId,
+            studentName: data['name'] ?? 'Unknown',
+            classId: data['class_id'] ?? '',
+            status: 'UNPAID',
+            schoolId: schoolId,
+            academicYearId: academicYearId,
+          )
+        );
+      }
     }
-    
-    // Filter by due_date range and status locally to avoid composite index requirement
-    final filtered = invoices.where((inv) {
-      if (inv.status != 'UNPAID' && inv.status != 'PARTIAL') return false;
-      if (inv.dueDate == null) return false;
-      return inv.dueDate!.isAfter(startTimestamp.toDate().subtract(const Duration(seconds: 1))) && 
-             inv.dueDate!.isBefore(endTimestamp.toDate().add(const Duration(seconds: 1)));
-    }).toList();
 
-    // Sort by due date
-    filtered.sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
+    // Sort by student name
+    arrears.sort((a, b) => a.studentName.compareTo(b.studentName));
 
-    return filtered;
+    return (payments: parsedPayments, arrears: arrears);
   }
 
   // Get stream of invoices for a specific student in a specific academic year and class
@@ -93,6 +125,68 @@ class InvoiceService {
       });
       return invoices;
     });
+  }
+
+  // Fetch invoices for a specific student (Future for efficiency)
+  Future<List<Invoice>> fetchStudentInvoices(String schoolId, String academicYearId, String classId, String studentId, {Source source = Source.serverAndCache}) async {
+    final snapshot = await _db
+        .collection('schools')
+        .doc(schoolId)
+        .collection('transactions_year')
+        .doc(academicYearId)
+        .collection('invoices')
+        .doc(classId)
+        .collection('invoices_class_data')
+        .doc(studentId)
+        .collection('invoice_data')
+        .get(GetOptions(source: source));
+        
+    var invoices = snapshot.docs.map((doc) => Invoice.fromFirestore(doc)).toList();
+    invoices.sort((a, b) {
+      int weight(String status) => status == 'PAID' ? 0 : status == 'PARTIAL' ? 1 : 2;
+      int statusCmp = weight(a.status).compareTo(weight(b.status));
+      if (statusCmp != 0) return statusCmp;
+      return (a.dueDate ?? DateTime.now()).compareTo(b.dueDate ?? DateTime.now());
+    });
+    return invoices;
+  }
+
+  // Fetch paginated invoices for a specific student
+  Future<List<Invoice>> fetchStudentInvoicesPaginated(
+      String schoolId, String academicYearId, String classId, String studentId,
+      {required bool isPaid, int? limitCount}) async {
+    Query query = _db
+        .collection('schools')
+        .doc(schoolId)
+        .collection('transactions_year')
+        .doc(academicYearId)
+        .collection('invoices')
+        .doc(classId)
+        .collection('invoices_class_data')
+        .doc(studentId)
+        .collection('invoice_data');
+
+    if (isPaid) {
+      query = query.where('status', isEqualTo: 'PAID');
+    } else {
+      query = query.where('status', whereIn: ['UNPAID', 'PARTIAL']);
+    }
+
+    // Hapus orderBy untuk menghindari error composite index
+    // query = query.orderBy('due_date', descending: false);
+
+    final snapshot = await query.get();
+    var invoices = snapshot.docs.map((doc) => Invoice.fromFirestore(doc as DocumentSnapshot<Map<String, dynamic>>)).toList();
+
+    // Sort locally by due_date
+    invoices.sort((a, b) => (a.dueDate ?? DateTime.now()).compareTo(b.dueDate ?? DateTime.now()));
+
+    // Apply limit locally
+    if (limitCount != null && invoices.length > limitCount) {
+      invoices = invoices.take(limitCount).toList();
+    }
+
+    return invoices;
   }
 
   // Create manual invoice

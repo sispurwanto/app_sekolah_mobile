@@ -137,6 +137,20 @@ class DashboardScreen extends StatelessWidget {
                     },
                   ),
                   ListTile(
+                    leading: const Icon(Icons.face),
+                    title: const Text('Siswa Lulus / Nonaktif'),
+                    contentPadding: const EdgeInsets.only(left: 40),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const StudentListScreen(activeOnly: false),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
                     leading: const Icon(Icons.class_),
                     title: const Text('Data Kelas'),
                     contentPadding: const EdgeInsets.only(left: 40),

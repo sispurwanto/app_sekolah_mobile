@@ -13,6 +13,7 @@ import 'payment_dialog.dart';
 import 'payment_history_dialog.dart';
 import 'bulk_payment_dialog.dart';
 import '../../../core/utils/snackbar_utils.dart';
+import '../../../core/widgets/empty_state_widget.dart';
 
 class InvoiceListScreen extends StatefulWidget {
   final String? studentId;
@@ -30,11 +31,76 @@ class InvoiceListScreen extends StatefulWidget {
   State<InvoiceListScreen> createState() => _InvoiceListScreenState();
 }
 
-class _InvoiceListScreenState extends State<InvoiceListScreen> {
+class _InvoiceListScreenState extends State<InvoiceListScreen> with SingleTickerProviderStateMixin {
   final InvoiceService _invoiceService = InvoiceService();
+  late TabController _tabController;
   final Set<String> _selectedInvoiceIds = {};
   final List<Invoice> _selectedInvoices = [];
   String _filterStatus = 'SEMUA'; // SEMUA, BELUM LUNAS, LUNAS
+  Future<List<Invoice>>? _invoicesFuture;
+  String _currentSchoolId = '';
+  String _currentYearId = '';
+
+  Future<List<Invoice>>? _unpaidFuture;
+  Future<List<Invoice>>? _paidFuture;
+  bool _showAllUnpaid = false;
+  bool _showAllPaid = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.index == 1 && _paidFuture == null && widget.studentId != null) {
+        _loadPaid();
+      }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // We will initialize _invoicesFuture after AcademicYear is loaded.
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _loadUnpaid() {
+    setState(() {
+      _unpaidFuture = _invoiceService.fetchStudentInvoicesPaginated(
+        _currentSchoolId, _currentYearId, widget.classId!, widget.studentId!,
+        isPaid: false, limitCount: _showAllUnpaid ? null : 2,
+      );
+    });
+  }
+
+  void _loadPaid() {
+    setState(() {
+      _paidFuture = _invoiceService.fetchStudentInvoicesPaginated(
+        _currentSchoolId, _currentYearId, widget.classId!, widget.studentId!,
+        isPaid: true, limitCount: _showAllPaid ? null : 2,
+      );
+    });
+  }
+
+  void _loadInvoices(String schoolId, String yearIdToUse) {
+    setState(() {
+      _currentSchoolId = schoolId;
+      _currentYearId = yearIdToUse;
+      if (widget.studentId != null) {
+        _loadUnpaid();
+        if (_tabController.index == 1 || _paidFuture != null) {
+          _loadPaid();
+        }
+      } else {
+        _invoicesFuture = _invoiceService.fetchAllInvoices(schoolId, yearIdToUse);
+      }
+    });
+  }
 
   void _toggleSelection(Invoice invoice) {
     setState(() {
@@ -73,6 +139,13 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.studentId != null ? 'Tagihan Siswa' : 'Daftar Semua Tagihan'),
+        bottom: widget.studentId != null ? TabBar(
+          controller: _tabController,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          indicatorColor: Colors.white,
+          tabs: const [Tab(text: 'Belum Lunas'), Tab(text: 'Lunas')],
+        ) : null,
         actions: [
           if (_selectedInvoiceIds.isNotEmpty)
             IconButton(
@@ -102,18 +175,71 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
             return const Center(child: Text('Data Kelas Siswa tidak lengkap untuk mengambil tagihan.'));
           }
 
-          return StreamBuilder<List<Invoice>>(
-            stream: widget.studentId != null 
-                ? _invoiceService.getStudentInvoices(schoolId, yearIdToUse, widget.classId!, widget.studentId!)
-                : _invoiceService.getAllInvoices(schoolId, yearIdToUse),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
+          if (widget.studentId != null) {
+            if (_unpaidFuture == null || _currentYearId != yearIdToUse) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _loadInvoices(schoolId, yearIdToUse);
+              });
+              return const Center(child: CircularProgressIndicator());
+            }
 
-              if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
-              }
+            return TabBarView(
+              controller: _tabController,
+              children: [
+                _buildTabContent(
+                  future: _unpaidFuture!, 
+                  showAll: _showAllUnpaid, 
+                  onShowAll: () {
+                    setState(() {
+                      _showAllUnpaid = true;
+                      _loadUnpaid();
+                    });
+                  },
+                  canManageInvoices: canManageInvoices,
+                  schoolId: schoolId,
+                  yearIdToUse: yearIdToUse,
+                ),
+                _paidFuture == null 
+                  ? const Center(child: CircularProgressIndicator())
+                  : _buildTabContent(
+                      future: _paidFuture!, 
+                      showAll: _showAllPaid, 
+                      onShowAll: () {
+                        setState(() {
+                          _showAllPaid = true;
+                          _loadPaid();
+                        });
+                      },
+                      canManageInvoices: canManageInvoices,
+                      schoolId: schoolId,
+                      yearIdToUse: yearIdToUse,
+                    ),
+              ],
+            );
+          }
+
+          if (_invoicesFuture == null || _currentYearId != yearIdToUse) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _loadInvoices(schoolId, yearIdToUse);
+            });
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              _loadInvoices(schoolId, yearIdToUse);
+              await _invoicesFuture;
+            },
+            child: FutureBuilder<List<Invoice>>(
+              future: _invoicesFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
 
               final invoices = snapshot.data ?? [];
 
@@ -144,104 +270,21 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                     ),
                   ),
                   if (filteredInvoices.isEmpty)
-                    const Expanded(child: Center(child: Text('Tidak ada tagihan untuk filter ini.')))
+                    const Expanded(child: EmptyStateWidget(
+                      icon: Icons.receipt_long,
+                      title: 'Tidak ada tagihan',
+                      subtitle: 'Tidak ada tagihan yang sesuai dengan filter ini.',
+                    ))
                   else
                     Expanded(
-                      child: ListView.builder(
-                        itemCount: filteredInvoices.length,
-                        itemBuilder: (context, index) {
-                          final invoice = filteredInvoices[index];
-                  final isSelected = _selectedInvoiceIds.contains(invoice.id);
-                  final isSelectable = invoice.status != 'PAID';
-                  final dueStr = invoice.dueDate != null ? DateFormat('dd/MM/yy').format(invoice.dueDate!) : '-';
-                  final isOverdue = invoice.dueDate != null && invoice.dueDate!.isBefore(DateTime.now());
-                  final dueColor = isOverdue && invoice.status != 'PAID' ? Colors.red : null;
-
-                  return Card(
-                    color: isSelected ? Colors.blue.shade50 : null,
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: ListTile(
-                      leading: isSelectable 
-                          ? Checkbox(
-                              value: isSelected,
-                              onChanged: (val) {
-                                _toggleSelection(invoice);
-                              },
-                            )
-                          : const Icon(Icons.check_circle, color: Colors.green),
-                      title: Text(invoice.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: RichText(
-                        text: TextSpan(
-                          style: DefaultTextStyle.of(context).style.copyWith(height: 1.5),
-                          children: [
-                            TextSpan(text: 'Siswa: ${invoice.studentName}\nTotal: ${CurrencyUtils.formatRp(invoice.amount)} | Dibayar: ${CurrencyUtils.formatRp(invoice.paidAmount)}\nStatus: '),
-                            TextSpan(
-                              text: invoice.status,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: invoice.status == 'PAID' ? Colors.green : (invoice.status == 'UNPAID' ? Colors.red : Colors.orange),
-                              ),
-                            ),
-                            const TextSpan(text: '\nJatuh Tempo: '),
-                            TextSpan(
-                              text: dueStr,
-                              style: TextStyle(
-                                color: dueColor, 
-                                fontWeight: isOverdue && invoice.status != 'PAID' ? FontWeight.bold : null,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      isThreeLine: true,
-                      onTap: isSelectable ? () => _toggleSelection(invoice) : null,
-                      trailing: PopupMenuButton<String>(
-                        onSelected: (value) {
-                          if (value == 'edit') {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => InvoiceFormScreen(invoice: invoice)),
-                            );
-                          } else if (value == 'pay') {
-                            showDialog(
-                              context: context,
-                              builder: (context) => PaymentDialog(invoice: invoice),
-                            );
-                          } else if (value == 'view_payments') {
-                            showDialog(
-                              context: context,
-                              builder: (context) => PaymentHistoryDialog(invoice: invoice),
-                            );
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          if (invoice.status != 'PAID' && _selectedInvoiceIds.isEmpty)
-                            PopupMenuItem(
-                              value: 'pay',
-                              child: Text(canManageInvoices ? 'Terima Pembayaran' : 'Bayar via Transfer'),
-                            ),
-                          if (invoice.paidAmount > 0)
-                            const PopupMenuItem(
-                              value: 'view_payments',
-                              child: Text('Riwayat Pembayaran'),
-                            ),
-                          if (canManageInvoices && invoice.status != 'PAID')
-                            const PopupMenuItem(
-                              value: 'edit',
-                              child: Text('Edit Tagihan'),
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-                      ),
+                      child: _buildInvoiceList(filteredInvoices, canManageInvoices),
                     ),
                 ],
               );
             },
-          );
-        }
+          ),
+        );
+      },
       ),
       floatingActionButton: _selectedInvoiceIds.isNotEmpty
           ? FloatingActionButton.extended(
@@ -252,6 +295,12 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                 );
                 if (success == true) {
                   _clearSelection();
+                  if (widget.studentId != null) {
+                    _loadUnpaid();
+                    _loadPaid();
+                  } else {
+                    _loadInvoices(_currentSchoolId, _currentYearId);
+                  }
                 }
               },
               icon: const Icon(Icons.payment),
@@ -267,11 +316,159 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                           studentId: widget.studentId,
                         ),
                       ),
-                    );
+                    ).then((_) {
+                      if (widget.studentId != null) {
+                        _loadUnpaid();
+                      } else {
+                        _loadInvoices(_currentSchoolId, _currentYearId);
+                      }
+                    });
                   },
                   child: const Icon(Icons.add),
                 )
               : null),
+    );
+  }
+
+  Widget _buildTabContent({
+    required Future<List<Invoice>> future, 
+    required bool showAll, 
+    required VoidCallback onShowAll,
+    required bool canManageInvoices,
+    required String schoolId,
+    required String yearIdToUse,
+  }) {
+    return RefreshIndicator(
+      onRefresh: () async {
+        _loadInvoices(schoolId, yearIdToUse);
+        await future;
+      },
+      child: FutureBuilder<List<Invoice>>(
+        future: future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+
+          final invoices = snapshot.data ?? [];
+
+          return Column(
+            children: [
+              Expanded(
+                child: invoices.isEmpty 
+                  ? const EmptyStateWidget(
+                      icon: Icons.receipt_long,
+                      title: 'Tidak ada tagihan',
+                    )
+                  : _buildInvoiceList(invoices, canManageInvoices),
+              ),
+              if (!showAll && invoices.length == 2)
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: TextButton(
+                    onPressed: onShowAll,
+                    child: const Text('Lihat Semua'),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildInvoiceList(List<Invoice> invoices, bool canManageInvoices) {
+    return ListView.builder(
+      itemCount: invoices.length,
+      itemBuilder: (context, index) {
+        final invoice = invoices[index];
+        final isSelected = _selectedInvoiceIds.contains(invoice.id);
+        final isSelectable = invoice.status != 'PAID';
+        final dueStr = invoice.dueDate != null ? DateFormat('dd/MM/yy').format(invoice.dueDate!) : '-';
+        final isOverdue = invoice.dueDate != null && invoice.dueDate!.isBefore(DateTime.now());
+        final dueColor = isOverdue && invoice.status != 'PAID' ? Colors.red : null;
+
+        return Card(
+          color: isSelected ? Colors.blue.shade50 : null,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: ListTile(
+            leading: isSelectable 
+                ? Checkbox(
+                    value: isSelected,
+                    onChanged: (val) {
+                      _toggleSelection(invoice);
+                    },
+                  )
+                : const Icon(Icons.check_circle, color: Colors.green),
+            title: Text(invoice.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: RichText(
+              text: TextSpan(
+                style: DefaultTextStyle.of(context).style.copyWith(height: 1.5),
+                children: [
+                  TextSpan(text: 'Siswa: ${invoice.studentName}\nTotal: ${CurrencyUtils.formatRp(invoice.amount)} | Dibayar: ${CurrencyUtils.formatRp(invoice.paidAmount)}\nStatus: '),
+                  TextSpan(
+                    text: invoice.status,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: invoice.status == 'PAID' ? Colors.green : (invoice.status == 'UNPAID' ? Colors.red : Colors.orange),
+                    ),
+                  ),
+                  const TextSpan(text: '\nJatuh Tempo: '),
+                  TextSpan(
+                    text: dueStr,
+                    style: TextStyle(
+                      color: dueColor, 
+                      fontWeight: isOverdue && invoice.status != 'PAID' ? FontWeight.bold : null,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            isThreeLine: true,
+            onTap: isSelectable ? () => _toggleSelection(invoice) : null,
+            trailing: PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'edit') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => InvoiceFormScreen(invoice: invoice)),
+                  ).then((_) => _loadInvoices(_currentSchoolId, _currentYearId));
+                } else if (value == 'pay') {
+                  showDialog(
+                    context: context,
+                    builder: (context) => PaymentDialog(invoice: invoice),
+                  ).then((_) => _loadInvoices(_currentSchoolId, _currentYearId));
+                } else if (value == 'view_payments') {
+                  showDialog(
+                    context: context,
+                    builder: (context) => PaymentHistoryDialog(invoice: invoice),
+                  );
+                }
+              },
+              itemBuilder: (context) => [
+                if (invoice.status != 'PAID' && _selectedInvoiceIds.isEmpty)
+                  PopupMenuItem(
+                    value: 'pay',
+                    child: Text(canManageInvoices ? 'Terima Pembayaran' : 'Bayar via Transfer'),
+                  ),
+                if (invoice.paidAmount > 0)
+                  const PopupMenuItem(
+                    value: 'view_payments',
+                    child: Text('Riwayat Pembayaran'),
+                  ),
+                if (canManageInvoices && invoice.status != 'PAID')
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Text('Edit Tagihan'),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
