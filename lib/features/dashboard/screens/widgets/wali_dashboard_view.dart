@@ -7,6 +7,8 @@ import '../../../../core/models/app_user.dart';
 import '../../../student_management/services/student_service.dart';
 import '../../../../core/models/student.dart';
 import '../../../invoices/screens/invoice_list_screen.dart';
+import '../../../../core/utils/snackbar_utils.dart';
+import '../../../savings/screens/savings_screen.dart';
 
 class WaliDashboardView extends StatelessWidget {
   const WaliDashboardView({super.key});
@@ -71,23 +73,62 @@ class WaliDashboardView extends StatelessWidget {
 
                       return Card(
                         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        child: ListTile(
-                          leading: const CircleAvatar(child: Icon(Icons.face)),
-                          title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text('Kelas: ${student.classId} | NIS: ${student.nis}'),
-                          trailing: const Icon(Icons.arrow_forward_ios),
-                          onTap: () {
-                            Navigator.push(
-                              context, 
-                              MaterialPageRoute(
-                                builder: (c) => InvoiceListScreen(
-                                  studentId: childId,
-                                  academicYearId: null, // Will automatically use active year in InvoiceListScreen
-                                  classId: student.classId,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            children: [
+                              ListTile(
+                                leading: const CircleAvatar(child: Icon(Icons.face)),
+                                title: Text(student.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                subtitle: Text('Kelas: ${student.classId} | NIS: ${student.nis}'),
+                              ),
+                              const Divider(),
+                              SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Row(
+                                  children: [
+                                    _buildActionButton(context, Icons.receipt_long, 'Tagihan', () {
+                                      Navigator.push(
+                                        context, 
+                                        MaterialPageRoute(
+                                          builder: (c) => InvoiceListScreen(
+                                            studentId: childId,
+                                            academicYearId: null, // Will automatically use active year in InvoiceListScreen
+                                            classId: student.classId,
+                                          ),
+                                        ),
+                                      );
+                                    }, Colors.blue),
+                                    const SizedBox(width: 8),
+                                    _buildActionButton(context, Icons.account_balance_wallet, 'Tabungan', () {
+                                      Navigator.push(
+                                        context, 
+                                        MaterialPageRoute(
+                                          builder: (c) => SavingsScreen(
+                                            studentId: childId,
+                                            studentName: student.name,
+                                            classId: student.classId,
+                                          ),
+                                        ),
+                                      );
+                                    }, Colors.teal),
+                                    // const SizedBox(width: 8),
+                                    // _buildActionButton(context, Icons.assignment, 'Ulangan', () {
+                                    //   SnackbarUtils.showErrorSnackbar('Modul Ulangan sedang dalam pengembangan');
+                                    // }, Colors.green),
+                                    // const SizedBox(width: 8),
+                                    // _buildActionButton(context, Icons.library_books, 'Raport', () {
+                                    //   SnackbarUtils.showErrorSnackbar('Modul Raport sedang dalam pengembangan');
+                                    // }, Colors.orange),
+                                    // const SizedBox(width: 8),
+                                    // _buildActionButton(context, Icons.fact_check, 'Absensi', () {
+                                    //   SnackbarUtils.showErrorSnackbar('Modul Absensi sedang dalam pengembangan');
+                                    // }, Colors.purple),
+                                  ],
                                 ),
                               ),
-                            );
-                          },
+                            ],
+                          ),
                         ),
                       );
                     },
@@ -98,6 +139,24 @@ class WaliDashboardView extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildActionButton(BuildContext context, IconData icon, String label, VoidCallback onTap, Color color) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 4),
+            Text(label, style: const TextStyle(fontSize: 10)),
+          ],
+        ),
+      ),
     );
   }
 }

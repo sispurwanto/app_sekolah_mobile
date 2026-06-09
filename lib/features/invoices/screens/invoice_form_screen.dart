@@ -7,6 +7,8 @@ import '../services/invoice_service.dart';
 import '../../master_data/services/academic_year_service.dart';
 import '../../student_management/services/student_service.dart';
 import '../../../core/utils/snackbar_utils.dart';
+import '../../../core/utils/currency_input_formatter.dart';
+import 'package:intl/intl.dart';
 import '../../../core/utils/dialog_utils.dart';
 import '../../../core/components/custom_button.dart';
 
@@ -40,7 +42,11 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
     _studentNameController = TextEditingController(text: widget.invoice?.studentName ?? '');
     _studentIdController = TextEditingController(text: widget.invoice?.studentId ?? widget.studentId ?? '');
     _titleController = TextEditingController(text: widget.invoice?.title ?? '');
-    _amountController = TextEditingController(text: widget.invoice?.amount.toStringAsFixed(0) ?? '');
+    _amountController = TextEditingController();
+    if (widget.invoice != null) {
+      final formatter = NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0);
+      _amountController.text = formatter.format(widget.invoice!.amount).trim();
+    }
 
     if (widget.invoice != null) {
       _status = widget.invoice!.status;
@@ -223,7 +229,7 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
                       controller: _amountController,
                       decoration: const InputDecoration(labelText: 'Nominal (Rp) *'),
                       keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      inputFormatters: [CurrencyInputFormatter()],
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
                     const SizedBox(height: 16),

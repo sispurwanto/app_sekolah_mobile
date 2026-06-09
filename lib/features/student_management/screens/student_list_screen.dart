@@ -5,6 +5,7 @@ import '../../../core/providers/school_provider.dart';
 import '../../../core/providers/user_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/student_service.dart';
+import '../../savings/screens/savings_screen.dart';
 import '../../master_data/services/class_service.dart';
 import '../../../core/models/app_class.dart';
 import '../../../core/models/invoice.dart';
@@ -168,7 +169,14 @@ class _StudentListScreenState extends State<StudentListScreen> {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
 
-          var students = snapshot.data ?? [];
+          final allStudents = snapshot.data ?? [];
+          
+          final allCount = allStudents.length;
+          final activeCount = allStudents.where((s) => s.status == 'ACTIVE').length;
+          final inactiveCount = allStudents.where((s) => s.status == 'INACTIVE').length;
+          final gradCount = allStudents.where((s) => s.status == 'GRADUATED').length;
+
+          var students = allStudents;
           
           if (_statusFilter != 'SEMUA') {
             students = students.where((s) => s.status == _statusFilter).toList();
@@ -193,11 +201,11 @@ class _StudentListScreenState extends State<StudentListScreen> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                 child: SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(value: 'SEMUA', label: Text('Semua', style: TextStyle(fontSize: 12))),
-                    ButtonSegment(value: 'ACTIVE', label: Text('Aktif', style: TextStyle(fontSize: 12))),
-                    ButtonSegment(value: 'INACTIVE', label: Text('Nonaktif', style: TextStyle(fontSize: 12))),
-                    ButtonSegment(value: 'GRADUATED', label: Text('Lulus', style: TextStyle(fontSize: 12))),
+                  segments: [
+                    ButtonSegment(value: 'SEMUA', label: Text('Semua ($allCount)', style: const TextStyle(fontSize: 10))),
+                    ButtonSegment(value: 'ACTIVE', label: Text('Aktif ($activeCount)', style: const TextStyle(fontSize: 10))),
+                    ButtonSegment(value: 'INACTIVE', label: Text('Nonaktif ($inactiveCount)', style: const TextStyle(fontSize: 10))),
+                    ButtonSegment(value: 'GRADUATED', label: Text('Lulus ($gradCount)', style: const TextStyle(fontSize: 10))),
                   ],
                   selected: {_statusFilter},
                   onSelectionChanged: (Set<String> newSelection) {
@@ -276,21 +284,30 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                       ),
                                     );
                                   }, Colors.blue),
-                                  const SizedBox(width: 8),
-                                  _buildActionButton(context, Icons.assignment, 'Ulangan', () {
-                                    SnackbarUtils.showErrorSnackbar('Modul Ulangan sedang dalam pengembangan');
-                                  }, Colors.green),
-                                  const SizedBox(width: 8),
-                                  _buildActionButton(context, Icons.library_books, 'Raport', () {
-                                    SnackbarUtils.showErrorSnackbar('Modul Raport sedang dalam pengembangan');
-                                  }, Colors.orange),
-                                  const SizedBox(width: 8),
-                                  _buildActionButton(context, Icons.fact_check, 'Absensi', () {
-                                    SnackbarUtils.showErrorSnackbar('Modul Absensi sedang dalam pengembangan');
-                                  }, Colors.purple),
+                                  // const SizedBox(width: 8),
+                                  // _buildActionButton(context, Icons.assignment, 'Ulangan', () {
+                                  //   SnackbarUtils.showErrorSnackbar('Modul Ulangan sedang dalam pengembangan');
+                                  // }, Colors.green),
+                                  // const SizedBox(width: 8),
+                                  // _buildActionButton(context, Icons.library_books, 'Raport', () {
+                                  //   SnackbarUtils.showErrorSnackbar('Modul Raport sedang dalam pengembangan');
+                                  // }, Colors.orange),
+                                  // const SizedBox(width: 8),
+                                  // _buildActionButton(context, Icons.fact_check, 'Absensi', () {
+                                  //   SnackbarUtils.showErrorSnackbar('Modul Absensi sedang dalam pengembangan');
+                                  // }, Colors.purple),
                                   const SizedBox(width: 8),
                                   _buildActionButton(context, Icons.account_balance_wallet, 'Tabungan', () {
-                                    SnackbarUtils.showErrorSnackbar('Modul Tabungan sedang dalam pengembangan');
+                                    Navigator.push(
+                                      context, 
+                                      MaterialPageRoute(
+                                        builder: (c) => SavingsScreen(
+                                          studentId: student.id,
+                                          studentName: student.name,
+                                          classId: student.classId,
+                                        ),
+                                      ),
+                                    );
                                   }, Colors.teal),
                                 ],
                               ),

@@ -5,7 +5,9 @@ import '../../../core/models/app_class.dart';
 import '../../../core/providers/school_provider.dart';
 import '../services/fee_template_service.dart';
 import '../services/class_service.dart';
-import '../../../core/utils/snackbar_utils.dart';
+import '../../../../core/utils/snackbar_utils.dart';
+import '../../../../core/utils/currency_input_formatter.dart';
+import 'package:intl/intl.dart';
 import '../../../core/utils/dialog_utils.dart';
 import 'package:flutter/services.dart';
 import '../../../core/components/custom_button.dart';
@@ -38,9 +40,16 @@ class _FeeTemplateFormScreenState extends State<FeeTemplateFormScreen> {
     super.initState();
     _idController = TextEditingController(text: widget.template?.id ?? '');
     _titleController = TextEditingController(text: widget.template?.title ?? '');
-    _amountController = TextEditingController(text: widget.template?.amount.toStringAsFixed(0) ?? '');
+    _amountController = TextEditingController();
     _dueDateDayController = TextEditingController(text: widget.template?.dueDateDay?.toString() ?? '');
-    _classId = widget.template?.classId;
+    
+    if (widget.template != null) {
+      _titleController.text = widget.template!.title;
+      final formatter = NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0);
+      _amountController.text = formatter.format(widget.template!.amount).trim();
+      _classId = widget.template!.classId;
+    }
+    
     _frequency = widget.template?.frequency ?? 'ONCE';
     _exactDueDate = widget.template?.exactDueDate;
   }
@@ -165,7 +174,7 @@ class _FeeTemplateFormScreenState extends State<FeeTemplateFormScreen> {
                       controller: _amountController,
                       decoration: const InputDecoration(labelText: 'Nominal (Rp) *'),
                       keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      inputFormatters: [CurrencyInputFormatter()],
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
                     const SizedBox(height: 16),

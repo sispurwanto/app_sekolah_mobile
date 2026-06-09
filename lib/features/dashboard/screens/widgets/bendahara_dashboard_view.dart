@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../student_management/screens/student_list_screen.dart';
 import '../../../invoices/screens/payment_validation_screen.dart';
+import '../../../savings/screens/savings_report_screen.dart';
 
 class BendaharaDashboardView extends StatelessWidget {
   const BendaharaDashboardView({super.key});
@@ -46,6 +47,18 @@ class BendaharaDashboardView extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const PaymentValidationScreen()),
+                  );
+                },
+              ),
+              _buildMenuCard(
+                context,
+                title: 'Laporan Tabungan',
+                icon: Icons.account_balance_wallet,
+                color: Colors.teal,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SavingsReportScreen()),
                   );
                 },
               ),

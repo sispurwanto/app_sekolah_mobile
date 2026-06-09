@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../../core/models/invoice.dart';
 import '../../../core/models/payment.dart';
 import '../../../core/utils/currency_utils.dart';
+import '../../../core/utils/currency_input_formatter.dart';
+import 'package:intl/intl.dart';
 import '../../../core/providers/school_provider.dart';
 import '../../../core/providers/user_provider.dart';
 import '../services/payment_service.dart';
@@ -33,7 +35,8 @@ class _PaymentDialogState extends State<PaymentDialog> {
   void initState() {
     super.initState();
     final remaining = widget.invoice.amount - widget.invoice.paidAmount;
-    _amountController.text = remaining.toStringAsFixed(0);
+    final formatter = NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0);
+    _amountController.text = formatter.format(remaining).trim();
   }
 
   @override
@@ -133,7 +136,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
             labelText: 'Nominal Bayar (Rp)',
             helperText: 'Bisa diedit jika ingin membayar sebagian/cicilan',
             keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            inputFormatters: [CurrencyInputFormatter()],
           ),
           if (!isBendahara) ...[
             FutureBuilder<School?>(

@@ -8,6 +8,7 @@ import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../../core/models/payment.dart';
 import '../../../core/models/invoice.dart';
+import '../../../core/models/savings.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../../core/utils/currency_utils.dart';
 import '../../../core/utils/snackbar_utils.dart';
@@ -190,6 +191,96 @@ class ExportService {
         if (context.mounted) {
           SnackbarUtils.showSnackbar('Membuka file Excel...');
           await Share.shareXFiles([XFile(path)], text: 'Laporan Tunggakan');
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        SnackbarUtils.showErrorSnackbar('Gagal export Excel: $e');
+      }
+    }
+  }
+
+  // EXPORT PDF TABUNGAN
+  Future<void> exportSavingsPdf(BuildContext context, List<SavingsSummary> summaries) async {
+    final pdf = pw.Document();
+
+    double total = summaries.fold(0, (sum, s) => sum + s.balance);
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        build: (pw.Context ctx) {
+          return [
+            pw.Header(
+              level: 0,
+              child: pw.Text('Laporan Tabungan Siswa', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+            ),
+            pw.Text('Tanggal Cetak: ${dateFormat.format(DateTime.now())}'),
+            pw.Text('Total Tabungan: ${CurrencyUtils.formatRp(total)}', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.green)),
+            pw.SizedBox(height: 20),
+            pw.TableHelper.fromTextArray(
+              context: ctx,
+              headers: ['Nama Siswa', 'Kelas', 'Total Nabung', 'Total Tarik', 'Saldo Akhir'],
+              data: summaries.map((s) => [
+                s.studentName,
+                s.classId,
+                CurrencyUtils.formatRp(s.totalDeposit),
+                CurrencyUtils.formatRp(s.totalWithdrawal),
+                CurrencyUtils.formatRp(s.balance),
+              ]).toList(),
+            ),
+          ];
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdf.save(),
+      name: 'Laporan_Tabungan_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
+    );
+  }
+
+  // EXPORT EXCEL TABUNGAN
+  Future<void> exportSavingsExcel(BuildContext context, List<SavingsSummary> summaries) async {
+    try {
+      var excel = Excel.createExcel();
+      var sheet = excel['Tabungan'];
+      excel.setDefaultSheet('Tabungan');
+
+      sheet.appendRow([TextCellValue('Laporan Tabungan Siswa')]);
+      sheet.appendRow([TextCellValue('Tanggal Cetak: ${dateFormat.format(DateTime.now())}')]);
+      sheet.appendRow([TextCellValue('')]);
+      
+      sheet.appendRow([
+        TextCellValue('Nama Siswa'),
+        TextCellValue('Kelas'),
+        TextCellValue('Total Nabung'),
+        TextCellValue('Total Tarik'),
+        TextCellValue('Saldo Akhir'),
+      ]);
+
+      for (var s in summaries) {
+        sheet.appendRow([
+          TextCellValue(s.studentName),
+          TextCellValue(s.classId),
+          DoubleCellValue(s.totalDeposit),
+          DoubleCellValue(s.totalWithdrawal),
+          DoubleCellValue(s.balance),
+        ]);
+      }
+
+      var fileBytes = excel.save();
+      if (fileBytes != null) {
+        final directory = await getApplicationDocumentsDirectory();
+        final path = '${directory.path}/Laporan_Tabungan_${DateFormat('yyyyMMdd').format(DateTime.now())}.xlsx';
+        File(path)
+          ..createSync(recursive: true)
+          ..writeAsBytesSync(fileBytes);
+        
+        if (context.mounted) {
+          SnackbarUtils.showSnackbar('Membuka file Excel...');
+          await Share.shareXFiles([XFile(path)], text: 'Laporan Tabungan');
         }
       }
     } catch (e) {

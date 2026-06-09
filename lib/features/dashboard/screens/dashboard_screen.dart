@@ -11,8 +11,9 @@ import '../../student_management/screens/student_list_screen.dart';
 import '../../master_data/screens/class_list_screen.dart';
 import '../../master_data/screens/academic_year_list_screen.dart';
 import '../../master_data/screens/fee_template_list_screen.dart';
-import 'widgets/wali_dashboard_view.dart';
 import '../../reports/screens/financial_report_screen.dart';
+import '../../savings/screens/savings_report_screen.dart';
+import 'widgets/wali_dashboard_view.dart';
 import 'widgets/bendahara_dashboard_view.dart';
 import 'widgets/guru_dashboard_view.dart';
 
@@ -184,18 +185,39 @@ class DashboardScreen extends StatelessWidget {
               Column(
                 children: [
                   const Divider(),
-                  ListTile(
+                  ExpansionTile(
                     leading: const Icon(Icons.analytics),
-                    title: const Text('Laporan Keuangan'),
-                    onTap: () {
-                      Navigator.pop(context); // Close drawer
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const FinancialReportScreen(),
-                        ),
-                      );
-                    },
+                    title: const Text('Laporan'),
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.monetization_on),
+                        title: const Text('Laporan Keuangan'),
+                        contentPadding: const EdgeInsets.only(left: 40),
+                        onTap: () {
+                          Navigator.pop(context); // Close drawer
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const FinancialReportScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      ListTile(
+                        leading: const Icon(Icons.account_balance_wallet),
+                        title: const Text('Laporan Tabungan'),
+                        contentPadding: const EdgeInsets.only(left: 40),
+                        onTap: () {
+                          Navigator.pop(context); // Close drawer
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SavingsReportScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),

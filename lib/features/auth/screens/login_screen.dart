@@ -41,6 +41,61 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _showResetPasswordDialog() {
+    final resetEmailController = TextEditingController(text: _emailController.text);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Reset Password'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Masukkan email Anda untuk menerima link reset password:'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: resetEmailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.emailAddress,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final email = resetEmailController.text.trim();
+                if (email.isEmpty) {
+                  SnackbarUtils.showErrorSnackbar('Email harus diisi!');
+                  return;
+                }
+                Navigator.pop(context);
+                try {
+                  final authService = Provider.of<AuthService>(context, listen: false);
+                  await authService.sendPasswordResetEmail(email);
+                  if (mounted) {
+                    SnackbarUtils.showSnackbar('Link reset password telah dikirim ke $email');
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    SnackbarUtils.showErrorSnackbar('Gagal mengirim link reset: $e');
+                  }
+                }
+              },
+              child: const Text('Kirim'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -57,9 +112,9 @@ class _LoginScreenState extends State<LoginScreen> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFFE3F2FD), // Light blue
-              Color(0xFFBBDEFB), // Slightly darker blue
-              Color(0xFFE8F5E9), // Light green tint for 'school/growth' feel
+              Color(0xFFE8F5E9), // Light green
+              Color(0xFFC8E6C9), // Slightly darker green
+              Color(0xFFA5D6A7), // Green tint
             ],
           ),
         ),
@@ -90,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              color: Colors.blueAccent,
+                              color: Colors.green,
                             ),
                           ),
                         ],
@@ -146,7 +201,15 @@ class _LoginScreenState extends State<LoginScreen> {
                           isLoading: _isLoading,
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
+                      TextButton(
+                        onPressed: _showResetPasswordDialog,
+                        child: const Text(
+                          'Lupa Password?',
+                          style: TextStyle(color: Colors.green),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
                       const Text(
                         'Versi 1.0',
                         style: TextStyle(fontSize: 12, color: Colors.grey),
