@@ -221,6 +221,16 @@ class _SavingsScreenState extends State<SavingsScreen> {
             },
           ),
           // Transactions List
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Riwayat Transaksi (30 Hari Terakhir)',
+                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+              ),
+            ),
+          ),
           Expanded(
             child: StreamBuilder<List<SavingsTransaction>>(
               stream: _savingsService.getTransactionsStream(schoolId, widget.studentId),

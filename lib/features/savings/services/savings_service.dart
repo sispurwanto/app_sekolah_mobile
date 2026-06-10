@@ -29,12 +29,14 @@ class SavingsService {
 
   // Get stream of recent transactions for a student
   Stream<List<SavingsTransaction>> getTransactionsStream(String schoolId, String studentId) {
+    final oneMonthAgo = DateTime.now().subtract(const Duration(days: 30));
     return _db
         .collection('schools')
         .doc(schoolId)
         .collection('savings')
         .doc(studentId)
         .collection('transactions')
+        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(oneMonthAgo))
         .orderBy('date', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => SavingsTransaction.fromFirestore(doc)).toList());

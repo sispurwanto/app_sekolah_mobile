@@ -4,6 +4,7 @@ import '../../../core/providers/school_provider.dart';
 import '../../../core/providers/user_provider.dart';
 import '../../../core/utils/dialog_utils.dart';
 import '../../auth/services/auth_service.dart';
+import '../../help/screens/manual_book_screen.dart';
 import '../../school_management/screens/school_list_screen.dart';
 import '../../user_management/screens/user_list_screen.dart';
 import '../../user_management/screens/profile_screen.dart';
@@ -247,6 +248,18 @@ class DashboardScreen extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (context) => const ProfileScreen(),
                   ),
+                );
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.help_outline, color: Colors.blue),
+              title: const Text('Buku Panduan', style: TextStyle(color: Colors.blue)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ManualBookScreen()),
                 );
               },
             ),

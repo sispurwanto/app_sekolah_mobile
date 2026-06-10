@@ -9,6 +9,7 @@ import '../../invoices/services/payment_service.dart';
 import '../../invoices/services/invoice_service.dart';
 import '../../../core/models/academic_year.dart';
 import '../../master_data/services/academic_year_service.dart';
+import '../../../core/utils/snackbar_utils.dart';
 import '../services/export_service.dart';
 
 class FinancialReportScreen extends StatefulWidget {
@@ -106,6 +107,11 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
     );
 
     if (picked != null) {
+      if (picked.end.difference(picked.start).inDays > 30) {
+        SnackbarUtils.showErrorSnackbar('Rentang laporan maksimal 30 hari. Silakan pilih ulang.');
+        return;
+      }
+
       setState(() {
         _startDate = picked.start;
         _endDate = picked.end;

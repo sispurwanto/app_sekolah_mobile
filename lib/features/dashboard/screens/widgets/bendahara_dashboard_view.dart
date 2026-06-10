@@ -14,7 +14,7 @@ class BendaharaDashboardView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Menu Kasir & Pembayaran',
+            'Menu',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
@@ -34,7 +34,9 @@ class BendaharaDashboardView extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const StudentListScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const StudentListScreen(),
+                    ),
                   );
                 },
               ),
@@ -46,7 +48,9 @@ class BendaharaDashboardView extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const PaymentValidationScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const PaymentValidationScreen(),
+                    ),
                   );
                 },
               ),
@@ -58,7 +62,9 @@ class BendaharaDashboardView extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const SavingsReportScreen()),
+                    MaterialPageRoute(
+                      builder: (_) => const SavingsReportScreen(),
+                    ),
                   );
                 },
               ),
@@ -69,7 +75,13 @@ class BendaharaDashboardView extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuCard(BuildContext context, {required String title, required IconData icon, required Color color, required VoidCallback onTap}) {
+  Widget _buildMenuCard(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -86,7 +98,10 @@ class BendaharaDashboardView extends StatelessWidget {
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
