@@ -7,6 +7,7 @@ import '../../../../core/models/app_user.dart';
 import '../../../student_management/services/student_service.dart';
 import '../../../../core/models/student.dart';
 import '../../../invoices/screens/invoice_list_screen.dart';
+import '../../../activities/screens/student_activity_screen.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 import '../../../savings/screens/savings_screen.dart';
 
@@ -112,6 +113,18 @@ class WaliDashboardView extends StatelessWidget {
                                         ),
                                       );
                                     }, Colors.teal),
+                                    const SizedBox(width: 8),
+                                    _buildActionButton(context, Icons.local_activity, 'Kegiatan', () {
+                                      Navigator.push(
+                                        context, 
+                                        MaterialPageRoute(
+                                          builder: (c) => StudentActivityScreen(
+                                            student: student,
+                                            isReadOnly: true,
+                                          ),
+                                        ),
+                                      );
+                                    }, Colors.orange),
                                     // const SizedBox(width: 8),
                                     // _buildActionButton(context, Icons.assignment, 'Ulangan', () {
                                     //   SnackbarUtils.showErrorSnackbar('Modul Ulangan sedang dalam pengembangan');

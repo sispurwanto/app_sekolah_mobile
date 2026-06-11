@@ -12,10 +12,12 @@ import '../../student_management/screens/student_list_screen.dart';
 import '../../master_data/screens/class_list_screen.dart';
 import '../../master_data/screens/academic_year_list_screen.dart';
 import '../../master_data/screens/fee_template_list_screen.dart';
+import '../../master_data/screens/activity_master_list_screen.dart';
 import '../../reports/screens/financial_report_screen.dart';
 import '../../savings/screens/savings_report_screen.dart';
 import 'widgets/wali_dashboard_view.dart';
 import 'widgets/bendahara_dashboard_view.dart';
+import 'widgets/siswa_dashboard_view.dart';
 import 'widgets/guru_dashboard_view.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -73,7 +75,7 @@ class DashboardScreen extends StatelessWidget {
               title: const Text('Beranda'),
               onTap: () => Navigator.pop(context),
             ),
-            
+
             // Tombol Ganti Sekolah (jika user punya lebih dari 1 sekolah)
             if ((userMapping?.registeredSchools.length ?? 0) > 1)
               ListTile(
@@ -84,7 +86,7 @@ class DashboardScreen extends StatelessWidget {
                   context.read<SchoolProvider>().clearActiveSchool();
                 },
               ),
-            
+
             // Menu khusus SUPER_ADMIN dan ADMIN
             if (role == 'SUPER_ADMIN' || role == 'ADMIN')
               ListTile(
@@ -94,9 +96,7 @@ class DashboardScreen extends StatelessWidget {
                   Navigator.pop(context); // Close drawer
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => SchoolListScreen(),
-                    ),
+                    MaterialPageRoute(builder: (context) => SchoolListScreen()),
                   );
                 },
               ),
@@ -110,9 +110,7 @@ class DashboardScreen extends StatelessWidget {
                   Navigator.pop(context); // Close drawer
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => UserListScreen(),
-                    ),
+                    MaterialPageRoute(builder: (context) => UserListScreen()),
                   );
                 },
               ),
@@ -125,7 +123,7 @@ class DashboardScreen extends StatelessWidget {
                 children: [
                   ListTile(
                     leading: const Icon(Icons.face),
-                    title: const Text('Manajemen Siswa'),
+                    title: const Text('Siswa'),
                     contentPadding: const EdgeInsets.only(left: 40),
                     onTap: () {
                       Navigator.pop(context);
@@ -146,13 +144,14 @@ class DashboardScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const StudentListScreen(activeOnly: false),
+                          builder: (context) =>
+                              const StudentListScreen(activeOnly: false),
                         ),
                       );
                     },
                   ),
                   ListTile(
-                    leading: const Icon(Icons.class_),
+                    leading: const Icon(Icons.school),
                     title: const Text('Data Kelas'),
                     contentPadding: const EdgeInsets.only(left: 40),
                     onTap: () {
@@ -161,6 +160,20 @@ class DashboardScreen extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => ClassListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.local_activity),
+                    title: const Text('Kegiatan Siswa'),
+                    contentPadding: const EdgeInsets.only(left: 40),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ActivityMasterListScreen(),
                         ),
                       );
                     },
@@ -195,8 +208,26 @@ class DashboardScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              
-            if (role == 'SUPER_ADMIN' || role == 'ADMIN' || role == 'BENDAHARA' || role == 'KEPALA_SEKOLAH')
+
+            if (role == 'KEPALA_SEKOLAH')
+              ListTile(
+                leading: const Icon(Icons.people),
+                title: const Text('Data Siswa'),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const StudentListScreen(),
+                    ),
+                  );
+                },
+              ),
+
+            if (role == 'SUPER_ADMIN' ||
+                role == 'ADMIN' ||
+                role == 'BENDAHARA' ||
+                role == 'KEPALA_SEKOLAH')
               Column(
                 children: [
                   const Divider(),
@@ -206,14 +237,15 @@ class DashboardScreen extends StatelessWidget {
                     children: [
                       ListTile(
                         leading: const Icon(Icons.monetization_on),
-                        title: const Text('Laporan Keuangan'),
+                        title: const Text('Laporan Pembayaran'),
                         contentPadding: const EdgeInsets.only(left: 40),
                         onTap: () {
                           Navigator.pop(context); // Close drawer
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const FinancialReportScreen(),
+                              builder: (context) =>
+                                  const FinancialReportScreen(),
                             ),
                           );
                         },
@@ -254,12 +286,17 @@ class DashboardScreen extends StatelessWidget {
             const Divider(),
             ListTile(
               leading: const Icon(Icons.help_outline, color: Colors.blue),
-              title: const Text('Buku Panduan', style: TextStyle(color: Colors.blue)),
+              title: const Text(
+                'Buku Panduan',
+                style: TextStyle(color: Colors.blue),
+              ),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ManualBookScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const ManualBookScreen(),
+                  ),
                 );
               },
             ),
@@ -284,15 +321,28 @@ class DashboardScreen extends StatelessWidget {
               color: Colors.grey.withValues(alpha: 0.2),
               blurRadius: 4,
               offset: const Offset(0, -2),
-            )
+            ),
           ],
         ),
         child: SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Active School: ${schoolId.split('_').map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '').join(' ')}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-              Text('Your Role: $role', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 12)),
+              Text(
+                'Active School: ${schoolId.split('_').map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '').join(' ')}',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+              Text(
+                'Your Role: $role',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                  fontSize: 12,
+                ),
+              ),
             ],
           ),
         ),
@@ -300,19 +350,23 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildDashboardBody(String role, String schoolId, BuildContext context) {
-    if (role == 'WALI' || role == 'SISWA') return const WaliDashboardView();
+  Widget _buildDashboardBody(
+    String role,
+    String schoolId,
+    BuildContext context,
+  ) {
+    if (role == 'WALI') return const WaliDashboardView();
+    if (role == 'SISWA') return const SiswaDashboardView();
     if (role == 'GURU') return const GuruDashboardView();
-    if (role == 'BENDAHARA' || role == 'ADMIN' || role == 'SUPER_ADMIN' || role == 'KEPALA_SEKOLAH') {
-      return const SingleChildScrollView(
-        child: Column(
-          children: [
-            BendaharaDashboardView(),
-          ],
-        ),
+    if (role == 'BENDAHARA' ||
+        role == 'ADMIN' ||
+        role == 'SUPER_ADMIN' ||
+        role == 'KEPALA_SEKOLAH') {
+      return SingleChildScrollView(
+        child: Column(children: [BendaharaDashboardView(role: role)]),
       );
     }
-    
+
     return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -323,4 +377,3 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 }
-

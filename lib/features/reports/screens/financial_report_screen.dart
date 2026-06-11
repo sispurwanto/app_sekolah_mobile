@@ -141,14 +141,14 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Laporan Keuangan'),
+        title: const Text('Laporan Pembayaran'),
         bottom: TabBar(
           controller: _tabController,
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           indicatorColor: Colors.white,
           tabs: const [
-            Tab(text: 'Pemasukan (Lunas)'),
+            Tab(text: 'Pembayaran (Lunas)'),
             Tab(text: 'Tidak Bayar'),
           ],
         ),
@@ -172,11 +172,36 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
                       final data = snapshot.data;
                       if (data == null) return const SizedBox.shrink();
 
-                      return TabBarView(
-                        controller: _tabController,
+                      return Column(
                         children: [
-                          _buildIncomeTab(data.payments),
-                          _buildArrearsTab(data.arrears),
+                          if (data.payments.isNotEmpty || data.arrears.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  TextButton.icon(
+                                    icon: const Icon(Icons.picture_as_pdf, color: Colors.blue),
+                                    label: const Text('Export PDF', style: TextStyle(color: Colors.blue)),
+                                    onPressed: () => _exportService.exportCombinedFinancialPdf(context, data.payments, data.arrears, _startDate, _endDate),
+                                  ),
+                                  TextButton.icon(
+                                    icon: const Icon(Icons.table_chart, color: Colors.blue),
+                                    label: const Text('Export Excel', style: TextStyle(color: Colors.blue)),
+                                    onPressed: () => _exportService.exportCombinedFinancialExcel(context, data.payments, data.arrears, _startDate, _endDate),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          Expanded(
+                            child: TabBarView(
+                              controller: _tabController,
+                              children: [
+                                _buildIncomeTab(data.payments),
+                                _buildArrearsTab(data.arrears),
+                              ],
+                            ),
+                          ),
                         ],
                       );
                     },
@@ -259,23 +284,7 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
     return ListView(
       padding: const EdgeInsets.all(16.0),
       children: [
-        _buildSummaryCard('Total Pemasukan', totalIncome, Colors.green),
-        if (payments.isNotEmpty)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton.icon(
-                icon: const Icon(Icons.picture_as_pdf, color: Colors.green),
-                label: const Text('PDF Pemasukan', style: TextStyle(color: Colors.green)),
-                onPressed: () => _exportService.exportIncomePdf(context, payments, _startDate, _endDate),
-              ),
-              TextButton.icon(
-                icon: const Icon(Icons.table_chart, color: Colors.green),
-                label: const Text('Excel Pemasukan', style: TextStyle(color: Colors.green)),
-                onPressed: () => _exportService.exportIncomeExcel(context, payments, _startDate, _endDate),
-              ),
-            ],
-          ),
+        _buildSummaryCard('Total Pembayaran', totalIncome, Colors.green, subtitle: 'dari ${payments.length} pembayaran'),
         if (payments.isNotEmpty)
           ...payments.map((p) => ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -296,22 +305,6 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
       children: [
         _buildSummaryCard('Total Siswa Tidak Bayar', 0, Colors.red, customValue: '${arrears.length} Siswa'),
         if (arrears.isNotEmpty)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              TextButton.icon(
-                icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
-                label: const Text('PDF Tidak Bayar', style: TextStyle(color: Colors.red)),
-                onPressed: () => _exportService.exportArrearsPdf(context, arrears, _startDate, _endDate),
-              ),
-              TextButton.icon(
-                icon: const Icon(Icons.table_chart, color: Colors.red),
-                label: const Text('Excel Tidak Bayar', style: TextStyle(color: Colors.red)),
-                onPressed: () => _exportService.exportArrearsExcel(context, arrears, _startDate, _endDate),
-              ),
-            ],
-          ),
-        if (arrears.isNotEmpty)
           ...arrears.map((a) => ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             title: Text(a.studentName, style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -325,7 +318,7 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
     );
   }
 
-  Widget _buildSummaryCard(String title, double amount, Color color, {String? customValue}) {
+  Widget _buildSummaryCard(String title, double amount, Color color, {String? customValue, String? subtitle}) {
     return Card(
       margin: const EdgeInsets.all(16.0),
       color: color.withOpacity(0.1),
@@ -336,16 +329,24 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
           children: [
             Text(
               title,
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
             ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: TextStyle(fontSize: 14, color: color.withOpacity(0.8)),
+              ),
+            ],
+            const SizedBox(height: 12),
             Text(
               customValue ?? CurrencyUtils.formatRp(amount),
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color),
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: color),
+              textAlign: TextAlign.center,
             ),
           ],
         ),

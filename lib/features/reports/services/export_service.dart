@@ -17,6 +17,161 @@ class ExportService {
   final currencyFormat = NumberFormat.currency(locale: 'id', symbol: 'Rp ', decimalDigits: 0);
   final dateFormat = DateFormat('dd MMM yyyy');
 
+  // EXPORT PDF GABUNGAN
+  Future<void> exportCombinedFinancialPdf(BuildContext context, List<Payment> payments, List<Invoice> arrears, DateTime start, DateTime end) async {
+    final pdf = pw.Document();
+
+    double totalIncome = payments.fold(0, (sum, p) => sum + p.amount);
+    double totalArrears = arrears.fold(0, (sum, inv) => sum + (inv.amount - inv.paidAmount));
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageFormat: PdfPageFormat.a4,
+        margin: const pw.EdgeInsets.all(32),
+        build: (pw.Context ctx) {
+          return [
+            pw.Header(
+              level: 0,
+              child: pw.Text('Laporan Pembayaran', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+            ),
+            pw.Text('Periode: ${dateFormat.format(start)} - ${dateFormat.format(end)}'),
+            pw.SizedBox(height: 20),
+            
+            // Lunas Section
+            pw.Text('Siswa Membayar (${payments.length} Pembayaran)', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.green)),
+            pw.Text('Total Pembayaran: ${CurrencyUtils.formatRp(totalIncome)}'),
+            pw.SizedBox(height: 10),
+            if (payments.isNotEmpty)
+              pw.TableHelper.fromTextArray(
+                context: ctx,
+                headers: ['Tanggal', 'Siswa', 'Kelas', 'Keterangan', 'Nominal', 'Metode'],
+                data: payments.map((p) => [
+                  p.createdAt != null ? dateFormat.format(p.createdAt!) : '-',
+                  p.studentName,
+                  p.classId,
+                  p.invoiceTitle.isNotEmpty ? p.invoiceTitle : 'Pembayaran',
+                  CurrencyUtils.formatRp(p.amount),
+                  p.method,
+                ]).toList(),
+              )
+            else
+              pw.Text('Tidak ada data pembayaran.'),
+
+            pw.SizedBox(height: 30),
+
+            // Tidak Bayar Section
+            pw.Text('Siswa Tidak Bayar (${arrears.length} Siswa)', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.red)),
+            pw.Text('Total Tunggakan: ${CurrencyUtils.formatRp(totalArrears)}'),
+            pw.SizedBox(height: 10),
+            if (arrears.isNotEmpty)
+              pw.TableHelper.fromTextArray(
+                context: ctx,
+                headers: ['Jatuh Tempo', 'Siswa', 'Kelas', 'Tagihan', 'Sisa Tunggakan', 'Status'],
+                data: arrears.map((inv) => [
+                  inv.dueDate != null ? dateFormat.format(inv.dueDate!) : '-',
+                  inv.studentName,
+                  inv.classId,
+                  inv.title,
+                  CurrencyUtils.formatRp(inv.amount - inv.paidAmount),
+                  inv.status,
+                ]).toList(),
+              )
+            else
+              pw.Text('Tidak ada data siswa tidak bayar.'),
+          ];
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdf.save(),
+      name: 'Laporan_Pembayaran_${DateFormat('yyyyMMdd').format(DateTime.now())}.pdf',
+    );
+  }
+
+  // EXPORT EXCEL GABUNGAN
+  Future<void> exportCombinedFinancialExcel(BuildContext context, List<Payment> payments, List<Invoice> arrears, DateTime start, DateTime end) async {
+    try {
+      var excel = Excel.createExcel();
+      var sheet = excel['Laporan'];
+      excel.setDefaultSheet('Laporan');
+
+      sheet.appendRow([TextCellValue('Laporan Pembayaran')]);
+      sheet.appendRow([TextCellValue('Periode: ${dateFormat.format(start)} - ${dateFormat.format(end)}')]);
+      sheet.appendRow([TextCellValue('')]);
+      
+      // Pembayaran
+      double totalIncome = payments.fold(0, (sum, p) => sum + p.amount);
+      sheet.appendRow([TextCellValue('Siswa Membayar (${payments.length} Pembayaran)')]);
+      sheet.appendRow([TextCellValue('Total Pembayaran: ${CurrencyUtils.formatRp(totalIncome)}')]);
+      sheet.appendRow([
+        TextCellValue('Tanggal'),
+        TextCellValue('Siswa'),
+        TextCellValue('Kelas'),
+        TextCellValue('Keterangan'),
+        TextCellValue('Nominal'),
+        TextCellValue('Metode'),
+      ]);
+
+      for (var p in payments) {
+        sheet.appendRow([
+          TextCellValue(p.createdAt != null ? dateFormat.format(p.createdAt!) : '-'),
+          TextCellValue(p.studentName),
+          TextCellValue(p.classId),
+          TextCellValue(p.invoiceTitle.isNotEmpty ? p.invoiceTitle : 'Pembayaran'),
+          DoubleCellValue(p.amount),
+          TextCellValue(p.method),
+        ]);
+      }
+
+      sheet.appendRow([TextCellValue('')]);
+      sheet.appendRow([TextCellValue('')]);
+
+      // Tunggakan
+      double totalArrears = arrears.fold(0, (sum, inv) => sum + (inv.amount - inv.paidAmount));
+      sheet.appendRow([TextCellValue('Siswa Tidak Bayar (${arrears.length} Siswa)')]);
+      sheet.appendRow([TextCellValue('Total Tunggakan: ${CurrencyUtils.formatRp(totalArrears)}')]);
+      sheet.appendRow([
+        TextCellValue('Jatuh Tempo'),
+        TextCellValue('Siswa'),
+        TextCellValue('Kelas'),
+        TextCellValue('Tagihan'),
+        TextCellValue('Sisa Tunggakan'),
+        TextCellValue('Status'),
+      ]);
+
+      for (var inv in arrears) {
+        sheet.appendRow([
+          TextCellValue(inv.dueDate != null ? dateFormat.format(inv.dueDate!) : '-'),
+          TextCellValue(inv.studentName),
+          TextCellValue(inv.classId),
+          TextCellValue(inv.title),
+          DoubleCellValue(inv.amount - inv.paidAmount),
+          TextCellValue(inv.status),
+        ]);
+      }
+
+      var fileBytes = excel.save();
+      if (fileBytes != null) {
+        final directory = await getApplicationDocumentsDirectory();
+        final path = '${directory.path}/Laporan_Pembayaran_${DateFormat('yyyyMMdd').format(DateTime.now())}.xlsx';
+        File(path)
+          ..createSync(recursive: true)
+          ..writeAsBytesSync(fileBytes);
+        
+        if (context.mounted) {
+          SnackbarUtils.showSnackbar('Membuka file Excel...');
+          // ignore: deprecated_member_use
+          await Share.shareXFiles([XFile(path)], text: 'Laporan Pembayaran');
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        SnackbarUtils.showErrorSnackbar('Gagal export Excel: $e');
+      }
+    }
+  }
+
   // EXPORT PDF PEMASUKAN
   Future<void> exportIncomePdf(BuildContext context, List<Payment> payments, DateTime start, DateTime end) async {
     final pdf = pw.Document();

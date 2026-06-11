@@ -16,26 +16,25 @@ class GuruDashboardView extends StatelessWidget {
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            physics: const NeverScrollableScrollPhysics(),
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
             children: [
-              _buildMenuCard(
-                context,
-                title: 'Data Siswa',
-                icon: Icons.people,
-                color: Colors.green,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const StudentListScreen()),
-                  );
-                },
+              SizedBox(
+                width: 100,
+                child: _buildMenuCard(
+                  context,
+                  title: 'Data Siswa',
+                  icon: Icons.people,
+                  color: Colors.green,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const StudentListScreen()),
+                    );
+                  },
+                ),
               ),
-              // Can add more menus like Absensi, Nilai, etc. in the future
             ],
           ),
         ],
@@ -51,16 +50,16 @@ class GuruDashboardView extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 48, color: color),
-              const SizedBox(height: 16),
+              Icon(icon, size: 32, color: color),
+              const SizedBox(height: 8),
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
               ),
             ],
           ),

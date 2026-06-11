@@ -11,6 +11,7 @@ import '../../../core/models/app_class.dart';
 import '../../../core/models/invoice.dart';
 import '../../invoices/services/invoice_service.dart';
 import '../../invoices/screens/invoice_list_screen.dart';
+import '../../activities/screens/student_activity_screen.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/utils/dialog_utils.dart';
 import 'student_form_screen.dart';
@@ -122,7 +123,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.activeOnly ? 'Manajemen Siswa' : 'Siswa Lulus / Nonaktif',
+          widget.activeOnly ? 'Daftar Siswa' : 'Siswa Lulus / Nonaktif',
         ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(
@@ -205,6 +206,11 @@ class _StudentListScreenState extends State<StudentListScreen> {
                           const DropdownMenuItem(
                             value: null,
                             child: Text('Semua Kelas (Max 100)'),
+                          ),
+                        if (isGuru && _selectedClassFilter.isEmpty)
+                          const DropdownMenuItem(
+                            value: null,
+                            child: Text('Pilih Kelas...'),
                           ),
                         ...classes.map(
                           (c) => DropdownMenuItem(
@@ -292,12 +298,29 @@ class _StudentListScreenState extends State<StudentListScreen> {
                       },
                     ),
                   ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0,
+                    vertical: 8.0,
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Total Siswa: ${students.length}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
+                ),
                 Expanded(
                   child: students.isEmpty
                       ? const EmptyStateWidget(
                           icon: Icons.group_off,
                           title: 'Belum ada data siswa',
-                          subtitle: 'Silakan tambah data siswa atau ubah filter pencarian.',
+                          subtitle:
+                              'Silakan tambah data siswa atau ubah filter pencarian.',
                         )
                       : ListView.builder(
                           itemCount: students.length,
@@ -331,12 +354,19 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                   //   int unpaid = invoices
                                   //       .where((i) => i.status == 'UNPAID')
                                   //       .length;
-
-                                  //   return 
+                                  //   return
                                   ListTile(
                                     leading: CircleAvatar(
-                                      child: Text(
-                                        student.gender == 'L' ? 'L' : 'P',
+                                      backgroundColor: student.gender == 'L'
+                                          ? Colors.blue.withOpacity(0.1)
+                                          : Colors.pink.withOpacity(0.1),
+                                      child: Icon(
+                                        student.gender == 'L'
+                                            ? Icons.face
+                                            : Icons.face_3,
+                                        color: student.gender == 'L'
+                                            ? Colors.blue
+                                            : Colors.pink,
                                       ),
                                     ),
                                     title: Text(
@@ -364,73 +394,79 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                           scrollDirection: Axis.horizontal,
                                           child: Row(
                                             children: [
-                                              _buildActionButton(
-                                                context,
-                                                Icons.receipt_long,
-                                                'Tagihan',
-                                                () {
-                                                  Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (context) =>
-                                                          InvoiceListScreen(
-                                                            studentId:
-                                                                student.id,
-                                                            academicYearId:
-                                                                student
-                                                                    .academicYearId
-                                                                    .isNotEmpty
-                                                                ? student
+                                              if (!isGuru &&
+                                                  role != 'KEPALA_SEKOLAH') ...[
+                                                _buildActionButton(
+                                                  context,
+                                                  Icons.receipt_long,
+                                                  'Tagihan',
+                                                  () {
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) =>
+                                                            InvoiceListScreen(
+                                                              studentId:
+                                                                  student.id,
+                                                              academicYearId:
+                                                                  student
                                                                       .academicYearId
-                                                                : null,
-                                                            classId:
-                                                                student
-                                                                    .classId
-                                                                    .isNotEmpty
-                                                                ? student
+                                                                      .isNotEmpty
+                                                                  ? student
+                                                                        .academicYearId
+                                                                  : null,
+                                                              classId:
+                                                                  student
                                                                       .classId
-                                                                : null,
-                                                          ),
-                                                    ),
-                                                  );
-                                                },
-                                                Colors.blue,
-                                              ),
-                                              const SizedBox(width: 8),
-                                              _buildActionButton(
-                                                context,
-                                                Icons.account_balance_wallet,
-                                                'Tabungan',
-                                                () {
-                                                  Navigator.push(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (c) =>
-                                                          SavingsScreen(
-                                                            studentId:
-                                                                student.id,
-                                                            studentName:
-                                                                student.name,
-                                                            classId:
-                                                                student.classId,
-                                                          ),
-                                                    ),
-                                                  );
-                                                },
-                                                Colors.teal,
-                                              ),
-                                              // const SizedBox(width: 8),
-                                              // _buildActionButton(context, Icons.assignment, 'Ulangan', () {
-                                              //   SnackbarUtils.showErrorSnackbar('Modul Ulangan sedang dalam pengembangan');
-                                              // }, Colors.green),
-                                              // const SizedBox(width: 8),
-                                              // _buildActionButton(context, Icons.library_books, 'Raport', () {
-                                              //   SnackbarUtils.showErrorSnackbar('Modul Raport sedang dalam pengembangan');
-                                              // }, Colors.orange),
-                                              // const SizedBox(width: 8),
-                                              // _buildActionButton(context, Icons.fact_check, 'Absensi', () {
-                                              //   SnackbarUtils.showErrorSnackbar('Modul Absensi sedang dalam pengembangan');
-                                              // }, Colors.purple),
+                                                                      .isNotEmpty
+                                                                  ? student
+                                                                        .classId
+                                                                  : null,
+                                                            ),
+                                                      ),
+                                                    );
+                                                  },
+                                                  Colors.blue,
+                                                ),
+                                                const SizedBox(width: 8),
+                                                _buildActionButton(
+                                                  context,
+                                                  Icons.account_balance_wallet,
+                                                  'Tabungan',
+                                                  () {
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (c) =>
+                                                            SavingsScreen(
+                                                              studentId:
+                                                                  student.id,
+                                                              studentName:
+                                                                  student.name,
+                                                              classId: student
+                                                                  .classId,
+                                                            ),
+                                                      ),
+                                                    );
+                                                  },
+                                                  Colors.teal,
+                                                ),
+                                              ],
+                                              if (role != 'BENDAHARA')
+                                                _buildActionButton(
+                                                  context,
+                                                  Icons.local_activity,
+                                                  'Kegiatan',
+                                                  () {
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) => StudentActivityScreen(student: student),
+                                                      ),
+                                                    );
+                                                  },
+                                                  Colors.orange,
+                                                ),
                                             ],
                                           ),
                                         ),
@@ -454,31 +490,57 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                             schoolId,
                                             student,
                                           );
+                                        } else if (value == 'kegiatan') {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => StudentActivityScreen(student: student),
+                                            ),
+                                          );
                                         }
                                       },
                                       itemBuilder: (BuildContext context) =>
                                           <PopupMenuEntry<String>>[
-                                            const PopupMenuItem<String>(
-                                              value: 'edit',
-                                              child: ListTile(
-                                                leading: Icon(Icons.edit),
-                                                title: Text('Edit Siswa'),
-                                                contentPadding: EdgeInsets.zero,
+                                            if (!isGuru &&
+                                                role != 'KEPALA_SEKOLAH') ...[
+                                              const PopupMenuItem<String>(
+                                                value: 'edit',
+                                                child: ListTile(
+                                                  leading: Icon(Icons.edit),
+                                                  title: Text('Edit Siswa'),
+                                                  contentPadding:
+                                                      EdgeInsets.zero,
+                                                ),
                                               ),
-                                            ),
-                                            const PopupMenuItem<String>(
-                                              value: 'generate',
-                                              child: ListTile(
-                                                leading: Icon(Icons.add_card),
-                                                title: Text('Generate Tagihan'),
-                                                contentPadding: EdgeInsets.zero,
+                                              const PopupMenuItem<String>(
+                                                value: 'generate',
+                                                child: ListTile(
+                                                  leading: Icon(Icons.add_card),
+                                                  title: Text(
+                                                    'Generate Tagihan',
+                                                  ),
+                                                  contentPadding:
+                                                      EdgeInsets.zero,
+                                                ),
                                               ),
-                                            ),
+                                            ],
+                                            if (role != 'BENDAHARA')
+                                              const PopupMenuItem<String>(
+                                                value: 'kegiatan',
+                                                child: ListTile(
+                                                  leading: Icon(
+                                                    Icons.local_activity,
+                                                  ),
+                                                  title: Text('Kegiatan Siswa'),
+                                                  contentPadding:
+                                                      EdgeInsets.zero,
+                                                ),
+                                              ),
                                           ],
                                     ),
                                   ),
-                                );
-                              },
+                            );
+                          },
                         ),
                 ),
               ],

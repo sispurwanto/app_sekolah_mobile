@@ -122,11 +122,14 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
-              child: Card(
-                elevation: 8,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 500),
+                width: double.infinity,
+                child: Card(
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 child: Padding(
                   padding: const EdgeInsets.all(32.0),
                   child: Column(
@@ -219,6 +222,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
+            ),
             ),
           ),
         ),

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import '../../../student_management/screens/student_list_screen.dart';
 import '../../../invoices/screens/payment_validation_screen.dart';
 import '../../../savings/screens/savings_report_screen.dart';
+import '../../../reports/screens/financial_report_screen.dart';
 
 class BendaharaDashboardView extends StatelessWidget {
-  const BendaharaDashboardView({super.key});
+  final String role;
+  const BendaharaDashboardView({super.key, required this.role});
 
   @override
   Widget build(BuildContext context) {
@@ -26,44 +28,75 @@ class BendaharaDashboardView extends StatelessWidget {
             childAspectRatio: 0.85,
             physics: const NeverScrollableScrollPhysics(),
             children: [
-              _buildMenuCard(
-                context,
-                title: 'Kasir (Cari Siswa)',
-                icon: Icons.point_of_sale,
-                color: Colors.blue,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const StudentListScreen(),
-                    ),
-                  );
-                },
-              ),
-              _buildMenuCard(
-                context,
-                title: 'Validasi Transfer',
-                icon: Icons.fact_check,
-                color: Colors.orange,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const PaymentValidationScreen(),
-                    ),
-                  );
-                },
-              ),
+              if (role != 'KEPALA_SEKOLAH')
+                _buildMenuCard(
+                  context,
+                  title: 'Kasir (Cari Siswa)',
+                  icon: Icons.point_of_sale,
+                  color: Colors.blue,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const StudentListScreen(),
+                      ),
+                    );
+                  },
+                ),
+              if (role == 'KEPALA_SEKOLAH')
+                _buildMenuCard(
+                  context,
+                  title: 'Data Siswa',
+                  icon: Icons.people,
+                  color: Colors.blue,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const StudentListScreen(),
+                      ),
+                    );
+                  },
+                ),
+              if (role != 'KEPALA_SEKOLAH')
+                _buildMenuCard(
+                  context,
+                  title: 'Validasi Pembayaran',
+                  icon: Icons.domain_verification,
+                  color: Colors.orange,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PaymentValidationScreen(),
+                      ),
+                    );
+                  },
+                ),
               _buildMenuCard(
                 context,
                 title: 'Laporan Tabungan',
                 icon: Icons.account_balance_wallet,
-                color: Colors.teal,
+                color: Colors.green,
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => const SavingsReportScreen(),
+                    ),
+                  );
+                },
+              ),
+              _buildMenuCard(
+                context,
+                title: 'Laporan Pembayaran',
+                icon: Icons.analytics,
+                color: Colors.purple,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const FinancialReportScreen(),
                     ),
                   );
                 },
