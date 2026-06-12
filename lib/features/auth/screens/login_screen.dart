@@ -27,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     setState(() => _isLoading = true);
-    
+
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       await authService.signInWithEmail(email, password);
@@ -42,7 +42,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showResetPasswordDialog() {
-    final resetEmailController = TextEditingController(text: _emailController.text);
+    final resetEmailController = TextEditingController(
+      text: _emailController.text,
+    );
     showDialog(
       context: context,
       builder: (context) {
@@ -51,7 +53,9 @@ class _LoginScreenState extends State<LoginScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Masukkan email Anda untuk menerima link reset password:'),
+              const Text(
+                'Masukkan email Anda untuk menerima link reset password:',
+              ),
               const SizedBox(height: 16),
               TextField(
                 controller: resetEmailController,
@@ -77,14 +81,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 }
                 Navigator.pop(context);
                 try {
-                  final authService = Provider.of<AuthService>(context, listen: false);
+                  final authService = Provider.of<AuthService>(
+                    context,
+                    listen: false,
+                  );
                   await authService.sendPasswordResetEmail(email);
                   if (mounted) {
-                    SnackbarUtils.showSnackbar('Link reset password telah dikirim ke $email');
+                    SnackbarUtils.showSnackbar(
+                      'Link reset password telah dikirim ke $email',
+                    );
                   }
                 } catch (e) {
                   if (mounted) {
-                    SnackbarUtils.showErrorSnackbar('Gagal mengirim link reset: $e');
+                    SnackbarUtils.showErrorSnackbar(
+                      'Gagal mengirim link reset: $e',
+                    );
                   }
                 }
               },
@@ -130,99 +141,114 @@ class _LoginScreenState extends State<LoginScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
-                child: Padding(
-                  padding: const EdgeInsets.all(32.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Header Logo and App Name
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Image.asset('assets/images/app_logo.jpg', height: 40, width: 40, fit: BoxFit.cover),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'ApSekolah',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
+                  child: Padding(
+                    padding: const EdgeInsets.all(32.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Header Logo and App Name
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              'assets/images/app_logo.jpg',
+                              height: 40,
+                              width: 40,
+                              fit: BoxFit.cover,
+                            ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'ApSekolah',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 32),
+                        const Text(
+                          'Selamat Datang',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Silakan login untuk melanjutkan',
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 32),
+                        TextField(
+                          controller: _emailController,
+                          decoration: InputDecoration(
+                            labelText: 'Email',
+                            prefixIcon: const Icon(Icons.email_outlined),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 32),
-                      const Text(
-                        'Selamat Datang',
-                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Silakan login untuk melanjutkan',
-                        style: TextStyle(fontSize: 14, color: Colors.grey),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 32),
-                      TextField(
-                        controller: _emailController,
-                        decoration: InputDecoration(
-                          labelText: 'Email',
-                          prefixIcon: const Icon(Icons.email_outlined),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          keyboardType: TextInputType.emailAddress,
                         ),
-                        keyboardType: TextInputType.emailAddress,
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _passwordController,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                        const SizedBox(height: 16),
+                        TextField(
+                          controller: _passwordController,
+                          decoration: InputDecoration(
+                            labelText: 'Password',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
+                          ),
+                          obscureText: _obscurePassword,
+                        ),
+                        const SizedBox(height: 32),
+                        SizedBox(
+                          height: 50,
+                          child: CustomButton(
+                            text: 'LOGIN',
+                            onPressed: _isLoading ? () {} : _login,
+                            isLoading: _isLoading,
                           ),
                         ),
-                        obscureText: _obscurePassword,
-                      ),
-                      const SizedBox(height: 32),
-                      SizedBox(
-                        height: 50,
-                        child: CustomButton(
-                          text: 'LOGIN',
-                          onPressed: _isLoading ? () {} : _login,
-                          isLoading: _isLoading,
+                        const SizedBox(height: 16),
+                        TextButton(
+                          onPressed: _showResetPasswordDialog,
+                          child: const Text(
+                            'Lupa Password?',
+                            style: TextStyle(color: Colors.green),
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      TextButton(
-                        onPressed: _showResetPasswordDialog,
-                        child: const Text(
-                          'Lupa Password?',
-                          style: TextStyle(color: Colors.green),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Versi 1.0',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                          textAlign: TextAlign.center,
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Versi 1.0',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
             ),
           ),
         ),

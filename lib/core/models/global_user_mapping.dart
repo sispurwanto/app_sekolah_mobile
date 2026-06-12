@@ -13,7 +13,9 @@ class GlobalUserMapping {
     return GlobalUserMapping(
       email: map['email'] ?? '',
       name: map['name'] ?? '',
-      registeredSchools: Map<String, dynamic>.from(map['registered_schools'] ?? {}),
+      registeredSchools: Map<String, dynamic>.from(
+        map['registered_schools'] ?? {},
+      ),
     );
   }
 

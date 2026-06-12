@@ -22,8 +22,14 @@ class _FeeTemplateListScreenState extends State<FeeTemplateListScreen> {
   final FeeTemplateService _service = FeeTemplateService();
   bool _isGenerating = false;
 
-  Future<void> _handleBulkGenerate(BuildContext context, String schoolId, FeeTemplate template) async {
-    final activeYear = await AcademicYearService().getActiveAcademicYear(schoolId);
+  Future<void> _handleBulkGenerate(
+    BuildContext context,
+    String schoolId,
+    FeeTemplate template,
+  ) async {
+    final activeYear = await AcademicYearService().getActiveAcademicYear(
+      schoolId,
+    );
     if (activeYear == null) {
       SnackbarUtils.showErrorSnackbar('Tidak ada Tahun Ajaran aktif.');
       return;
@@ -35,7 +41,8 @@ class _FeeTemplateListScreenState extends State<FeeTemplateListScreen> {
 
     final confirm = await DialogUtils.showConfirmationDialog(
       title: 'Generate Tagihan Massal',
-      content: 'Generate tagihan "${template.title}" untuk siswa di $targetMsg pada tahun ajaran ${activeYear.name}?\n\nIni mungkin membutuhkan waktu beberapa saat.',
+      content:
+          'Generate tagihan "${template.title}" untuk siswa di $targetMsg pada tahun ajaran ${activeYear.name}?\n\nIni mungkin membutuhkan waktu beberapa saat.',
       confirmText: 'Generate',
     );
 
@@ -61,9 +68,7 @@ class _FeeTemplateListScreenState extends State<FeeTemplateListScreen> {
     final schoolId = context.watch<SchoolProvider>().activeSchoolId ?? '';
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Master Tagihan'),
-      ),
+      appBar: AppBar(title: const Text('Master Tagihan')),
       body: StreamBuilder<List<FeeTemplate>>(
         stream: _service.getFeeTemplates(schoolId),
         builder: (context, snapshot) {
@@ -89,15 +94,21 @@ class _FeeTemplateListScreenState extends State<FeeTemplateListScreen> {
             itemCount: templates.length,
             itemBuilder: (context, index) {
               final template = templates[index];
-              final targetClass = (template.classId != null && template.classId!.isNotEmpty)
+              final targetClass =
+                  (template.classId != null && template.classId!.isNotEmpty)
                   ? 'Target: Kelas ${template.classId}'
                   : 'Target: Semua Kelas';
 
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: ListTile(
-                  title: Text(template.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('Nominal: ${CurrencyUtils.formatRp(template.amount)}\n$targetClass'),
+                  title: Text(
+                    template.title,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    'Nominal: ${CurrencyUtils.formatRp(template.amount)}\n$targetClass',
+                  ),
                   isThreeLine: true,
                   trailing: PopupMenuButton<String>(
                     onSelected: (value) {
@@ -105,7 +116,8 @@ class _FeeTemplateListScreenState extends State<FeeTemplateListScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => FeeTemplateFormScreen(template: template),
+                            builder: (context) =>
+                                FeeTemplateFormScreen(template: template),
                           ),
                         );
                       } else if (value == 'generate') {

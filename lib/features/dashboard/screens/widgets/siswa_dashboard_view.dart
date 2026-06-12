@@ -17,11 +17,17 @@ class SiswaDashboardView extends StatelessWidget {
           const SizedBox(height: 16),
           Card(
             elevation: 2,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: const Padding(
               padding: EdgeInsets.all(24.0),
               child: Center(
-                child: Text('Fitur Kegiatan Siswa sedang dalam pengembangan', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+                child: Text(
+                  'Fitur Kegiatan Siswa sedang dalam pengembangan',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey),
+                ),
               ),
             ),
           ),
@@ -33,11 +39,17 @@ class SiswaDashboardView extends StatelessWidget {
           const SizedBox(height: 16),
           Card(
             elevation: 2,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: const Padding(
               padding: EdgeInsets.all(24.0),
               child: Center(
-                child: Text('Fitur Nilai Akademik sedang dalam pengembangan', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+                child: Text(
+                  'Fitur Nilai Akademik sedang dalam pengembangan',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey),
+                ),
               ),
             ),
           ),

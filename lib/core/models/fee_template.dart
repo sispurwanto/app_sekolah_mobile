@@ -36,10 +36,16 @@ class FeeTemplate {
       classId: data['class_id'],
       frequency: data['frequency'] ?? 'ONCE',
       dueDateDay: data['due_date_day'],
-      exactDueDate: data['exact_due_date'] != null ? (data['exact_due_date'] as Timestamp).toDate() : null,
-      createdAt: data['created_at'] != null ? (data['created_at'] as Timestamp).toDate() : null,
+      exactDueDate: data['exact_due_date'] != null
+          ? (data['exact_due_date'] as Timestamp).toDate()
+          : null,
+      createdAt: data['created_at'] != null
+          ? (data['created_at'] as Timestamp).toDate()
+          : null,
       createdBy: data['created_by'],
-      updatedAt: data['updated_at'] != null ? (data['updated_at'] as Timestamp).toDate() : null,
+      updatedAt: data['updated_at'] != null
+          ? (data['updated_at'] as Timestamp).toDate()
+          : null,
       updatedBy: data['updated_by'],
     );
   }
@@ -51,7 +57,9 @@ class FeeTemplate {
       'class_id': classId,
       'frequency': frequency,
       'due_date_day': dueDateDay,
-      'exact_due_date': exactDueDate != null ? Timestamp.fromDate(exactDueDate!) : null,
+      'exact_due_date': exactDueDate != null
+          ? Timestamp.fromDate(exactDueDate!)
+          : null,
     };
   }
 }

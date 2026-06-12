@@ -24,9 +24,7 @@ class ActivityMasterListScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Master Data Kegiatan Siswa'),
-      ),
+      appBar: AppBar(title: const Text('Master Data Kegiatan Siswa')),
       body: StreamBuilder<List<ActivityMaster>>(
         stream: _activityService.getActivities(schoolId),
         builder: (context, snapshot) {
@@ -43,7 +41,8 @@ class ActivityMasterListScreen extends StatelessWidget {
             return const EmptyStateWidget(
               icon: Icons.local_activity_outlined,
               title: 'Belum ada Master Kegiatan',
-              subtitle: 'Tambahkan data master kegiatan melalui tombol di bawah.',
+              subtitle:
+                  'Tambahkan data master kegiatan melalui tombol di bawah.',
             );
           }
 
@@ -56,17 +55,25 @@ class ActivityMasterListScreen extends StatelessWidget {
                   backgroundColor: Colors.orangeAccent,
                   child: Icon(Icons.local_activity, color: Colors.white),
                 ),
-                title: Text(activity.nameActivity, style: const TextStyle(fontWeight: FontWeight.bold)),
+                title: Text(
+                  activity.nameActivity,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
                       icon: const Icon(Icons.edit, color: Colors.blue),
-                      onPressed: () => _showActivityForm(context, schoolId, activity: activity),
+                      onPressed: () => _showActivityForm(
+                        context,
+                        schoolId,
+                        activity: activity,
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _confirmDelete(context, schoolId, activity),
+                      onPressed: () =>
+                          _confirmDelete(context, schoolId, activity),
                     ),
                   ],
                 ),
@@ -82,7 +89,11 @@ class ActivityMasterListScreen extends StatelessWidget {
     );
   }
 
-  void _showActivityForm(BuildContext context, String schoolId, {ActivityMaster? activity}) {
+  void _showActivityForm(
+    BuildContext context,
+    String schoolId, {
+    ActivityMaster? activity,
+  }) {
     showDialog(
       context: context,
       builder: (context) => _ActivityMasterFormDialog(
@@ -93,10 +104,15 @@ class ActivityMasterListScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _confirmDelete(BuildContext context, String schoolId, ActivityMaster activity) async {
+  Future<void> _confirmDelete(
+    BuildContext context,
+    String schoolId,
+    ActivityMaster activity,
+  ) async {
     final confirm = await DialogUtils.showConfirmationDialog(
       title: 'Hapus Kegiatan',
-      content: 'Apakah Anda yakin ingin menghapus kegiatan "${activity.nameActivity}"?',
+      content:
+          'Apakah Anda yakin ingin menghapus kegiatan "${activity.nameActivity}"?',
       confirmText: 'Hapus',
       isDestructive: true,
     );
@@ -124,7 +140,8 @@ class _ActivityMasterFormDialog extends StatefulWidget {
   });
 
   @override
-  State<_ActivityMasterFormDialog> createState() => _ActivityMasterFormDialogState();
+  State<_ActivityMasterFormDialog> createState() =>
+      _ActivityMasterFormDialogState();
 }
 
 class _ActivityMasterFormDialogState extends State<_ActivityMasterFormDialog> {
@@ -160,7 +177,10 @@ class _ActivityMasterFormDialogState extends State<_ActivityMasterFormDialog> {
         await widget.activityService.addActivity(widget.schoolId, newActivity);
         SnackbarUtils.showSnackbar('Kegiatan berhasil ditambahkan');
       } else {
-        await widget.activityService.updateActivity(widget.schoolId, newActivity);
+        await widget.activityService.updateActivity(
+          widget.schoolId,
+          newActivity,
+        );
         SnackbarUtils.showSnackbar('Kegiatan berhasil diperbarui');
       }
 
@@ -175,7 +195,9 @@ class _ActivityMasterFormDialogState extends State<_ActivityMasterFormDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.activity == null ? 'Tambah Kegiatan' : 'Edit Kegiatan'),
+      title: Text(
+        widget.activity == null ? 'Tambah Kegiatan' : 'Edit Kegiatan',
+      ),
       content: Form(
         key: _formKey,
         child: Column(
@@ -204,7 +226,13 @@ class _ActivityMasterFormDialogState extends State<_ActivityMasterFormDialog> {
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,
-          child: _isLoading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Simpan'),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Simpan'),
         ),
       ],
     );

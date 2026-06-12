@@ -34,8 +34,12 @@ class _ClassFormScreenState extends State<ClassFormScreen> {
     super.initState();
     _idController = TextEditingController(text: widget.appClass?.id ?? '');
     _nameController = TextEditingController(text: widget.appClass?.name ?? '');
-    _levelController = TextEditingController(text: widget.appClass?.level ?? '');
-    _descriptionController = TextEditingController(text: widget.appClass?.description ?? '');
+    _levelController = TextEditingController(
+      text: widget.appClass?.level ?? '',
+    );
+    _descriptionController = TextEditingController(
+      text: widget.appClass?.description ?? '',
+    );
     _selectedTeacherId = widget.appClass?.teacherId;
     _selectedTeacherName = widget.appClass?.teacherName;
   }
@@ -56,7 +60,9 @@ class _ClassFormScreenState extends State<ClassFormScreen> {
     final schoolId = context.read<SchoolProvider>().activeSchoolId!;
 
     final appClass = AppClass(
-      id: widget.appClass == null ? _idController.text.trim() : widget.appClass!.id,
+      id: widget.appClass == null
+          ? _idController.text.trim()
+          : widget.appClass!.id,
       name: _nameController.text.trim(),
       level: _levelController.text.trim(),
       description: _descriptionController.text.trim(),
@@ -82,7 +88,7 @@ class _ClassFormScreenState extends State<ClassFormScreen> {
 
   void _delete() async {
     if (widget.appClass == null) return;
-    
+
     final schoolId = context.read<SchoolProvider>().activeSchoolId!;
 
     final confirm = await DialogUtils.showConfirmationDialog(
@@ -133,7 +139,8 @@ class _ClassFormScreenState extends State<ClassFormScreen> {
                       controller: _idController,
                       decoration: const InputDecoration(
                         labelText: 'ID Kelas *',
-                        helperText: 'ID akan menjadi Key/Data Utama. Tidak bisa diubah setelah dibuat.',
+                        helperText:
+                            'ID akan menjadi Key/Data Utama. Tidak bisa diubah setelah dibuat.',
                       ),
                       readOnly: isEditing,
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
@@ -141,7 +148,9 @@ class _ClassFormScreenState extends State<ClassFormScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _nameController,
-                      decoration: const InputDecoration(labelText: 'Nama Kelas *'),
+                      decoration: const InputDecoration(
+                        labelText: 'Nama Kelas *',
+                      ),
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
                     const SizedBox(height: 16),
@@ -156,34 +165,49 @@ class _ClassFormScreenState extends State<ClassFormScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _descriptionController,
-                      decoration: const InputDecoration(labelText: 'Deskripsi / Catatan'),
+                      decoration: const InputDecoration(
+                        labelText: 'Deskripsi / Catatan',
+                      ),
                       maxLines: 3,
                     ),
                     const SizedBox(height: 16),
                     FutureBuilder<List<AppUser>>(
-                      future: UserManagementService().getUsersByRole(context.read<SchoolProvider>().activeSchoolId!, 'GURU'),
+                      future: UserManagementService().getUsersByRole(
+                        context.read<SchoolProvider>().activeSchoolId!,
+                        'GURU',
+                      ),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return const CircularProgressIndicator();
                         }
-                        
+
                         final users = snapshot.data ?? [];
-                        
+
                         return DropdownButtonFormField<String>(
                           value: _selectedTeacherId,
-                          decoration: const InputDecoration(labelText: 'Wali Kelas (Opsional)'),
+                          decoration: const InputDecoration(
+                            labelText: 'Wali Kelas (Opsional)',
+                          ),
                           items: [
-                            const DropdownMenuItem(value: null, child: Text('-- Tidak Ada --')),
-                            ...users.map((user) => DropdownMenuItem(
-                                  value: user.id,
-                                  child: Text(user.name),
-                                )),
+                            const DropdownMenuItem(
+                              value: null,
+                              child: Text('-- Tidak Ada --'),
+                            ),
+                            ...users.map(
+                              (user) => DropdownMenuItem(
+                                value: user.id,
+                                child: Text(user.name),
+                              ),
+                            ),
                           ],
                           onChanged: (val) {
                             setState(() {
                               _selectedTeacherId = val;
                               if (val != null) {
-                                _selectedTeacherName = users.firstWhere((u) => u.id == val).name;
+                                _selectedTeacherName = users
+                                    .firstWhere((u) => u.id == val)
+                                    .name;
                               } else {
                                 _selectedTeacherName = null;
                               }

@@ -45,15 +45,19 @@ class Invoice {
       amount: (data['amount'] ?? 0).toDouble(),
       paidAmount: (data['paid_amount'] ?? 0).toDouble(),
       status: data['status'] ?? 'UNPAID',
-      dueDate: data['due_date'] != null 
-          ? (data['due_date'] as Timestamp).toDate() 
+      dueDate: data['due_date'] != null
+          ? (data['due_date'] as Timestamp).toDate()
           : DateTime.now(),
       schoolId: data['school_id'] ?? '',
       academicYearId: data['academic_year_id'] ?? '',
       classId: data['class_id'] ?? '',
-      createdAt: data['created_at'] != null ? (data['created_at'] as Timestamp).toDate() : null,
+      createdAt: data['created_at'] != null
+          ? (data['created_at'] as Timestamp).toDate()
+          : null,
       createdBy: data['created_by'],
-      updatedAt: data['updated_at'] != null ? (data['updated_at'] as Timestamp).toDate() : null,
+      updatedAt: data['updated_at'] != null
+          ? (data['updated_at'] as Timestamp).toDate()
+          : null,
       updatedBy: data['updated_by'],
     );
   }
@@ -70,7 +74,9 @@ class Invoice {
       'school_id': schoolId,
       'academic_year_id': academicYearId,
       'class_id': classId,
-      'created_at': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+      'created_at': createdAt != null
+          ? Timestamp.fromDate(createdAt!)
+          : FieldValue.serverTimestamp(),
     };
   }
 }

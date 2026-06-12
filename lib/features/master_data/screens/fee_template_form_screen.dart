@@ -39,17 +39,25 @@ class _FeeTemplateFormScreenState extends State<FeeTemplateFormScreen> {
   void initState() {
     super.initState();
     _idController = TextEditingController(text: widget.template?.id ?? '');
-    _titleController = TextEditingController(text: widget.template?.title ?? '');
+    _titleController = TextEditingController(
+      text: widget.template?.title ?? '',
+    );
     _amountController = TextEditingController();
-    _dueDateDayController = TextEditingController(text: widget.template?.dueDateDay?.toString() ?? '');
-    
+    _dueDateDayController = TextEditingController(
+      text: widget.template?.dueDateDay?.toString() ?? '',
+    );
+
     if (widget.template != null) {
       _titleController.text = widget.template!.title;
-      final formatter = NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0);
+      final formatter = NumberFormat.currency(
+        locale: 'id_ID',
+        symbol: '',
+        decimalDigits: 0,
+      );
       _amountController.text = formatter.format(widget.template!.amount).trim();
       _classId = widget.template!.classId;
     }
-    
+
     _frequency = widget.template?.frequency ?? 'ONCE';
     _exactDueDate = widget.template?.exactDueDate;
   }
@@ -68,12 +76,14 @@ class _FeeTemplateFormScreenState extends State<FeeTemplateFormScreen> {
 
     setState(() => _isLoading = true);
     final schoolId = context.read<SchoolProvider>().activeSchoolId!;
-    
+
     int? dueDateDay;
     if (_frequency == 'MONTHLY' && _dueDateDayController.text.isNotEmpty) {
       dueDateDay = int.tryParse(_dueDateDayController.text);
       if (dueDateDay != null && (dueDateDay < 1 || dueDateDay > 28)) {
-        SnackbarUtils.showErrorSnackbar('Tanggal jatuh tempo harus antara 1 s.d 28');
+        SnackbarUtils.showErrorSnackbar(
+          'Tanggal jatuh tempo harus antara 1 s.d 28',
+        );
         return;
       }
     }
@@ -81,7 +91,11 @@ class _FeeTemplateFormScreenState extends State<FeeTemplateFormScreen> {
     final template = FeeTemplate(
       id: _idController.text.trim(),
       title: _titleController.text.trim(),
-      amount: double.tryParse(_amountController.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0.0,
+      amount:
+          double.tryParse(
+            _amountController.text.replaceAll(RegExp(r'[^0-9]'), ''),
+          ) ??
+          0.0,
       classId: _classId,
       frequency: _frequency,
       dueDateDay: dueDateDay,
@@ -106,7 +120,7 @@ class _FeeTemplateFormScreenState extends State<FeeTemplateFormScreen> {
 
   void _delete() async {
     if (widget.template == null) return;
-    
+
     final schoolId = context.read<SchoolProvider>().activeSchoolId!;
 
     final confirm = await DialogUtils.showConfirmationDialog(
@@ -137,7 +151,9 @@ class _FeeTemplateFormScreenState extends State<FeeTemplateFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEditing ? 'Edit Master Tagihan' : 'Tambah Master Tagihan'),
+        title: Text(
+          isEditing ? 'Edit Master Tagihan' : 'Tambah Master Tagihan',
+        ),
         actions: [
           if (isEditing)
             IconButton(
@@ -166,13 +182,17 @@ class _FeeTemplateFormScreenState extends State<FeeTemplateFormScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _titleController,
-                      decoration: const InputDecoration(labelText: 'Nama Tagihan *'),
+                      decoration: const InputDecoration(
+                        labelText: 'Nama Tagihan *',
+                      ),
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _amountController,
-                      decoration: const InputDecoration(labelText: 'Nominal (Rp) *'),
+                      decoration: const InputDecoration(
+                        labelText: 'Nominal (Rp) *',
+                      ),
                       keyboardType: TextInputType.number,
                       inputFormatters: [CurrencyInputFormatter()],
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
@@ -180,11 +200,22 @@ class _FeeTemplateFormScreenState extends State<FeeTemplateFormScreen> {
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
                       value: _frequency,
-                      decoration: const InputDecoration(labelText: 'Frekuensi Tagihan'),
+                      decoration: const InputDecoration(
+                        labelText: 'Frekuensi Tagihan',
+                      ),
                       items: const [
-                        DropdownMenuItem(value: 'ONCE', child: Text('Sekali Bayar (Misal: Uang Pangkal)')),
-                        DropdownMenuItem(value: 'MONTHLY', child: Text('Bulanan (Misal: SPP)')),
-                        DropdownMenuItem(value: 'YEARLY', child: Text('Tahunan (Misal: Daftar Ulang)')),
+                        DropdownMenuItem(
+                          value: 'ONCE',
+                          child: Text('Sekali Bayar (Misal: Uang Pangkal)'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'MONTHLY',
+                          child: Text('Bulanan (Misal: SPP)'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'YEARLY',
+                          child: Text('Tahunan (Misal: Daftar Ulang)'),
+                        ),
                       ],
                       onChanged: (v) {
                         setState(() {
@@ -198,18 +229,23 @@ class _FeeTemplateFormScreenState extends State<FeeTemplateFormScreen> {
                         controller: _dueDateDayController,
                         decoration: const InputDecoration(
                           labelText: 'Tanggal Jatuh Tempo Tiap Bulan (1-28)',
-                          helperText: 'Tagihan akan jatuh tempo pada tanggal ini setiap bulannya.',
+                          helperText:
+                              'Tagihan akan jatuh tempo pada tanggal ini setiap bulannya.',
                         ),
                         keyboardType: TextInputType.number,
-                        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
                       )
                     else
                       ListTile(
                         contentPadding: EdgeInsets.zero,
                         title: const Text('Tanggal Jatuh Tempo'),
-                        subtitle: Text(_exactDueDate != null 
-                            ? '${_exactDueDate!.day}/${_exactDueDate!.month}/${_exactDueDate!.year}' 
-                            : 'Belum diatur (Opsional)'),
+                        subtitle: Text(
+                          _exactDueDate != null
+                              ? '${_exactDueDate!.day}/${_exactDueDate!.month}/${_exactDueDate!.year}'
+                              : 'Belum diatur (Opsional)',
+                        ),
                         trailing: const Icon(Icons.calendar_today),
                         onTap: () async {
                           final picked = await showDatePicker(
@@ -227,14 +263,17 @@ class _FeeTemplateFormScreenState extends State<FeeTemplateFormScreen> {
                     StreamBuilder<List<AppClass>>(
                       stream: _classService.getClasses(schoolId),
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return const CircularProgressIndicator();
                         }
-                        
+
                         final classes = snapshot.data ?? [];
-                        
+
                         // Ensure _classId still exists in the list if it was set previously
-                        if (_classId != null && _classId!.isNotEmpty && !classes.any((c) => c.id == _classId)) {
+                        if (_classId != null &&
+                            _classId!.isNotEmpty &&
+                            !classes.any((c) => c.id == _classId)) {
                           _classId = null;
                         }
 
@@ -242,17 +281,20 @@ class _FeeTemplateFormScreenState extends State<FeeTemplateFormScreen> {
                           value: _classId,
                           decoration: const InputDecoration(
                             labelText: 'Target Kelas',
-                            helperText: 'Pilih kelas atau biarkan kosong jika berlaku untuk semua siswa.',
+                            helperText:
+                                'Pilih kelas atau biarkan kosong jika berlaku untuk semua siswa.',
                           ),
                           items: [
                             const DropdownMenuItem<String?>(
                               value: null,
                               child: Text('Semua Kelas'),
                             ),
-                            ...classes.map((c) => DropdownMenuItem(
-                              value: c.id,
-                              child: Text(c.name),
-                            ))
+                            ...classes.map(
+                              (c) => DropdownMenuItem(
+                                value: c.id,
+                                child: Text(c.name),
+                              ),
+                            ),
                           ],
                           onChanged: (val) {
                             setState(() {

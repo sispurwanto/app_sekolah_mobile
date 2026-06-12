@@ -19,8 +19,8 @@ class FinancialReportScreen extends StatefulWidget {
   State<FinancialReportScreen> createState() => _FinancialReportScreenState();
 }
 
-class _FinancialReportScreenState extends State<FinancialReportScreen> with SingleTickerProviderStateMixin {
-
+class _FinancialReportScreenState extends State<FinancialReportScreen>
+    with SingleTickerProviderStateMixin {
   final PaymentService _paymentService = PaymentService();
   final InvoiceService _invoiceService = InvoiceService();
   final AcademicYearService _academicYearService = AcademicYearService();
@@ -40,7 +40,7 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadAcademicYears();
     });
@@ -48,29 +48,31 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
 
   Future<void> _loadAcademicYears() async {
     // School ID is needed to load years. We can get it from context via read.
-      final schoolId = context.read<SchoolProvider>().activeSchoolId;
-      if (schoolId == null) return;
+    final schoolId = context.read<SchoolProvider>().activeSchoolId;
+    if (schoolId == null) return;
 
-      try {
-        final yearsStream = _academicYearService.getAcademicYears(schoolId);
-        final years = await yearsStream.first;
-        final activeYear = years.firstWhere((y) => y.isActive, orElse: () => years.first);
-        
-        setState(() {
-          _academicYears = years;
-          if (years.isNotEmpty) {
-            _selectedAcademicYearId = activeYear.id;
-            _loadData(schoolId);
-          }
-          _isLoadingYears = false;
-        });
-      } catch (e) {
-        setState(() {
-          _isLoadingYears = false;
-        });
-      }
+    try {
+      final yearsStream = _academicYearService.getAcademicYears(schoolId);
+      final years = await yearsStream.first;
+      final activeYear = years.firstWhere(
+        (y) => y.isActive,
+        orElse: () => years.first,
+      );
+
+      setState(() {
+        _academicYears = years;
+        if (years.isNotEmpty) {
+          _selectedAcademicYearId = activeYear.id;
+          _loadData(schoolId);
+        }
+        _isLoadingYears = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingYears = false;
+      });
+    }
   }
-
 
   @override
   void dispose() {
@@ -81,7 +83,12 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
   void _loadData(String schoolId) {
     if (_selectedAcademicYearId == null) return;
     setState(() {
-      _summaryFuture = _invoiceService.getFinancialSummaryByDateRange(schoolId, _selectedAcademicYearId!, _startDate, _endDate);
+      _summaryFuture = _invoiceService.getFinancialSummaryByDateRange(
+        schoolId,
+        _selectedAcademicYearId!,
+        _startDate,
+        _endDate,
+      );
     });
   }
 
@@ -108,7 +115,9 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
 
     if (picked != null) {
       if (picked.end.difference(picked.start).inDays > 30) {
-        SnackbarUtils.showErrorSnackbar('Rentang laporan maksimal 30 hari. Silakan pilih ulang.');
+        SnackbarUtils.showErrorSnackbar(
+          'Rentang laporan maksimal 30 hari. Silakan pilih ulang.',
+        );
         return;
       }
 
@@ -134,9 +143,7 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
     }
 
     if (_isLoadingYears) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -159,36 +166,70 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
           Expanded(
             child: _summaryFuture == null
                 ? const Center(child: Text('Pilih Tahun Ajaran'))
-                : FutureBuilder<({List<Payment> payments, List<Invoice> arrears})>(
+                : FutureBuilder<
+                    ({List<Payment> payments, List<Invoice> arrears})
+                  >(
                     future: _summaryFuture,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
                       }
                       if (snapshot.hasError) {
-                        return Center(child: Text('Terjadi kesalahan: ${snapshot.error}'));
+                        return Center(
+                          child: Text('Terjadi kesalahan: ${snapshot.error}'),
+                        );
                       }
-                      
+
                       final data = snapshot.data;
                       if (data == null) return const SizedBox.shrink();
 
                       return Column(
                         children: [
-                          if (data.payments.isNotEmpty || data.arrears.isNotEmpty)
+                          if (data.payments.isNotEmpty ||
+                              data.arrears.isNotEmpty)
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+                                vertical: 8.0,
+                              ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
                                   TextButton.icon(
-                                    icon: const Icon(Icons.picture_as_pdf, color: Colors.blue),
-                                    label: const Text('Export PDF', style: TextStyle(color: Colors.blue)),
-                                    onPressed: () => _exportService.exportCombinedFinancialPdf(context, data.payments, data.arrears, _startDate, _endDate),
+                                    icon: const Icon(
+                                      Icons.picture_as_pdf,
+                                      color: Colors.blue,
+                                    ),
+                                    label: const Text(
+                                      'Export PDF',
+                                      style: TextStyle(color: Colors.blue),
+                                    ),
+                                    onPressed: () => _exportService
+                                        .exportCombinedFinancialPdf(
+                                          context,
+                                          data.payments,
+                                          data.arrears,
+                                          _startDate,
+                                          _endDate,
+                                        ),
                                   ),
                                   TextButton.icon(
-                                    icon: const Icon(Icons.table_chart, color: Colors.blue),
-                                    label: const Text('Export Excel', style: TextStyle(color: Colors.blue)),
-                                    onPressed: () => _exportService.exportCombinedFinancialExcel(context, data.payments, data.arrears, _startDate, _endDate),
+                                    icon: const Icon(
+                                      Icons.table_chart,
+                                      color: Colors.blue,
+                                    ),
+                                    label: const Text(
+                                      'Export Excel',
+                                      style: TextStyle(color: Colors.blue),
+                                    ),
+                                    onPressed: () => _exportService
+                                        .exportCombinedFinancialExcel(
+                                          context,
+                                          data.payments,
+                                          data.arrears,
+                                          _startDate,
+                                          _endDate,
+                                        ),
                                   ),
                                 ],
                               ),
@@ -222,7 +263,10 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
         children: [
           Row(
             children: [
-              const Text('Tahun Ajaran: ', style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                'Tahun Ajaran: ',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: DropdownButton<String>(
@@ -239,7 +283,9 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
                       setState(() {
                         _selectedAcademicYearId = val;
                       });
-                      final schoolId = context.read<SchoolProvider>().activeSchoolId;
+                      final schoolId = context
+                          .read<SchoolProvider>()
+                          .activeSchoolId;
                       if (schoolId != null) {
                         _loadData(schoolId);
                       }
@@ -257,11 +303,17 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Periode Laporan:', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    const Text(
+                      'Periode Laporan:',
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       '${dateFormat.format(_startDate)} - ${dateFormat.format(_endDate)}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                   ],
                 ),
@@ -279,22 +331,45 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
   }
 
   Widget _buildIncomeTab(List<Payment> payments) {
-    final double totalIncome = payments.fold(0, (sum, item) => sum + item.amount);
+    final double totalIncome = payments.fold(
+      0,
+      (sum, item) => sum + item.amount,
+    );
 
     return ListView(
       padding: const EdgeInsets.all(16.0),
       children: [
-        _buildSummaryCard('Total Pembayaran', totalIncome, Colors.green, subtitle: 'dari ${payments.length} pembayaran'),
+        _buildSummaryCard(
+          'Total Pembayaran',
+          totalIncome,
+          Colors.green,
+          subtitle: 'dari ${payments.length} pembayaran',
+        ),
         if (payments.isNotEmpty)
-          ...payments.map((p) => ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            title: Text(p.studentName, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text(p.invoiceTitle.isNotEmpty ? p.invoiceTitle : 'Pembayaran'),
-            trailing: Text(
-              CurrencyUtils.formatRp(p.amount),
-              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green),
-            ),
-          )).toList(),
+          ...payments
+              .map(
+                (p) => ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  title: Text(
+                    p.studentName,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    p.invoiceTitle.isNotEmpty ? p.invoiceTitle : 'Pembayaran',
+                  ),
+                  trailing: Text(
+                    CurrencyUtils.formatRp(p.amount),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
       ],
     );
   }
@@ -303,22 +378,46 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
     return ListView(
       padding: const EdgeInsets.all(16.0),
       children: [
-        _buildSummaryCard('Total Siswa Tidak Bayar', 0, Colors.red, customValue: '${arrears.length} Siswa'),
+        _buildSummaryCard(
+          'Total Siswa Tidak Bayar',
+          0,
+          Colors.red,
+          customValue: '${arrears.length} Siswa',
+        ),
         if (arrears.isNotEmpty)
-          ...arrears.map((a) => ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            title: Text(a.studentName, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: const Text('Belum ada pembayaran periode ini'),
-            trailing: const Text(
-              'Tidak Bayar',
-              style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red),
-            ),
-          )).toList(),
+          ...arrears
+              .map(
+                (a) => ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  title: Text(
+                    a.studentName,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: const Text('Belum ada pembayaran periode ini'),
+                  trailing: const Text(
+                    'Tidak Bayar',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
       ],
     );
   }
 
-  Widget _buildSummaryCard(String title, double amount, Color color, {String? customValue, String? subtitle}) {
+  Widget _buildSummaryCard(
+    String title,
+    double amount,
+    Color color, {
+    String? customValue,
+    String? subtitle,
+  }) {
     return Card(
       margin: const EdgeInsets.all(16.0),
       color: color.withOpacity(0.1),
@@ -333,7 +432,11 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
           children: [
             Text(
               title,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
             if (subtitle != null) ...[
               const SizedBox(height: 4),
@@ -345,7 +448,11 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> with Sing
             const SizedBox(height: 12),
             Text(
               customValue ?? CurrencyUtils.formatRp(amount),
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: color),
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
               textAlign: TextAlign.center,
             ),
           ],

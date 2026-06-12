@@ -13,29 +13,37 @@ class StudentService {
         .collection('students')
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) => Student.fromFirestore(doc)).toList();
-    });
+          return snapshot.docs
+              .map((doc) => Student.fromFirestore(doc))
+              .toList();
+        });
   }
 
   // Fetch students by class (Future for efficiency)
-  Future<List<Student>> fetchStudentsByClass(String schoolId, String classId, {String statusFilter = 'SEMUA', Source source = Source.serverAndCache}) async {
-    var query = _db
-        .collection('schools')
-        .doc(schoolId)
-        .collection('students');
-        
+  Future<List<Student>> fetchStudentsByClass(
+    String schoolId,
+    String classId, {
+    String statusFilter = 'SEMUA',
+    Source source = Source.serverAndCache,
+  }) async {
+    var query = _db.collection('schools').doc(schoolId).collection('students');
+
     // Base Query with status filter (if not ALL)
     Query<Map<String, dynamic>> finalQuery = query;
     if (statusFilter != 'SEMUA') {
       finalQuery = finalQuery.where('status', isEqualTo: statusFilter);
     }
-        
+
     if (classId.isNotEmpty) {
-      final snapshot = await finalQuery.where('class_id', isEqualTo: classId).get(GetOptions(source: source));
+      final snapshot = await finalQuery
+          .where('class_id', isEqualTo: classId)
+          .get(GetOptions(source: source));
       return snapshot.docs.map((doc) => Student.fromFirestore(doc)).toList();
     } else {
       // Limit to avoid massive reads
-      final snapshot = await finalQuery.limit(500).get(GetOptions(source: source));
+      final snapshot = await finalQuery
+          .limit(500)
+          .get(GetOptions(source: source));
       return snapshot.docs.map((doc) => Student.fromFirestore(doc)).toList();
     }
   }
@@ -47,7 +55,7 @@ class StudentService {
         .collection('students')
         .doc(studentId)
         .get();
-    
+
     if (doc.exists) {
       return Student.fromFirestore(doc);
     }
@@ -63,19 +71,23 @@ class StudentService {
         .doc(studentId)
         .snapshots()
         .map((doc) {
-      if (!doc.exists) return null;
-      return Student.fromFirestore(doc);
-    });
+          if (!doc.exists) return null;
+          return Student.fromFirestore(doc);
+        });
   }
 
   // Create student
   Future<void> addStudent(String schoolId, Student student) async {
     final batch = _db.batch();
-    
+
     // Gunakan NIS sebagai ID Dokumen
-    final idToUse = student.nis; 
-    final studentRef = _db.collection('schools').doc(schoolId).collection('students').doc(idToUse);
-    
+    final idToUse = student.nis;
+    final studentRef = _db
+        .collection('schools')
+        .doc(schoolId)
+        .collection('students')
+        .doc(idToUse);
+
     // Save student
     final uid = FirebaseAuth.instance.currentUser?.uid;
     final studentData = student.toMap();
@@ -88,16 +100,14 @@ class StudentService {
 
     // If there is a guardian, auto link in guardian's document
     if (student.guardianId.isNotEmpty) {
-      final guardianRef = _db.collection('schools').doc(schoolId).collection('users').doc(student.guardianId);
-      batch.set(
-        guardianRef,
-        {
-          'childrens': {
-            idToUse: true,
-          }
-        },
-        SetOptions(merge: true)
-      );
+      final guardianRef = _db
+          .collection('schools')
+          .doc(schoolId)
+          .collection('users')
+          .doc(student.guardianId);
+      batch.set(guardianRef, {
+        'childrens': {idToUse: true},
+      }, SetOptions(merge: true));
     }
 
     if (student.academicYearId.isNotEmpty && student.classId.isNotEmpty) {
@@ -120,7 +130,8 @@ class StudentService {
 
       final classDataRef = classDocRef.collection('students').doc(idToUse);
 
-      final studentClassData = studentData; // Use the same data as the master student
+      final studentClassData =
+          studentData; // Use the same data as the master student
       studentClassData['status'] = 'ACTIVE';
       studentClassData['joined_at'] = FieldValue.serverTimestamp();
 
@@ -133,23 +144,25 @@ class StudentService {
   // Update student
   Future<void> updateStudent(String schoolId, Student student) async {
     final batch = _db.batch();
-    final studentRef = _db.collection('schools').doc(schoolId).collection('students').doc(student.id);
+    final studentRef = _db
+        .collection('schools')
+        .doc(schoolId)
+        .collection('students')
+        .doc(student.id);
 
     // To handle guardian changes perfectly, we would need the old guardian id to remove the child from their map.
     // For simplicity, we just ensure the new guardian gets the child added.
     batch.update(studentRef, student.toMap());
 
     if (student.guardianId.isNotEmpty) {
-      final guardianRef = _db.collection('schools').doc(schoolId).collection('users').doc(student.guardianId);
-      batch.set(
-        guardianRef,
-        {
-          'childrens': {
-            student.id: true,
-          }
-        },
-        SetOptions(merge: true)
-      );
+      final guardianRef = _db
+          .collection('schools')
+          .doc(schoolId)
+          .collection('users')
+          .doc(student.guardianId);
+      batch.set(guardianRef, {
+        'childrens': {student.id: true},
+      }, SetOptions(merge: true));
     }
 
     if (student.academicYearId.isNotEmpty && student.classId.isNotEmpty) {
@@ -182,21 +195,28 @@ class StudentService {
   }
 
   // Delete student
-  Future<void> deleteStudent(String schoolId, String studentId, String guardianId) async {
+  Future<void> deleteStudent(
+    String schoolId,
+    String studentId,
+    String guardianId,
+  ) async {
     final batch = _db.batch();
-    final studentRef = _db.collection('schools').doc(schoolId).collection('students').doc(studentId);
-    
+    final studentRef = _db
+        .collection('schools')
+        .doc(schoolId)
+        .collection('students')
+        .doc(studentId);
+
     batch.delete(studentRef);
 
     if (guardianId.isNotEmpty) {
-      final guardianRef = _db.collection('schools').doc(schoolId).collection('users').doc(guardianId);
+      final guardianRef = _db
+          .collection('schools')
+          .doc(schoolId)
+          .collection('users')
+          .doc(guardianId);
       // Remove child from map
-      batch.update(
-        guardianRef,
-        {
-          'childrens.$studentId': FieldValue.delete(),
-        }
-      );
+      batch.update(guardianRef, {'childrens.$studentId': FieldValue.delete()});
     }
 
     await batch.commit();

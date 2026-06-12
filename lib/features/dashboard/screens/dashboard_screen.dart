@@ -13,6 +13,8 @@ import '../../master_data/screens/class_list_screen.dart';
 import '../../master_data/screens/academic_year_list_screen.dart';
 import '../../master_data/screens/fee_template_list_screen.dart';
 import '../../master_data/screens/activity_master_list_screen.dart';
+import '../../master_data/screens/subject_list_screen.dart';
+import '../../master_data/screens/schedule_list_screen.dart';
 import '../../reports/screens/financial_report_screen.dart';
 import '../../savings/screens/savings_report_screen.dart';
 import 'widgets/wali_dashboard_view.dart';
@@ -174,6 +176,34 @@ class DashboardScreen extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => ActivityMasterListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.menu_book),
+                    title: const Text('Mata Pelajaran'),
+                    contentPadding: const EdgeInsets.only(left: 40),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SubjectListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.calendar_view_week),
+                    title: const Text('Jadwal Pelajaran'),
+                    contentPadding: const EdgeInsets.only(left: 40),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ScheduleListScreen(),
                         ),
                       );
                     },

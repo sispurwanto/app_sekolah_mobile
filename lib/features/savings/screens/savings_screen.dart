@@ -29,7 +29,12 @@ class SavingsScreen extends StatefulWidget {
 class _SavingsScreenState extends State<SavingsScreen> {
   final SavingsService _savingsService = SavingsService();
 
-  void _showTransactionDialog(BuildContext context, String schoolId, String type, double currentBalance) {
+  void _showTransactionDialog(
+    BuildContext context,
+    String schoolId,
+    String type,
+    double currentBalance,
+  ) {
     final amountController = TextEditingController();
     final noteController = TextEditingController();
     final isDeposit = type == 'DEPOSIT';
@@ -46,7 +51,9 @@ class _SavingsScreenState extends State<SavingsScreen> {
               decoration: InputDecoration(
                 labelText: 'Nominal (Rp)',
                 prefixIcon: const Icon(Icons.payments),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               keyboardType: TextInputType.number,
               inputFormatters: [CurrencyInputFormatter()],
@@ -57,17 +64,27 @@ class _SavingsScreenState extends State<SavingsScreen> {
               decoration: InputDecoration(
                 labelText: 'Keterangan (Opsional)',
                 prefixIcon: const Icon(Icons.note),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: isDeposit ? Colors.green : Colors.red),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isDeposit ? Colors.green : Colors.red,
+            ),
             onPressed: () async {
-              final amountStr = amountController.text.replaceAll(RegExp(r'[^0-9]'), '');
+              final amountStr = amountController.text.replaceAll(
+                RegExp(r'[^0-9]'),
+                '',
+              );
               final amount = double.tryParse(amountStr) ?? 0.0;
 
               if (amount <= 0) {
@@ -104,10 +121,16 @@ class _SavingsScreenState extends State<SavingsScreen> {
     );
   }
 
-  void _showActionOptions(BuildContext context, String schoolId, double currentBalance) {
+  void _showActionOptions(
+    BuildContext context,
+    String schoolId,
+    double currentBalance,
+  ) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 20),
@@ -121,7 +144,12 @@ class _SavingsScreenState extends State<SavingsScreen> {
                 label: 'Nabung',
                 onTap: () {
                   Navigator.pop(context);
-                  _showTransactionDialog(context, schoolId, 'DEPOSIT', currentBalance);
+                  _showTransactionDialog(
+                    context,
+                    schoolId,
+                    'DEPOSIT',
+                    currentBalance,
+                  );
                 },
               ),
               _buildActionItem(
@@ -131,7 +159,12 @@ class _SavingsScreenState extends State<SavingsScreen> {
                 label: 'Tarik Tunai',
                 onTap: () {
                   Navigator.pop(context);
-                  _showTransactionDialog(context, schoolId, 'WITHDRAWAL', currentBalance);
+                  _showTransactionDialog(
+                    context,
+                    schoolId,
+                    'WITHDRAWAL',
+                    currentBalance,
+                  );
                 },
               ),
             ],
@@ -141,7 +174,13 @@ class _SavingsScreenState extends State<SavingsScreen> {
     );
   }
 
-  Widget _buildActionItem({required BuildContext context, required IconData icon, required Color color, required String label, required VoidCallback onTap}) {
+  Widget _buildActionItem({
+    required BuildContext context,
+    required IconData icon,
+    required Color color,
+    required String label,
+    required VoidCallback onTap,
+  }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
@@ -156,7 +195,10 @@ class _SavingsScreenState extends State<SavingsScreen> {
               child: Icon(icon, color: color, size: 36),
             ),
             const SizedBox(height: 8),
-            Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
           ],
         ),
       ),
@@ -181,13 +223,18 @@ class _SavingsScreenState extends State<SavingsScreen> {
         children: [
           // Header / Summary Card
           StreamBuilder<SavingsSummary?>(
-            stream: _savingsService.getSavingsSummaryStream(schoolId, widget.studentId),
+            stream: _savingsService.getSavingsSummaryStream(
+              schoolId,
+              widget.studentId,
+            ),
             builder: (context, snapshot) {
-              final summary = snapshot.data ?? SavingsSummary(
-                studentId: widget.studentId,
-                studentName: widget.studentName,
-                classId: widget.classId,
-              );
+              final summary =
+                  snapshot.data ??
+                  SavingsSummary(
+                    studentId: widget.studentId,
+                    studentName: widget.studentName,
+                    classId: widget.classId,
+                  );
 
               return Container(
                 padding: const EdgeInsets.all(20),
@@ -197,22 +244,40 @@ class _SavingsScreenState extends State<SavingsScreen> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.only(bottomLeft: Radius.circular(30), bottomRight: Radius.circular(30)),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30),
+                  ),
                 ),
                 child: Column(
                   children: [
-                    const Text('Total Saldo Saat Ini', style: TextStyle(color: Colors.white70, fontSize: 16)),
+                    const Text(
+                      'Total Saldo Saat Ini',
+                      style: TextStyle(color: Colors.white70, fontSize: 16),
+                    ),
                     const SizedBox(height: 8),
                     Text(
                       CurrencyUtils.formatRp(summary.balance),
-                      style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 24),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        _buildSummaryStat('Total Nabung', summary.totalDeposit, Colors.greenAccent),
-                        _buildSummaryStat('Total Penarikan', summary.totalWithdrawal, Colors.redAccent),
+                        _buildSummaryStat(
+                          'Total Nabung',
+                          summary.totalDeposit,
+                          Colors.greenAccent,
+                        ),
+                        _buildSummaryStat(
+                          'Total Penarikan',
+                          summary.totalWithdrawal,
+                          Colors.redAccent,
+                        ),
                       ],
                     ),
                   ],
@@ -227,13 +292,19 @@ class _SavingsScreenState extends State<SavingsScreen> {
               alignment: Alignment.centerLeft,
               child: Text(
                 'Riwayat Transaksi (30 Hari Terakhir)',
-                style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                ),
               ),
             ),
           ),
           Expanded(
             child: StreamBuilder<List<SavingsTransaction>>(
-              stream: _savingsService.getTransactionsStream(schoolId, widget.studentId),
+              stream: _savingsService.getTransactionsStream(
+                schoolId,
+                widget.studentId,
+              ),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -244,7 +315,8 @@ class _SavingsScreenState extends State<SavingsScreen> {
                   return const EmptyStateWidget(
                     icon: Icons.account_balance_wallet_outlined,
                     title: 'Belum ada transaksi',
-                    subtitle: 'Tabungan akan muncul di sini setelah transaksi dilakukan.',
+                    subtitle:
+                        'Tabungan akan muncul di sini setelah transaksi dilakukan.',
                   );
                 }
 
@@ -256,21 +328,43 @@ class _SavingsScreenState extends State<SavingsScreen> {
                     final isDeposit = t.type == 'DEPOSIT';
                     return Card(
                       margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       child: ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: isDeposit ? Colors.green.shade50 : Colors.red.shade50,
+                          backgroundColor: isDeposit
+                              ? Colors.green.shade50
+                              : Colors.red.shade50,
                           child: Icon(
-                            isDeposit ? Icons.arrow_downward : Icons.arrow_upward,
+                            isDeposit
+                                ? Icons.arrow_downward
+                                : Icons.arrow_upward,
                             color: isDeposit ? Colors.green : Colors.red,
                           ),
                         ),
-                        title: Text(isDeposit ? 'Setor Tabungan' : 'Tarik Tunai', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        title: Text(
+                          isDeposit ? 'Setor Tabungan' : 'Tarik Tunai',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(DateFormat('dd MMM yyyy, HH:mm').format(t.date), style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                            if (t.note.isNotEmpty) Text(t.note, style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+                            Text(
+                              DateFormat('dd MMM yyyy, HH:mm').format(t.date),
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            if (t.note.isNotEmpty)
+                              Text(
+                                t.note,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
                           ],
                         ),
                         trailing: Text(
@@ -290,19 +384,28 @@ class _SavingsScreenState extends State<SavingsScreen> {
           ),
         ],
       ),
-      floatingActionButton: isWali ? null : StreamBuilder<SavingsSummary?>(
-        stream: _savingsService.getSavingsSummaryStream(schoolId, widget.studentId),
-        builder: (context, snapshot) {
-          final balance = snapshot.data?.balance ?? 0.0;
-          return FloatingActionButton.extended(
-            onPressed: () => _showActionOptions(context, schoolId, balance),
-            icon: const Icon(Icons.account_balance_wallet),
-            label: const Text('Transaksi', style: TextStyle(color: Colors.white)),
-            backgroundColor: const Color(0xFF2E7D32),
-            foregroundColor: Colors.white,
-          );
-        },
-      ),
+      floatingActionButton: isWali
+          ? null
+          : StreamBuilder<SavingsSummary?>(
+              stream: _savingsService.getSavingsSummaryStream(
+                schoolId,
+                widget.studentId,
+              ),
+              builder: (context, snapshot) {
+                final balance = snapshot.data?.balance ?? 0.0;
+                return FloatingActionButton.extended(
+                  onPressed: () =>
+                      _showActionOptions(context, schoolId, balance),
+                  icon: const Icon(Icons.account_balance_wallet),
+                  label: const Text(
+                    'Transaksi',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  backgroundColor: const Color(0xFF2E7D32),
+                  foregroundColor: Colors.white,
+                );
+              },
+            ),
     );
   }
 
@@ -310,11 +413,18 @@ class _SavingsScreenState extends State<SavingsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white70, fontSize: 12),
+        ),
         const SizedBox(height: 4),
         Text(
           CurrencyUtils.formatRp(amount),
-          style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: color,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );

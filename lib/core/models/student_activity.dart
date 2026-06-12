@@ -49,13 +49,15 @@ class StudentActivity {
 
   factory StudentActivity.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic>? firestoreData = doc.data() as Map<String, dynamic>?;
-    
+
     if (firestoreData == null) {
       return StudentActivity(idSiswa: doc.id, nameSiswa: '', data: []);
     }
 
     var list = firestoreData['data'] as List<dynamic>? ?? [];
-    List<ActivityEntry> dataList = list.map((i) => ActivityEntry.fromMap(i as Map<String, dynamic>)).toList();
+    List<ActivityEntry> dataList = list
+        .map((i) => ActivityEntry.fromMap(i as Map<String, dynamic>))
+        .toList();
 
     return StudentActivity(
       idSiswa: firestoreData['id_siswa'] ?? doc.id,

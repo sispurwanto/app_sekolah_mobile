@@ -16,9 +16,7 @@ class AcademicYearListScreen extends StatelessWidget {
     final schoolId = context.watch<SchoolProvider>().activeSchoolId ?? '';
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tahun Ajaran'),
-      ),
+      appBar: AppBar(title: const Text('Tahun Ajaran')),
       body: StreamBuilder<List<AcademicYear>>(
         stream: _service.getAcademicYears(schoolId),
         builder: (context, snapshot) {
@@ -47,8 +45,13 @@ class AcademicYearListScreen extends StatelessWidget {
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: ListTile(
-                  title: Text(year.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text(year.isActive ? 'Status: Aktif' : 'Status: Tidak Aktif'),
+                  title: Text(
+                    year.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    year.isActive ? 'Status: Aktif' : 'Status: Tidak Aktif',
+                  ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -60,7 +63,8 @@ class AcademicYearListScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => AcademicYearFormScreen(academicYear: year),
+                              builder: (context) =>
+                                  AcademicYearFormScreen(academicYear: year),
                             ),
                           );
                         },

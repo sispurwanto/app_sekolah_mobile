@@ -12,14 +12,16 @@ class FeeTemplateService {
         .collection('fee_templates')
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) => FeeTemplate.fromFirestore(doc)).toList();
-    });
+          return snapshot.docs
+              .map((doc) => FeeTemplate.fromFirestore(doc))
+              .toList();
+        });
   }
 
   Future<void> addFeeTemplate(String schoolId, FeeTemplate template) async {
     final idToUse = template.id;
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    
+
     final data = template.toMap();
     data['created_at'] = FieldValue.serverTimestamp();
     data['created_by'] = uid;
@@ -37,10 +39,10 @@ class FeeTemplateService {
   Future<void> updateFeeTemplate(String schoolId, FeeTemplate template) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     final data = template.toMap();
-    
+
     data.remove('created_at');
     data.remove('created_by');
-    
+
     data['updated_at'] = FieldValue.serverTimestamp();
     data['updated_by'] = uid;
 

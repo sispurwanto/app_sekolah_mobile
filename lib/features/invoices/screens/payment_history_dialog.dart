@@ -22,7 +22,10 @@ class PaymentHistoryDialog extends StatelessWidget {
         Icon(icon, size: 14, color: Colors.grey),
         const SizedBox(width: 4),
         Expanded(
-          child: Text('$label: $value', style: const TextStyle(color: Colors.black87, fontSize: 13)),
+          child: Text(
+            '$label: $value',
+            style: const TextStyle(color: Colors.black87, fontSize: 13),
+          ),
         ),
       ],
     );
@@ -42,14 +45,15 @@ class PaymentHistoryDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              invoice.title,
-              style: const TextStyle(color: Colors.grey),
-            ),
+            Text(invoice.title, style: const TextStyle(color: Colors.grey)),
             const Divider(),
             Expanded(
               child: StreamBuilder<List<Payment>>(
-                stream: paymentService.getPaymentsForInvoice(schoolId, invoice.academicYearId, invoice.id),
+                stream: paymentService.getPaymentsForInvoice(
+                  schoolId,
+                  invoice.academicYearId,
+                  invoice.id,
+                ),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
@@ -74,7 +78,9 @@ class PaymentHistoryDialog extends StatelessWidget {
                     itemBuilder: (context, index) {
                       final payment = payments[index];
                       final dateStr = payment.createdAt != null
-                          ? DateFormat('dd MMM yyyy HH:mm').format(payment.createdAt!)
+                          ? DateFormat(
+                              'dd MMM yyyy HH:mm',
+                            ).format(payment.createdAt!)
                           : '-';
 
                       Color statusColor;
@@ -92,47 +98,76 @@ class PaymentHistoryDialog extends StatelessWidget {
                           statusColor = Colors.grey;
                       }
 
-                      final isBulk = payment.invoiceIds != null && payment.invoiceIds!.length > 1;
+                      final isBulk =
+                          payment.invoiceIds != null &&
+                          payment.invoiceIds!.length > 1;
                       final titles = payment.invoiceTitles ?? [];
                       final amounts = payment.invoiceAmounts ?? [];
 
                       return Card(
                         margin: const EdgeInsets.symmetric(vertical: 6),
                         elevation: 2,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                         child: Padding(
                           padding: const EdgeInsets.all(12),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
                                     CurrencyUtils.formatRp(payment.amount),
-                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
                                   ),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: statusColor.withAlpha((255 * 0.1).toInt()),
+                                      color: statusColor.withAlpha(
+                                        (255 * 0.1).toInt(),
+                                      ),
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(color: statusColor),
                                     ),
                                     child: Text(
                                       payment.status,
-                                      style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12),
+                                      style: TextStyle(
+                                        color: statusColor,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
                                     ),
                                   ),
                                 ],
                               ),
                               const Divider(height: 16),
-                              _buildDetailRow(Icons.payment, 'Metode', payment.method),
+                              _buildDetailRow(
+                                Icons.payment,
+                                'Metode',
+                                payment.method,
+                              ),
                               const SizedBox(height: 4),
-                              _buildDetailRow(Icons.calendar_today, 'Tanggal', dateStr),
+                              _buildDetailRow(
+                                Icons.calendar_today,
+                                'Tanggal',
+                                dateStr,
+                              ),
                               if (payment.referenceNote.isNotEmpty) ...[
                                 const SizedBox(height: 4),
-                                _buildDetailRow(Icons.note, 'Catatan', payment.referenceNote),
+                                _buildDetailRow(
+                                  Icons.note,
+                                  'Catatan',
+                                  payment.referenceNote,
+                                ),
                               ],
                               if (isBulk) ...[
                                 const SizedBox(height: 12),
@@ -141,30 +176,55 @@ class PaymentHistoryDialog extends StatelessWidget {
                                   decoration: BoxDecoration(
                                     color: Colors.blue.shade50,
                                     borderRadius: BorderRadius.circular(6),
-                                    border: Border.all(color: Colors.blue.shade200),
+                                    border: Border.all(
+                                      color: Colors.blue.shade200,
+                                    ),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       const Row(
                                         children: [
-                                          Icon(Icons.collections_bookmark, size: 14, color: Colors.blue),
+                                          Icon(
+                                            Icons.collections_bookmark,
+                                            size: 14,
+                                            color: Colors.blue,
+                                          ),
                                           SizedBox(width: 4),
-                                          Text('Rincian Kolektif:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 13)),
+                                          Text(
+                                            'Rincian Kolektif:',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.blue,
+                                              fontSize: 13,
+                                            ),
+                                          ),
                                         ],
                                       ),
                                       const SizedBox(height: 6),
                                       ...List.generate(titles.length, (i) {
                                         return Padding(
-                                          padding: const EdgeInsets.only(bottom: 4),
+                                          padding: const EdgeInsets.only(
+                                            bottom: 4,
+                                          ),
                                           child: Row(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
-                                              const Text('• ', style: TextStyle(color: Colors.blue)),
+                                              const Text(
+                                                '• ',
+                                                style: TextStyle(
+                                                  color: Colors.blue,
+                                                ),
+                                              ),
                                               Expanded(
                                                 child: Text(
                                                   '${titles[i]} ${i < amounts.length ? "(${CurrencyUtils.formatRp(amounts[i])})" : ""}',
-                                                  style: const TextStyle(fontSize: 12, color: Colors.black87),
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.black87,
+                                                  ),
                                                 ),
                                               ),
                                             ],
@@ -174,7 +234,7 @@ class PaymentHistoryDialog extends StatelessWidget {
                                     ],
                                   ),
                                 ),
-                              ]
+                              ],
                             ],
                           ),
                         ),

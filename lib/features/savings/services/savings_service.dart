@@ -6,7 +6,10 @@ class SavingsService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   // Get stream of SavingsSummary for a specific student
-  Stream<SavingsSummary?> getSavingsSummaryStream(String schoolId, String studentId) {
+  Stream<SavingsSummary?> getSavingsSummaryStream(
+    String schoolId,
+    String studentId,
+  ) {
     return _db
         .collection('schools')
         .doc(schoolId)
@@ -17,18 +20,26 @@ class SavingsService {
   }
 
   // Fetch all active savings summaries for reporting (Future)
-  Future<List<SavingsSummary>> fetchAllSavingsSummaries(String schoolId, {Source source = Source.serverAndCache}) async {
+  Future<List<SavingsSummary>> fetchAllSavingsSummaries(
+    String schoolId, {
+    Source source = Source.serverAndCache,
+  }) async {
     final snapshot = await _db
         .collection('schools')
         .doc(schoolId)
         .collection('savings')
         .where('balance', isGreaterThan: 0)
         .get(GetOptions(source: source));
-    return snapshot.docs.map((doc) => SavingsSummary.fromFirestore(doc)).toList();
+    return snapshot.docs
+        .map((doc) => SavingsSummary.fromFirestore(doc))
+        .toList();
   }
 
   // Get stream of recent transactions for a student
-  Stream<List<SavingsTransaction>> getTransactionsStream(String schoolId, String studentId) {
+  Stream<List<SavingsTransaction>> getTransactionsStream(
+    String schoolId,
+    String studentId,
+  ) {
     final oneMonthAgo = DateTime.now().subtract(const Duration(days: 30));
     return _db
         .collection('schools')
@@ -39,7 +50,11 @@ class SavingsService {
         .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(oneMonthAgo))
         .orderBy('date', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => SavingsTransaction.fromFirestore(doc)).toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => SavingsTransaction.fromFirestore(doc))
+              .toList(),
+        );
   }
 
   // Add a new transaction using a Firestore Transaction to ensure data consistency
@@ -56,20 +71,26 @@ class SavingsService {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (amount <= 0) throw Exception('Nominal harus lebih dari 0');
 
-    final summaryRef = _db.collection('schools').doc(schoolId).collection('savings').doc(studentId);
+    final summaryRef = _db
+        .collection('schools')
+        .doc(schoolId)
+        .collection('savings')
+        .doc(studentId);
     final transactionRef = summaryRef.collection('transactions').doc();
 
     await _db.runTransaction((transaction) async {
       final summarySnapshot = await transaction.get(summaryRef);
-      
+
       double currentBalance = 0;
       double totalDeposit = 0;
       double totalWithdrawal = 0;
 
       if (summarySnapshot.exists) {
         currentBalance = (summarySnapshot.data()?['balance'] ?? 0.0).toDouble();
-        totalDeposit = (summarySnapshot.data()?['total_deposit'] ?? 0.0).toDouble();
-        totalWithdrawal = (summarySnapshot.data()?['total_withdrawal'] ?? 0.0).toDouble();
+        totalDeposit = (summarySnapshot.data()?['total_deposit'] ?? 0.0)
+            .toDouble();
+        totalWithdrawal = (summarySnapshot.data()?['total_withdrawal'] ?? 0.0)
+            .toDouble();
       }
 
       if (type == 'WITHDRAWAL' && currentBalance < amount) {

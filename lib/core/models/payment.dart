@@ -49,10 +49,16 @@ class Payment {
       id: doc.id,
       invoiceId: data['invoice_id'] ?? '',
       invoiceTitle: data['invoice_title'] ?? '',
-      invoiceIds: data['invoice_ids'] != null ? List<String>.from(data['invoice_ids']) : null,
-      invoiceTitles: data['invoice_titles'] != null ? List<String>.from(data['invoice_titles']) : null,
-      invoiceAmounts: data['invoice_amounts'] != null 
-          ? List<dynamic>.from(data['invoice_amounts']).map((e) => (e as num).toDouble()).toList() 
+      invoiceIds: data['invoice_ids'] != null
+          ? List<String>.from(data['invoice_ids'])
+          : null,
+      invoiceTitles: data['invoice_titles'] != null
+          ? List<String>.from(data['invoice_titles'])
+          : null,
+      invoiceAmounts: data['invoice_amounts'] != null
+          ? List<dynamic>.from(
+              data['invoice_amounts'],
+            ).map((e) => (e as num).toDouble()).toList()
           : null,
       studentId: data['student_id'] ?? '',
       studentName: data['student_name'] ?? '',
@@ -63,9 +69,13 @@ class Payment {
       referenceNote: data['reference_note'] ?? '',
       schoolId: data['school_id'] ?? '',
       academicYearId: data['academic_year_id'] ?? '',
-      createdAt: data['created_at'] != null ? (data['created_at'] as Timestamp).toDate() : null,
+      createdAt: data['created_at'] != null
+          ? (data['created_at'] as Timestamp).toDate()
+          : null,
       createdBy: data['created_by'],
-      updatedAt: data['updated_at'] != null ? (data['updated_at'] as Timestamp).toDate() : null,
+      updatedAt: data['updated_at'] != null
+          ? (data['updated_at'] as Timestamp).toDate()
+          : null,
       updatedBy: data['updated_by'],
     );
   }
@@ -83,7 +93,9 @@ class Payment {
       'reference_note': referenceNote,
       'school_id': schoolId,
       'academic_year_id': academicYearId,
-      'created_at': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+      'created_at': createdAt != null
+          ? Timestamp.fromDate(createdAt!)
+          : FieldValue.serverTimestamp(),
     };
     if (invoiceIds != null) result['invoice_ids'] = invoiceIds;
     if (invoiceTitles != null) result['invoice_titles'] = invoiceTitles;

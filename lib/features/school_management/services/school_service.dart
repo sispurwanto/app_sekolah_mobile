@@ -23,9 +23,9 @@ class SchoolService {
   // Create school
   Future<void> addSchool(School school) async {
     final idToUse = school.id;
-    
+
     final batch = _db.batch();
-    
+
     final schoolRef = _db.collection(_collection).doc(idToUse);
     final uid = FirebaseAuth.instance.currentUser?.uid;
     final data = school.toMap();
@@ -33,22 +33,18 @@ class SchoolService {
     data['created_by'] = uid;
     data['updated_at'] = FieldValue.serverTimestamp();
     data['updated_by'] = uid;
-    
+
     batch.set(schoolRef, data);
 
     // Automatically map SUPER_ADMIN to current user
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      final globalMappingRef = _db.collection('global_users_mapping').doc(user.uid);
-      batch.set(
-        globalMappingRef,
-        {
-          'registered_schools': {
-            idToUse: 'SUPER_ADMIN',
-          }
-        },
-        SetOptions(merge: true),
-      );
+      final globalMappingRef = _db
+          .collection('global_users_mapping')
+          .doc(user.uid);
+      batch.set(globalMappingRef, {
+        'registered_schools': {idToUse: 'SUPER_ADMIN'},
+      }, SetOptions(merge: true));
     }
 
     await batch.commit();
@@ -57,10 +53,10 @@ class SchoolService {
   Future<void> updateSchool(School school) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     final data = school.toMap();
-    
+
     data.remove('created_at');
     data.remove('created_by');
-    
+
     data['updated_at'] = FieldValue.serverTimestamp();
     data['updated_by'] = uid;
 

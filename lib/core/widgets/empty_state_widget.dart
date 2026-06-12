@@ -16,7 +16,8 @@ class EmptyStateWidget extends StatefulWidget {
   State<EmptyStateWidget> createState() => _EmptyStateWidgetState();
 }
 
-class _EmptyStateWidgetState extends State<EmptyStateWidget> with SingleTickerProviderStateMixin {
+class _EmptyStateWidgetState extends State<EmptyStateWidget>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
 
@@ -27,10 +28,11 @@ class _EmptyStateWidgetState extends State<EmptyStateWidget> with SingleTickerPr
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     )..repeat(reverse: true);
-    
-    _animation = Tween<double>(begin: 0.95, end: 1.05).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+
+    _animation = Tween<double>(
+      begin: 0.95,
+      end: 1.05,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -50,11 +52,7 @@ class _EmptyStateWidgetState extends State<EmptyStateWidget> with SingleTickerPr
           children: [
             ScaleTransition(
               scale: _animation,
-              child: Icon(
-                widget.icon,
-                size: 80,
-                color: Colors.grey.shade400,
-              ),
+              child: Icon(widget.icon, size: 80, color: Colors.grey.shade400),
             ),
             const SizedBox(height: 24),
             Text(
@@ -70,10 +68,7 @@ class _EmptyStateWidgetState extends State<EmptyStateWidget> with SingleTickerPr
               const SizedBox(height: 8),
               Text(
                 widget.subtitle!,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade500,
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
                 textAlign: TextAlign.center,
               ),
             ],

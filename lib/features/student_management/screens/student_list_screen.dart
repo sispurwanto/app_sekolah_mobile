@@ -12,6 +12,7 @@ import '../../../core/models/invoice.dart';
 import '../../invoices/services/invoice_service.dart';
 import '../../invoices/screens/invoice_list_screen.dart';
 import '../../activities/screens/student_activity_screen.dart';
+import '../../grades/screens/parent_grade_screen.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/utils/dialog_utils.dart';
 import 'student_form_screen.dart';
@@ -331,214 +332,208 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                 horizontal: 16,
                                 vertical: 8,
                               ),
-                              child:
-                                  // FutureBuilder<List<Invoice>>(
-                                  //   future: (student.academicYearId.isNotEmpty &&
-                                  //       student.classId.isNotEmpty)
-                                  //   ? InvoiceService().fetchStudentInvoices(
-                                  //       schoolId,
-                                  //       student.academicYearId,
-                                  //       student.classId,
-                                  //       student.id,
-                                  //     )
-                                  //   : Future.value([]),
-                                  // builder: (context, invSnapshot) {
-                                  //   final invoices = invSnapshot.data ?? [];
-                                  //   int total = invoices.length;
-                                  //   int paid = invoices
-                                  //       .where((i) => i.status == 'PAID')
-                                  //       .length;
-                                  //   int partial = invoices
-                                  //       .where((i) => i.status == 'PARTIAL')
-                                  //       .length;
-                                  //   int unpaid = invoices
-                                  //       .where((i) => i.status == 'UNPAID')
-                                  //       .length;
-                                  //   return
-                                  ListTile(
-                                    leading: CircleAvatar(
-                                      backgroundColor: student.gender == 'L'
-                                          ? Colors.blue.withOpacity(0.1)
-                                          : Colors.pink.withOpacity(0.1),
-                                      child: Icon(
-                                        student.gender == 'L'
-                                            ? Icons.face
-                                            : Icons.face_3,
-                                        color: student.gender == 'L'
-                                            ? Colors.blue
-                                            : Colors.pink,
-                                      ),
-                                    ),
-                                    title: Text(
-                                      student.name,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    subtitle: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'NIS: ${student.nis} | Kelas: ${student.classId.isNotEmpty ? student.classId : "-"}',
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Ortu: ${student.guardianName.isNotEmpty ? student.guardianName : "-"} | HP: ${student.phone.isNotEmpty ? student.phone : "-"}',
-                                        ),
-                                        // Invoice stats removed to save reads
-                                        const SizedBox(height: 12),
-                                        // Action Buttons
-                                        SingleChildScrollView(
-                                          scrollDirection: Axis.horizontal,
-                                          child: Row(
-                                            children: [
-                                              if (!isGuru &&
-                                                  role != 'KEPALA_SEKOLAH') ...[
-                                                _buildActionButton(
-                                                  context,
-                                                  Icons.receipt_long,
-                                                  'Tagihan',
-                                                  () {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) =>
-                                                            InvoiceListScreen(
-                                                              studentId:
-                                                                  student.id,
-                                                              academicYearId:
-                                                                  student
-                                                                      .academicYearId
-                                                                      .isNotEmpty
-                                                                  ? student
-                                                                        .academicYearId
-                                                                  : null,
-                                                              classId:
-                                                                  student
-                                                                      .classId
-                                                                      .isNotEmpty
-                                                                  ? student
-                                                                        .classId
-                                                                  : null,
-                                                            ),
-                                                      ),
-                                                    );
-                                                  },
-                                                  Colors.blue,
-                                                ),
-                                                const SizedBox(width: 8),
-                                                _buildActionButton(
-                                                  context,
-                                                  Icons.account_balance_wallet,
-                                                  'Tabungan',
-                                                  () {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (c) =>
-                                                            SavingsScreen(
-                                                              studentId:
-                                                                  student.id,
-                                                              studentName:
-                                                                  student.name,
-                                                              classId: student
-                                                                  .classId,
-                                                            ),
-                                                      ),
-                                                    );
-                                                  },
-                                                  Colors.teal,
-                                                ),
-                                              ],
-                                              if (role != 'BENDAHARA')
-                                                _buildActionButton(
-                                                  context,
-                                                  Icons.local_activity,
-                                                  'Kegiatan',
-                                                  () {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) => StudentActivityScreen(student: student),
-                                                      ),
-                                                    );
-                                                  },
-                                                  Colors.orange,
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    trailing: PopupMenuButton<String>(
-                                      onSelected: (value) {
-                                        if (value == 'edit') {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  StudentFormScreen(
-                                                    student: student,
-                                                  ),
-                                            ),
-                                          );
-                                        } else if (value == 'generate') {
-                                          _handleGenerateInvoice(
-                                            context,
-                                            schoolId,
-                                            student,
-                                          );
-                                        } else if (value == 'kegiatan') {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) => StudentActivityScreen(student: student),
-                                            ),
-                                          );
-                                        }
-                                      },
-                                      itemBuilder: (BuildContext context) =>
-                                          <PopupMenuEntry<String>>[
-                                            if (!isGuru &&
-                                                role != 'KEPALA_SEKOLAH') ...[
-                                              const PopupMenuItem<String>(
-                                                value: 'edit',
-                                                child: ListTile(
-                                                  leading: Icon(Icons.edit),
-                                                  title: Text('Edit Siswa'),
-                                                  contentPadding:
-                                                      EdgeInsets.zero,
-                                                ),
-                                              ),
-                                              const PopupMenuItem<String>(
-                                                value: 'generate',
-                                                child: ListTile(
-                                                  leading: Icon(Icons.add_card),
-                                                  title: Text(
-                                                    'Generate Tagihan',
-                                                  ),
-                                                  contentPadding:
-                                                      EdgeInsets.zero,
-                                                ),
-                                              ),
-                                            ],
-                                            if (role != 'BENDAHARA')
-                                              const PopupMenuItem<String>(
-                                                value: 'kegiatan',
-                                                child: ListTile(
-                                                  leading: Icon(
-                                                    Icons.local_activity,
-                                                  ),
-                                                  title: Text('Kegiatan Siswa'),
-                                                  contentPadding:
-                                                      EdgeInsets.zero,
-                                                ),
-                                              ),
-                                          ],
-                                    ),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: student.gender == 'L'
+                                      ? Colors.blue.withOpacity(0.1)
+                                      : Colors.pink.withOpacity(0.1),
+                                  child: Icon(
+                                    student.gender == 'L'
+                                        ? Icons.face
+                                        : Icons.face_3,
+                                    color: student.gender == 'L'
+                                        ? Colors.blue
+                                        : Colors.pink,
                                   ),
+                                ),
+                                title: Text(
+                                  student.name,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'NIS: ${student.nis} | Kelas: ${student.classId.isNotEmpty ? student.classId : "-"}',
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Ortu: ${student.guardianName.isNotEmpty ? student.guardianName : "-"} | HP: ${student.phone.isNotEmpty ? student.phone : "-"}',
+                                    ),
+                                    // Invoice stats removed to save reads
+                                    const SizedBox(height: 12),
+                                    // Action Buttons
+                                    SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: Row(
+                                        children: [
+                                          if (!isGuru &&
+                                              role != 'KEPALA_SEKOLAH') ...[
+                                            _buildActionButton(
+                                              context,
+                                              Icons.receipt_long,
+                                              'Tagihan',
+                                              () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        InvoiceListScreen(
+                                                          studentId: student.id,
+                                                          academicYearId:
+                                                              student
+                                                                  .academicYearId
+                                                                  .isNotEmpty
+                                                              ? student
+                                                                    .academicYearId
+                                                              : null,
+                                                          classId:
+                                                              student
+                                                                  .classId
+                                                                  .isNotEmpty
+                                                              ? student.classId
+                                                              : null,
+                                                        ),
+                                                  ),
+                                                );
+                                              },
+                                              Colors.blue,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            _buildActionButton(
+                                              context,
+                                              Icons.account_balance_wallet,
+                                              'Tabungan',
+                                              () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (c) =>
+                                                        SavingsScreen(
+                                                          studentId: student.id,
+                                                          studentName:
+                                                              student.name,
+                                                          classId:
+                                                              student.classId,
+                                                        ),
+                                                  ),
+                                                );
+                                              },
+                                              Colors.teal,
+                                            ),
+                                          ],
+                                          if (role != 'BENDAHARA') ...[
+                                            _buildActionButton(
+                                              context,
+                                              Icons.local_activity,
+                                              'Kegiatan',
+                                              () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        StudentActivityScreen(
+                                                          student: student,
+                                                        ),
+                                                  ),
+                                                );
+                                              },
+                                              Colors.orange,
+                                            ),
+                                            const SizedBox(width: 8),
+                                            _buildActionButton(
+                                              context,
+                                              Icons.edit_note,
+                                              'Nilai',
+                                              () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        ParentGradeScreen(
+                                                          studentId: student.id,
+                                                          studentName:
+                                                              student.name,
+                                                        ),
+                                                  ),
+                                                );
+                                              },
+                                              Colors.purple,
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                trailing: PopupMenuButton<String>(
+                                  onSelected: (value) {
+                                    if (value == 'edit') {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              StudentFormScreen(
+                                                student: student,
+                                              ),
+                                        ),
+                                      );
+                                    } else if (value == 'generate') {
+                                      _handleGenerateInvoice(
+                                        context,
+                                        schoolId,
+                                        student,
+                                      );
+                                    } else if (value == 'kegiatan') {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              StudentActivityScreen(
+                                                student: student,
+                                              ),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  itemBuilder: (BuildContext context) =>
+                                      <PopupMenuEntry<String>>[
+                                        if (!isGuru &&
+                                            role != 'KEPALA_SEKOLAH') ...[
+                                          const PopupMenuItem<String>(
+                                            value: 'edit',
+                                            child: ListTile(
+                                              leading: Icon(Icons.edit),
+                                              title: Text('Edit Siswa'),
+                                              contentPadding: EdgeInsets.zero,
+                                            ),
+                                          ),
+                                          const PopupMenuItem<String>(
+                                            value: 'generate',
+                                            child: ListTile(
+                                              leading: Icon(Icons.add_card),
+                                              title: Text('Generate Tagihan'),
+                                              contentPadding: EdgeInsets.zero,
+                                            ),
+                                          ),
+                                        ],
+                                        if (role != 'BENDAHARA')
+                                          const PopupMenuItem<String>(
+                                            value: 'kegiatan',
+                                            child: ListTile(
+                                              leading: Icon(
+                                                Icons.local_activity,
+                                              ),
+                                              title: Text('Kegiatan Siswa'),
+                                              contentPadding: EdgeInsets.zero,
+                                            ),
+                                          ),
+                                      ],
+                                ),
+                              ),
                             );
                           },
                         ),

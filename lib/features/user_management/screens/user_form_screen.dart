@@ -38,7 +38,8 @@ class _UserFormScreenState extends State<UserFormScreen> {
     super.initState();
     _nameController = TextEditingController(text: widget.user?.name ?? '');
     _emailController = TextEditingController(text: widget.user?.email ?? '');
-    _passwordController = TextEditingController(); // Empty for new, or hidden for existing
+    _passwordController =
+        TextEditingController(); // Empty for new, or hidden for existing
 
     if (widget.user != null) {
       _role = widget.user!.role;
@@ -46,9 +47,18 @@ class _UserFormScreenState extends State<UserFormScreen> {
     }
 
     final schoolId = context.read<SchoolProvider>().activeSchoolId ?? '';
-    final currentUserRole = context.read<UserProvider>().userMapping?.registeredSchools[schoolId] ?? '';
+    final currentUserRole =
+        context.read<UserProvider>().userMapping?.registeredSchools[schoolId] ??
+        '';
 
-    _availableRoles = ['ADMIN', 'KEPALA_SEKOLAH', 'BENDAHARA', 'GURU', 'WALI', 'SISWA'];
+    _availableRoles = [
+      'ADMIN',
+      'KEPALA_SEKOLAH',
+      'BENDAHARA',
+      'GURU',
+      'WALI',
+      'SISWA',
+    ];
     if (currentUserRole == 'SUPER_ADMIN') {
       _availableRoles.insert(0, 'SUPER_ADMIN');
     }
@@ -101,10 +111,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
           createdBy: widget.user!.createdBy,
         );
 
-        await _userService.updateUser(
-          schoolId: schoolId,
-          user: updatedUser,
-        );
+        await _userService.updateUser(schoolId: schoolId, user: updatedUser);
         SnackbarUtils.showSnackbar('User berhasil diperbarui');
       }
       if (mounted) Navigator.pop(context);
@@ -144,7 +151,9 @@ class _UserFormScreenState extends State<UserFormScreen> {
                   title: Text('Memuat data anak...'),
                 );
               }
-              if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+              if (snapshot.hasError ||
+                  !snapshot.hasData ||
+                  snapshot.data == null) {
                 return ListTile(
                   leading: const Icon(Icons.person_off),
                   title: Text('ID: $studentId'),
@@ -155,7 +164,9 @@ class _UserFormScreenState extends State<UserFormScreen> {
               return ListTile(
                 leading: const Icon(Icons.person),
                 title: Text(student.name),
-                subtitle: Text('NIS: ${student.nis} | Kelas: ${student.classId}'),
+                subtitle: Text(
+                  'NIS: ${student.nis} | Kelas: ${student.classId}',
+                ),
               );
             },
           );
@@ -169,9 +180,7 @@ class _UserFormScreenState extends State<UserFormScreen> {
     final isEditing = widget.user != null;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isEditing ? 'Edit User' : 'Tambah User'),
-      ),
+      appBar: AppBar(title: Text(isEditing ? 'Edit User' : 'Tambah User')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -182,7 +191,9 @@ class _UserFormScreenState extends State<UserFormScreen> {
                   children: [
                     TextFormField(
                       controller: _nameController,
-                      decoration: const InputDecoration(labelText: 'Nama Lengkap *'),
+                      decoration: const InputDecoration(
+                        labelText: 'Nama Lengkap *',
+                      ),
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
                     const SizedBox(height: 16),
@@ -190,7 +201,8 @@ class _UserFormScreenState extends State<UserFormScreen> {
                       controller: _emailController,
                       decoration: const InputDecoration(labelText: 'Email *'),
                       keyboardType: TextInputType.emailAddress,
-                      enabled: !isEditing, // Disable email edit for existing user for now
+                      enabled:
+                          !isEditing, // Disable email edit for existing user for now
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
                     const SizedBox(height: 16),
@@ -201,7 +213,9 @@ class _UserFormScreenState extends State<UserFormScreen> {
                           labelText: 'Password Sementara *',
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                              _obscurePassword
+                                  ? Icons.visibility_off
+                                  : Icons.visibility,
                             ),
                             onPressed: () {
                               setState(() {
@@ -218,43 +232,54 @@ class _UserFormScreenState extends State<UserFormScreen> {
                       initialValue: _role,
                       decoration: const InputDecoration(labelText: 'Role'),
                       items: _availableRoles
-                          .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                          .map(
+                            (s) => DropdownMenuItem(value: s, child: Text(s)),
+                          )
                           .toList(),
                       onChanged: (v) => setState(() => _role = v!),
                     ),
-                      if (isEditing) ...[
-                        const SizedBox(height: 16),
-                        SwitchListTile(
-                          title: const Text('Status Aktif'),
-                          value: _isActive,
-                          onChanged: (v) => setState(() => _isActive = v),
-                        ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          child: CustomButton(
-                            text: 'Kirim Link Reset Password',
-                            icon: Icons.lock_reset,
-                            isSecondary: true,
-                            onPressed: () async {
-                              try {
-                                await FirebaseAuth.instance.sendPasswordResetEmail(email: widget.user!.email);
-                                if (mounted) {
-                                  SnackbarUtils.showSnackbar('Link reset password telah dikirim ke ${widget.user!.email}');
-                                }
-                              } catch (e) {
-                                if (mounted) {
-                                  SnackbarUtils.showErrorSnackbar('Gagal mengirim link: $e');
-                                }
+                    if (isEditing) ...[
+                      const SizedBox(height: 16),
+                      SwitchListTile(
+                        title: const Text('Status Aktif'),
+                        value: _isActive,
+                        onChanged: (v) => setState(() => _isActive = v),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: CustomButton(
+                          text: 'Kirim Link Reset Password',
+                          icon: Icons.lock_reset,
+                          isSecondary: true,
+                          onPressed: () async {
+                            try {
+                              await FirebaseAuth.instance
+                                  .sendPasswordResetEmail(
+                                    email: widget.user!.email,
+                                  );
+                              if (mounted) {
+                                SnackbarUtils.showSnackbar(
+                                  'Link reset password telah dikirim ke ${widget.user!.email}',
+                                );
                               }
-                            },
-                          ),
+                            } catch (e) {
+                              if (mounted) {
+                                SnackbarUtils.showErrorSnackbar(
+                                  'Gagal mengirim link: $e',
+                                );
+                              }
+                            }
+                          },
                         ),
-                        if (_role == 'WALI' || _role == 'SISWA') ...[
-                          const SizedBox(height: 16),
-                          _buildChildrenList(context.read<SchoolProvider>().activeSchoolId ?? ''),
-                        ],
+                      ),
+                      if (_role == 'WALI' || _role == 'SISWA') ...[
+                        const SizedBox(height: 16),
+                        _buildChildrenList(
+                          context.read<SchoolProvider>().activeSchoolId ?? '',
+                        ),
                       ],
+                    ],
                     const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,

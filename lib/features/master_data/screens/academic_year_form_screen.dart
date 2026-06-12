@@ -28,7 +28,9 @@ class _AcademicYearFormScreenState extends State<AcademicYearFormScreen> {
   void initState() {
     super.initState();
     _idController = TextEditingController(text: widget.academicYear?.id ?? '');
-    _nameController = TextEditingController(text: widget.academicYear?.name ?? '');
+    _nameController = TextEditingController(
+      text: widget.academicYear?.name ?? '',
+    );
     _isActive = widget.academicYear?.isActive ?? false;
   }
 
@@ -46,7 +48,9 @@ class _AcademicYearFormScreenState extends State<AcademicYearFormScreen> {
     final schoolId = context.read<SchoolProvider>().activeSchoolId!;
 
     final year = AcademicYear(
-      id: widget.academicYear == null ? _idController.text.trim() : widget.academicYear!.id,
+      id: widget.academicYear == null
+          ? _idController.text.trim()
+          : widget.academicYear!.id,
       name: _nameController.text.trim(),
       isActive: _isActive,
     );
@@ -69,7 +73,7 @@ class _AcademicYearFormScreenState extends State<AcademicYearFormScreen> {
 
   void _delete() async {
     if (widget.academicYear == null) return;
-    
+
     final schoolId = context.read<SchoolProvider>().activeSchoolId!;
 
     final confirm = await DialogUtils.showConfirmationDialog(
@@ -120,7 +124,8 @@ class _AcademicYearFormScreenState extends State<AcademicYearFormScreen> {
                       controller: _idController,
                       decoration: const InputDecoration(
                         labelText: 'ID Tahun Ajaran *',
-                        helperText: 'Bisa diisi misal: "2026", "2026-1". Tidak bisa diubah setelah dibuat.',
+                        helperText:
+                            'Bisa diisi misal: "2026", "2026-1". Tidak bisa diubah setelah dibuat.',
                       ),
                       readOnly: isEditing,
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
@@ -128,7 +133,9 @@ class _AcademicYearFormScreenState extends State<AcademicYearFormScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _nameController,
-                      decoration: const InputDecoration(labelText: 'Nama Tahun Ajaran *'),
+                      decoration: const InputDecoration(
+                        labelText: 'Nama Tahun Ajaran *',
+                      ),
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
                     const SizedBox(height: 16),

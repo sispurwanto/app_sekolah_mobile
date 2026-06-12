@@ -17,13 +17,16 @@ class SchoolListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final activeSchoolId = context.watch<SchoolProvider>().activeSchoolId ?? '';
-    final role = context.watch<UserProvider>().userMapping?.registeredSchools[activeSchoolId] ?? '';
+    final role =
+        context
+            .watch<UserProvider>()
+            .userMapping
+            ?.registeredSchools[activeSchoolId] ??
+        '';
     final isSuperAdmin = role == 'SUPER_ADMIN';
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Manajemen Sekolah'),
-      ),
+      appBar: AppBar(title: const Text('Manajemen Sekolah')),
       body: StreamBuilder<List<School>>(
         stream: _schoolService.getSchools(),
         builder: (context, snapshot) {
@@ -46,7 +49,8 @@ class SchoolListScreen extends StatelessWidget {
             return const EmptyStateWidget(
               icon: Icons.school_outlined,
               title: 'Belum ada data sekolah',
-              subtitle: 'Silakan hubungi administrator untuk menambahkan sekolah.',
+              subtitle:
+                  'Silakan hubungi administrator untuk menambahkan sekolah.',
             );
           }
 
@@ -57,8 +61,13 @@ class SchoolListScreen extends StatelessWidget {
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: ListTile(
-                  title: Text(school.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('${school.id}\nStatus: ${school.status} | Package: ${school.package}'),
+                  title: Text(
+                    school.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    '${school.id}\nStatus: ${school.status} | Package: ${school.package}',
+                  ),
                   isThreeLine: true,
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -69,7 +78,8 @@ class SchoolListScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => SchoolFormScreen(school: school),
+                              builder: (context) =>
+                                  SchoolFormScreen(school: school),
                             ),
                           );
                         },
@@ -77,23 +87,29 @@ class SchoolListScreen extends StatelessWidget {
                       if (isSuperAdmin)
                         IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () async {
-                          final confirm = await DialogUtils.showConfirmationDialog(
-                            title: 'Hapus Sekolah',
-                            content: 'Yakin ingin menghapus ${school.name}?',
-                            confirmText: 'Hapus',
-                            isDestructive: true,
-                          );
-                          if (confirm == true) {
-                            try {
-                              await _schoolService.deleteSchool(school.id);
-                              SnackbarUtils.showSnackbar('Sekolah berhasil dihapus');
-                            } catch (e) {
-                              SnackbarUtils.showErrorSnackbar('Gagal menghapus: $e');
+                          onPressed: () async {
+                            final confirm =
+                                await DialogUtils.showConfirmationDialog(
+                                  title: 'Hapus Sekolah',
+                                  content:
+                                      'Yakin ingin menghapus ${school.name}?',
+                                  confirmText: 'Hapus',
+                                  isDestructive: true,
+                                );
+                            if (confirm == true) {
+                              try {
+                                await _schoolService.deleteSchool(school.id);
+                                SnackbarUtils.showSnackbar(
+                                  'Sekolah berhasil dihapus',
+                                );
+                              } catch (e) {
+                                SnackbarUtils.showErrorSnackbar(
+                                  'Gagal menghapus: $e',
+                                );
+                              }
                             }
-                          }
-                        },
-                      ),
+                          },
+                        ),
                     ],
                   ),
                 ),
@@ -102,19 +118,19 @@ class SchoolListScreen extends StatelessWidget {
           );
         },
       ),
-      floatingActionButton: isSuperAdmin 
-        ? FloatingActionButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const SchoolFormScreen(),
-                ),
-              );
-            },
-            child: const Icon(Icons.add),
-          )
-        : null,
+      floatingActionButton: isSuperAdmin
+          ? FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SchoolFormScreen(),
+                  ),
+                );
+              },
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 }

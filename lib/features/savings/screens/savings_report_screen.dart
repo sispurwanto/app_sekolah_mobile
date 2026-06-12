@@ -40,14 +40,21 @@ class _SavingsReportScreenState extends State<SavingsReportScreen> {
     return FutureBuilder<List<SavingsSummary>>(
       future: _summariesFuture,
       builder: (context, snapshot) {
-        final allSummaries = (snapshot.data ?? []).where((s) => s.balance > 0).toList();
-        final double totalBalance = allSummaries.fold(0.0, (sum, item) => sum + item.balance);
+        final allSummaries = (snapshot.data ?? [])
+            .where((s) => s.balance > 0)
+            .toList();
+        final double totalBalance = allSummaries.fold(
+          0.0,
+          (sum, item) => sum + item.balance,
+        );
 
         var filteredSummaries = allSummaries;
         if (_searchQuery.isNotEmpty) {
           filteredSummaries = allSummaries.where((s) {
-            return s.studentName.toLowerCase().contains(_searchQuery.toLowerCase()) || 
-                   s.classId.toLowerCase().contains(_searchQuery.toLowerCase());
+            return s.studentName.toLowerCase().contains(
+                  _searchQuery.toLowerCase(),
+                ) ||
+                s.classId.toLowerCase().contains(_searchQuery.toLowerCase());
           }).toList();
         }
 
@@ -59,12 +66,18 @@ class _SavingsReportScreenState extends State<SavingsReportScreen> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.picture_as_pdf),
-                onPressed: () => ExportService().exportSavingsPdf(context, filteredSummaries),
+                onPressed: () => ExportService().exportSavingsPdf(
+                  context,
+                  filteredSummaries,
+                ),
                 tooltip: 'Export PDF',
               ),
               IconButton(
                 icon: const Icon(Icons.table_chart),
-                onPressed: () => ExportService().exportSavingsExcel(context, filteredSummaries),
+                onPressed: () => ExportService().exportSavingsExcel(
+                  context,
+                  filteredSummaries,
+                ),
                 tooltip: 'Export Excel',
               ),
             ],
@@ -77,72 +90,105 @@ class _SavingsReportScreenState extends State<SavingsReportScreen> {
             child: snapshot.connectionState == ConnectionState.waiting
                 ? const Center(child: CircularProgressIndicator())
                 : snapshot.hasError
-                    ? Center(child: Text('Error: ${snapshot.error}'))
-                    : Column(
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF2E7D32), Color(0xFF4CAF50)],
-                  ),
-                  borderRadius: BorderRadius.only(bottomLeft: Radius.circular(20), bottomRight: Radius.circular(20)),
-                ),
-                child: Column(
-                  children: [
-                    const Text('Total Tabungan Seluruh Siswa', style: TextStyle(color: Colors.white70, fontSize: 14)),
-                    const SizedBox(height: 8),
-                    Text(
-                      CurrencyUtils.formatRp(totalBalance),
-                      style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    Text('${allSummaries.length} Siswa Menabung', style: const TextStyle(color: Colors.white, fontSize: 14)),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextField(
-                  decoration: InputDecoration(
-                    labelText: 'Cari Nama Siswa atau Kelas',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onChanged: (val) {
-                    setState(() {
-                      _searchQuery = val;
-                    });
-                  },
-                ),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: filteredSummaries.length,
-                  itemBuilder: (context, index) {
-                    final summary = filteredSummaries[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.green.shade50,
-                          child: const Icon(Icons.account_balance_wallet, color: Colors.green),
+                ? Center(child: Text('Error: ${snapshot.error}'))
+                : Column(
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Color(0xFF2E7D32), Color(0xFF4CAF50)],
+                          ),
+                          borderRadius: BorderRadius.only(
+                            bottomLeft: Radius.circular(20),
+                            bottomRight: Radius.circular(20),
+                          ),
                         ),
-                        title: Text(summary.studentName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text('Kelas: ${summary.classId}'),
-                        trailing: Text(
-                          CurrencyUtils.formatRp(summary.balance),
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green, fontSize: 16),
+                        child: Column(
+                          children: [
+                            const Text(
+                              'Total Tabungan Seluruh Siswa',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              CurrencyUtils.formatRp(totalBalance),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '${allSummaries.length} Siswa Menabung',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ), // Closes Column
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: TextField(
+                          decoration: InputDecoration(
+                            labelText: 'Cari Nama Siswa atau Kelas',
+                            prefixIcon: const Icon(Icons.search),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onChanged: (val) {
+                            setState(() {
+                              _searchQuery = val;
+                            });
+                          },
+                        ),
+                      ),
+                      Expanded(
+                        child: ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: filteredSummaries.length,
+                          itemBuilder: (context, index) {
+                            final summary = filteredSummaries[index];
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: Colors.green.shade50,
+                                  child: const Icon(
+                                    Icons.account_balance_wallet,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                                title: Text(
+                                  summary.studentName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                subtitle: Text('Kelas: ${summary.classId}'),
+                                trailing: Text(
+                                  CurrencyUtils.formatRp(summary.balance),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ), // Closes Column
           ), // Closes RefreshIndicator
         ); // Closes Scaffold
       }, // Closes builder

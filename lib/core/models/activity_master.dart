@@ -4,10 +4,7 @@ class ActivityMaster {
   final String idActivity;
   final String nameActivity;
 
-  ActivityMaster({
-    required this.idActivity,
-    required this.nameActivity,
-  });
+  ActivityMaster({required this.idActivity, required this.nameActivity});
 
   factory ActivityMaster.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
@@ -18,8 +15,6 @@ class ActivityMaster {
   }
 
   Map<String, dynamic> toMap() {
-    return {
-      'name_activity': nameActivity,
-    };
+    return {'name_activity': nameActivity};
   }
 }

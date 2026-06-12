@@ -35,7 +35,11 @@ class _PaymentDialogState extends State<PaymentDialog> {
   void initState() {
     super.initState();
     final remaining = widget.invoice.amount - widget.invoice.paidAmount;
-    final formatter = NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0);
+    final formatter = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: '',
+      decimalDigits: 0,
+    );
     _amountController.text = formatter.format(remaining).trim();
   }
 
@@ -49,7 +53,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
   void _submitPayment(String role, String schoolId) async {
     final amountText = _amountController.text.replaceAll(RegExp(r'[^0-9]'), '');
     final amount = double.tryParse(amountText) ?? 0.0;
-    
+
     if (amount <= 0) {
       SnackbarUtils.showErrorSnackbar('Nominal pembayaran tidak valid');
       return;
@@ -89,7 +93,11 @@ class _PaymentDialogState extends State<PaymentDialog> {
 
     try {
       await _paymentService.createPayment(schoolId, payment, widget.invoice);
-      SnackbarUtils.showSnackbar(isBendahara ? 'Pembayaran berhasil dicatat' : 'Bukti transfer berhasil dikirim. Menunggu validasi Bendahara.');
+      SnackbarUtils.showSnackbar(
+        isBendahara
+            ? 'Pembayaran berhasil dicatat'
+            : 'Bukti transfer berhasil dikirim. Menunggu validasi Bendahara.',
+      );
       if (mounted) Navigator.pop(context, true); // true indicates success
     } catch (e) {
       SnackbarUtils.showErrorSnackbar('Error: $e');
@@ -101,9 +109,11 @@ class _PaymentDialogState extends State<PaymentDialog> {
   @override
   Widget build(BuildContext context) {
     final schoolId = context.watch<SchoolProvider>().activeSchoolId ?? '';
-    final role = context.read<UserProvider>().userMapping?.registeredSchools[schoolId] ?? 'WALI';
+    final role =
+        context.read<UserProvider>().userMapping?.registeredSchools[schoolId] ??
+        'WALI';
     final isBendahara = ['BENDAHARA', 'ADMIN', 'SUPER_ADMIN'].contains(role);
-    
+
     final remaining = widget.invoice.amount - widget.invoice.paidAmount;
 
     return CustomDialog(
@@ -117,16 +127,29 @@ class _PaymentDialogState extends State<PaymentDialog> {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.blue.shade50, 
+              color: Colors.blue.shade50,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: Colors.blue.shade100),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.invoice.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(
+                  widget.invoice.title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text('Sisa Tagihan: ${CurrencyUtils.formatRp(remaining)}', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue, fontSize: 16)),
+                Text(
+                  'Sisa Tagihan: ${CurrencyUtils.formatRp(remaining)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                    fontSize: 16,
+                  ),
+                ),
               ],
             ),
           ),
@@ -142,12 +165,17 @@ class _PaymentDialogState extends State<PaymentDialog> {
             FutureBuilder<School?>(
               future: SchoolService().getSchool(schoolId),
               builder: (context, snapshot) {
-                if (!snapshot.hasData || snapshot.data == null) return const SizedBox();
+                if (!snapshot.hasData || snapshot.data == null)
+                  return const SizedBox();
                 final school = snapshot.data!;
-                if (school.bankAccountNumber == null || school.bankAccountNumber!.isEmpty) {
+                if (school.bankAccountNumber == null ||
+                    school.bankAccountNumber!.isEmpty) {
                   return const Padding(
                     padding: EdgeInsets.only(bottom: 16.0),
-                    child: Text('Informasi rekening sekolah belum diatur.', style: TextStyle(color: Colors.red)),
+                    child: Text(
+                      'Informasi rekening sekolah belum diatur.',
+                      style: TextStyle(color: Colors.red),
+                    ),
                   );
                 }
                 return Container(
@@ -161,10 +189,19 @@ class _PaymentDialogState extends State<PaymentDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Silakan Transfer ke:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Silakan Transfer ke:',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       const SizedBox(height: 4),
                       Text('Bank: ${school.bankName ?? "-"}'),
-                      Text('No. Rekening: ${school.bankAccountNumber}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text(
+                        'No. Rekening: ${school.bankAccountNumber}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
                       Text('A/N: ${school.bankAccountName ?? "-"}'),
                     ],
                   ),

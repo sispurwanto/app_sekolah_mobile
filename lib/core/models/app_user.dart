@@ -34,9 +34,13 @@ class AppUser {
       role: data['role'] ?? 'WALI',
       isActive: data['is_active'] ?? true,
       childrens: Map<String, dynamic>.from(data['childrens'] ?? {}),
-      createdAt: data['created_at'] != null ? (data['created_at'] as Timestamp).toDate() : null,
+      createdAt: data['created_at'] != null
+          ? (data['created_at'] as Timestamp).toDate()
+          : null,
       createdBy: data['created_by'],
-      updatedAt: data['updated_at'] != null ? (data['updated_at'] as Timestamp).toDate() : null,
+      updatedAt: data['updated_at'] != null
+          ? (data['updated_at'] as Timestamp).toDate()
+          : null,
       updatedBy: data['updated_by'],
     );
   }

@@ -19,8 +19,14 @@ import 'core/theme/app_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (Firebase.apps.isEmpty) {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
+  } catch (e) {
+    debugPrint('Firebase initialization error: $e');
   }
 
   runApp(const MyApp());
@@ -80,7 +86,7 @@ class AuthWrapper extends StatelessWidget {
                 children: [
                   CircularProgressIndicator(),
                   SizedBox(height: 16),
-                  Text('Memuat Data User...'),
+                  Text('Memuat Data...'),
                 ],
               ),
             ),
@@ -108,7 +114,7 @@ class AuthWrapper extends StatelessWidget {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final userProvider = context.read<UserProvider>();
           if (userProvider.userMapping?.email != userMapping.email) {
-             userProvider.setUserMapping(userMapping);
+            userProvider.setUserMapping(userMapping);
           }
         });
 

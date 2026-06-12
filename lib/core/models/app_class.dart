@@ -34,9 +34,13 @@ class AppClass {
       description: data['description'] ?? '',
       teacherId: data['teacher_id'],
       teacherName: data['teacher_name'],
-      createdAt: data['created_at'] != null ? (data['created_at'] as Timestamp).toDate() : null,
+      createdAt: data['created_at'] != null
+          ? (data['created_at'] as Timestamp).toDate()
+          : null,
       createdBy: data['created_by'],
-      updatedAt: data['updated_at'] != null ? (data['updated_at'] as Timestamp).toDate() : null,
+      updatedAt: data['updated_at'] != null
+          ? (data['updated_at'] as Timestamp).toDate()
+          : null,
       updatedBy: data['updated_by'],
     );
   }

@@ -27,9 +27,9 @@ class SecondaryAppService {
       );
 
       // Important: We must sign out from the secondary app to clear its session,
-      // though deleting the app usually suffices. 
+      // though deleting the app usually suffices.
       await auth.signOut();
-      
+
       return userCredential.user;
     } catch (e) {
       rethrow;

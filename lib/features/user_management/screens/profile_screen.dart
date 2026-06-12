@@ -58,11 +58,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         newName: _nameController.text.trim(),
         registeredSchools: userMapping.registeredSchools,
       );
-      
+
       // Update local provider manually or let the stream handle it if it listens
-      // To be safe, we can trigger an auth check in main if needed, but the user mapping stream 
+      // To be safe, we can trigger an auth check in main if needed, but the user mapping stream
       // in main.dart should automatically pick up the change since it's listening to global_users_mapping.
-      
+
       SnackbarUtils.showSnackbar('Profil berhasil diperbarui!');
     } catch (e) {
       SnackbarUtils.showErrorSnackbar('Gagal memperbarui profil: $e');
@@ -78,7 +78,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: _email);
       if (mounted) {
-        SnackbarUtils.showSnackbar('Link reset password telah dikirim ke $_email');
+        SnackbarUtils.showSnackbar(
+          'Link reset password telah dikirim ke $_email',
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -92,9 +94,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profil Saya'),
-      ),
+      appBar: AppBar(title: const Text('Profil Saya')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Form(

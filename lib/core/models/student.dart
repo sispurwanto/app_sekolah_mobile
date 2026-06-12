@@ -47,8 +47,8 @@ class Student {
       nisn: data['nisn'] ?? '',
       name: data['name'] ?? '',
       gender: data['gender'] ?? 'L',
-      birthDate: data['birth_date'] != null 
-          ? (data['birth_date'] as Timestamp).toDate() 
+      birthDate: data['birth_date'] != null
+          ? (data['birth_date'] as Timestamp).toDate()
           : DateTime.now(),
       classId: data['class_id'] ?? '',
       guardianId: data['guardian_id'] ?? '',
@@ -57,9 +57,13 @@ class Student {
       address: data['address'] ?? '',
       academicYearId: data['academic_year_id'] ?? '',
       status: data['status'] ?? 'ACTIVE',
-      createdAt: data['created_at'] != null ? (data['created_at'] as Timestamp).toDate() : null,
+      createdAt: data['created_at'] != null
+          ? (data['created_at'] as Timestamp).toDate()
+          : null,
       createdBy: data['created_by'],
-      updatedAt: data['updated_at'] != null ? (data['updated_at'] as Timestamp).toDate() : null,
+      updatedAt: data['updated_at'] != null
+          ? (data['updated_at'] as Timestamp).toDate()
+          : null,
       updatedBy: data['updated_by'],
     );
   }

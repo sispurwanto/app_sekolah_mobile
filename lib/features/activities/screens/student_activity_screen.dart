@@ -59,8 +59,8 @@ class StudentActivityScreen extends StatelessWidget {
             return EmptyStateWidget(
               icon: Icons.local_activity_outlined,
               title: 'Belum ada data kegiatan',
-              subtitle: isReadOnly 
-                  ? 'Belum ada catatan kegiatan untuk siswa ini.' 
+              subtitle: isReadOnly
+                  ? 'Belum ada catatan kegiatan untuk siswa ini.'
                   : 'Tambahkan data kegiatan siswa melalui tombol di bawah.',
             );
           }

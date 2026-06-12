@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 class DialogUtils {
   // Global key for the Navigator to show dialogs from anywhere
-  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
 
   /// Shows a confirmation dialog globally
   static Future<bool?> showConfirmationDialog({
@@ -28,7 +29,10 @@ class DialogUtils {
             ),
             ElevatedButton(
               style: isDestructive
-                  ? ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white)
+                  ? ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                    )
                   : null,
               onPressed: () => Navigator.of(context).pop(true),
               child: Text(confirmText),

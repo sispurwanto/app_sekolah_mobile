@@ -53,15 +53,19 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
     _nisnController = TextEditingController(text: widget.student?.nisn ?? '');
     _nameController = TextEditingController(text: widget.student?.name ?? '');
     _phoneController = TextEditingController(text: widget.student?.phone ?? '');
-    _addressController = TextEditingController(text: widget.student?.address ?? '');
-    _parentNameController = TextEditingController(text: widget.student?.guardianName ?? '');
+    _addressController = TextEditingController(
+      text: widget.student?.address ?? '',
+    );
+    _parentNameController = TextEditingController(
+      text: widget.student?.guardianName ?? '',
+    );
 
     final guardianId = widget.student?.guardianId ?? '';
     _selectedGuardianId = guardianId.isNotEmpty ? guardianId : null;
-    
+
     final classId = widget.student?.classId ?? '';
     _selectedClassId = classId.isNotEmpty ? classId : null;
-    
+
     final ayId = widget.student?.academicYearId ?? '';
     _selectedAcademicYearId = ayId.isNotEmpty ? ayId : null;
 
@@ -135,7 +139,7 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
 
   void _delete() async {
     if (widget.student == null) return;
-    
+
     final schoolId = context.read<SchoolProvider>().activeSchoolId!;
 
     final confirm = await DialogUtils.showConfirmationDialog(
@@ -148,7 +152,11 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
     if (confirm == true) {
       setState(() => _isLoading = true);
       try {
-        await _studentService.deleteStudent(schoolId, widget.student!.id, widget.student!.guardianId);
+        await _studentService.deleteStudent(
+          schoolId,
+          widget.student!.id,
+          widget.student!.guardianId,
+        );
         SnackbarUtils.showSnackbar('Siswa dihapus');
         if (mounted) Navigator.pop(context);
       } catch (e) {
@@ -184,7 +192,9 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                   children: [
                     TextFormField(
                       controller: _nameController,
-                      decoration: const InputDecoration(labelText: 'Nama Lengkap *'),
+                      decoration: const InputDecoration(
+                        labelText: 'Nama Lengkap *',
+                      ),
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
                     const SizedBox(height: 16),
@@ -192,7 +202,8 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                       controller: _nisController,
                       decoration: const InputDecoration(
                         labelText: 'NIS *',
-                        helperText: 'NIS akan menjadi ID Data (Tidak bisa diubah)',
+                        helperText:
+                            'NIS akan menjadi ID Data (Tidak bisa diubah)',
                       ),
                       readOnly: isEditing,
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
@@ -205,7 +216,9 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
                       initialValue: _gender,
-                      decoration: const InputDecoration(labelText: 'Jenis Kelamin'),
+                      decoration: const InputDecoration(
+                        labelText: 'Jenis Kelamin',
+                      ),
                       items: const [
                         DropdownMenuItem(value: 'L', child: Text('Laki-laki')),
                         DropdownMenuItem(value: 'P', child: Text('Perempuan')),
@@ -216,7 +229,9 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Tanggal Lahir'),
-                      subtitle: Text('${_birthDate.day}/${_birthDate.month}/${_birthDate.year}'),
+                      subtitle: Text(
+                        '${_birthDate.day}/${_birthDate.month}/${_birthDate.year}',
+                      ),
                       trailing: const Icon(Icons.calendar_today),
                       onTap: _pickBirthDate,
                     ),
@@ -224,157 +239,226 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _parentNameController,
-                      decoration: const InputDecoration(labelText: 'Nama Orang Tua / Wali'),
+                      decoration: const InputDecoration(
+                        labelText: 'Nama Orang Tua / Wali',
+                      ),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _phoneController,
-                      decoration: const InputDecoration(labelText: 'No. Telepon / HP'),
+                      decoration: const InputDecoration(
+                        labelText: 'No. Telepon / HP',
+                      ),
                       keyboardType: TextInputType.phone,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _addressController,
-                      decoration: const InputDecoration(labelText: 'Alamat Lengkap'),
+                      decoration: const InputDecoration(
+                        labelText: 'Alamat Lengkap',
+                      ),
                       maxLines: 2,
                     ),
                     const SizedBox(height: 16),
                     StreamBuilder<List<AppClass>>(
-                      stream: _classService.getClasses(context.read<SchoolProvider>().activeSchoolId!),
+                      stream: _classService.getClasses(
+                        context.read<SchoolProvider>().activeSchoolId!,
+                      ),
                       builder: (context, snapshot) {
                         List<AppClass> classes = [];
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return const Padding(
                             padding: EdgeInsets.symmetric(vertical: 8.0),
                             child: Row(
                               children: [
-                                SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
                                 SizedBox(width: 16),
                                 Text('Memuat data Kelas...'),
                               ],
                             ),
                           );
                         }
-                        
+
                         if (snapshot.hasData) {
                           classes = snapshot.data!;
                         }
-                        
-                        if (_selectedClassId != null && !classes.any((c) => c.id == _selectedClassId)) {
-                          if (snapshot.connectionState == ConnectionState.active && classes.isNotEmpty) {
-                             bool found = false;
-                             for (var c in classes) { if (c.id == _selectedClassId) found = true; }
-                             if (!found) {
-                               WidgetsBinding.instance.addPostFrameCallback((_) {
-                                 if (mounted) setState(() => _selectedClassId = null);
-                               });
-                             }
+
+                        if (_selectedClassId != null &&
+                            !classes.any((c) => c.id == _selectedClassId)) {
+                          if (snapshot.connectionState ==
+                                  ConnectionState.active &&
+                              classes.isNotEmpty) {
+                            bool found = false;
+                            for (var c in classes) {
+                              if (c.id == _selectedClassId) found = true;
+                            }
+                            if (!found) {
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (mounted)
+                                  setState(() => _selectedClassId = null);
+                              });
+                            }
                           }
                         }
 
                         return DropdownButtonFormField<String>(
                           value: _selectedClassId,
-                          decoration: const InputDecoration(labelText: 'Pilih Kelas'),
+                          decoration: const InputDecoration(
+                            labelText: 'Pilih Kelas',
+                          ),
                           items: [
                             const DropdownMenuItem<String>(
                               value: null,
                               child: Text('Tidak ada / Belum ditentukan'),
                             ),
-                            ...classes.map((c) => DropdownMenuItem(
-                                  value: c.id,
-                                  child: Text(c.name),
-                                )),
+                            ...classes.map(
+                              (c) => DropdownMenuItem(
+                                value: c.id,
+                                child: Text(c.name),
+                              ),
+                            ),
                           ],
-                          onChanged: (v) => setState(() => _selectedClassId = v),
+                          onChanged: (v) =>
+                              setState(() => _selectedClassId = v),
                         );
                       },
                     ),
                     const SizedBox(height: 16),
                     StreamBuilder<List<AcademicYear>>(
-                      stream: _academicYearService.getAcademicYears(context.read<SchoolProvider>().activeSchoolId!),
+                      stream: _academicYearService.getAcademicYears(
+                        context.read<SchoolProvider>().activeSchoolId!,
+                      ),
                       builder: (context, snapshot) {
                         List<AcademicYear> years = [];
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return const Padding(
                             padding: EdgeInsets.symmetric(vertical: 8.0),
                             child: Row(
                               children: [
-                                SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
                                 SizedBox(width: 16),
                                 Text('Memuat data Tahun Ajaran...'),
                               ],
                             ),
                           );
                         }
-                        
+
                         if (snapshot.hasData) {
                           years = snapshot.data!;
                         }
-                        
-                        if (_selectedAcademicYearId != null && !years.any((y) => y.id == _selectedAcademicYearId)) {
-                          if (snapshot.connectionState == ConnectionState.active && years.isNotEmpty) {
-                             bool found = false;
-                             for (var y in years) { if (y.id == _selectedAcademicYearId) found = true; }
-                             if (!found) {
-                               WidgetsBinding.instance.addPostFrameCallback((_) {
-                                 if (mounted) setState(() => _selectedAcademicYearId = null);
-                               });
-                             }
+
+                        if (_selectedAcademicYearId != null &&
+                            !years.any(
+                              (y) => y.id == _selectedAcademicYearId,
+                            )) {
+                          if (snapshot.connectionState ==
+                                  ConnectionState.active &&
+                              years.isNotEmpty) {
+                            bool found = false;
+                            for (var y in years) {
+                              if (y.id == _selectedAcademicYearId) found = true;
+                            }
+                            if (!found) {
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (mounted)
+                                  setState(
+                                    () => _selectedAcademicYearId = null,
+                                  );
+                              });
+                            }
                           }
                         }
 
                         return DropdownButtonFormField<String>(
                           value: _selectedAcademicYearId,
-                          decoration: const InputDecoration(labelText: 'Pilih Tahun Ajaran'),
+                          decoration: const InputDecoration(
+                            labelText: 'Pilih Tahun Ajaran',
+                          ),
                           items: [
                             const DropdownMenuItem<String>(
                               value: null,
                               child: Text('Tidak ada / Belum ditentukan'),
                             ),
-                            ...years.map((y) => DropdownMenuItem(
-                                  value: y.id,
-                                  child: Text('${y.name}${y.isActive ? " (Aktif)" : ""}'),
-                                )),
+                            ...years.map(
+                              (y) => DropdownMenuItem(
+                                value: y.id,
+                                child: Text(
+                                  '${y.name}${y.isActive ? " (Aktif)" : ""}',
+                                ),
+                              ),
+                            ),
                           ],
-                          onChanged: (v) => setState(() => _selectedAcademicYearId = v),
+                          onChanged: (v) =>
+                              setState(() => _selectedAcademicYearId = v),
                         );
                       },
                     ),
                     const SizedBox(height: 16),
                     StreamBuilder<List<AppUser>>(
-                      stream: _userService.getUsers(context.read<SchoolProvider>().activeSchoolId!),
+                      stream: _userService.getUsers(
+                        context.read<SchoolProvider>().activeSchoolId!,
+                      ),
                       builder: (context, snapshot) {
                         List<AppUser> walis = [];
-                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
                           return const Padding(
                             padding: EdgeInsets.symmetric(vertical: 8.0),
                             child: Row(
                               children: [
-                                SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
                                 SizedBox(width: 16),
                                 Text('Memuat data Wali...'),
                               ],
                             ),
                           );
                         }
-                        
+
                         if (snapshot.hasData) {
-                          walis = snapshot.data!.where((u) => u.role == 'WALI').toList();
+                          walis = snapshot.data!
+                              .where((u) => u.role == 'WALI')
+                              .toList();
                         }
-                        if (_selectedGuardianId != null && !walis.any((w) => w.id == _selectedGuardianId)) {
+                        if (_selectedGuardianId != null &&
+                            !walis.any((w) => w.id == _selectedGuardianId)) {
                           // If current guardian is not in the list (e.g. not loaded yet), we keep it but it might cause issues.
                           // It's safe to just let it be if it matches, or null if it doesn't match and list is loaded
-                          if (snapshot.connectionState == ConnectionState.active && walis.isNotEmpty) {
-                             // Let's not auto-null it just in case they are deleted, but DropdownButton requires value to be in items or null.
-                             bool found = false;
-                             for (var w in walis) { if (w.id == _selectedGuardianId) found = true; }
-                             if (!found) {
-                               // To prevent crash, if the assigned WALI is no longer a WALI, we add a dummy or set to null
-                               // For simplicity, set to null
-                               WidgetsBinding.instance.addPostFrameCallback((_) {
-                                 if (mounted) setState(() => _selectedGuardianId = null);
-                               });
-                             }
+                          if (snapshot.connectionState ==
+                                  ConnectionState.active &&
+                              walis.isNotEmpty) {
+                            // Let's not auto-null it just in case they are deleted, but DropdownButton requires value to be in items or null.
+                            bool found = false;
+                            for (var w in walis) {
+                              if (w.id == _selectedGuardianId) found = true;
+                            }
+                            if (!found) {
+                              // To prevent crash, if the assigned WALI is no longer a WALI, we add a dummy or set to null
+                              // For simplicity, set to null
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (mounted)
+                                  setState(() => _selectedGuardianId = null);
+                              });
+                            }
                           }
                         }
 
@@ -389,16 +473,20 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                               value: null,
                               child: Text('Tidak ada / Belum ditentukan'),
                             ),
-                            ...walis.map((w) => DropdownMenuItem(
-                                  value: w.id,
-                                  child: Text('${w.name} (${w.email})'),
-                                )),
+                            ...walis.map(
+                              (w) => DropdownMenuItem(
+                                value: w.id,
+                                child: Text('${w.name} (${w.email})'),
+                              ),
+                            ),
                           ],
                           onChanged: (v) {
                             setState(() {
                               _selectedGuardianId = v;
                               if (v != null) {
-                                final selectedWali = walis.firstWhere((w) => w.id == v);
+                                final selectedWali = walis.firstWhere(
+                                  (w) => w.id == v,
+                                );
                                 _parentNameController.text = selectedWali.name;
                               }
                             });
@@ -411,7 +499,9 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                       initialValue: _status,
                       decoration: const InputDecoration(labelText: 'Status'),
                       items: ['ACTIVE', 'INACTIVE', 'GRADUATED']
-                          .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                          .map(
+                            (s) => DropdownMenuItem(value: s, child: Text(s)),
+                          )
                           .toList(),
                       onChanged: (v) => setState(() => _status = v!),
                     ),

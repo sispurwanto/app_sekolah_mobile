@@ -14,8 +14,10 @@ class UserManagementService {
         .collection('users')
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) => AppUser.fromFirestore(doc)).toList();
-    });
+          return snapshot.docs
+              .map((doc) => AppUser.fromFirestore(doc))
+              .toList();
+        });
   }
 
   // Get users by specific role
@@ -27,7 +29,7 @@ class UserManagementService {
         .where('role', isEqualTo: role)
         .where('is_active', isEqualTo: true)
         .get();
-        
+
     return snapshot.docs.map((doc) => AppUser.fromFirestore(doc)).toList();
   }
 
@@ -67,37 +69,31 @@ class UserManagementService {
         .doc(schoolId)
         .collection('users')
         .doc(uid);
-        
+
     final currentUserUid = FirebaseAuth.instance.currentUser?.uid;
     final userData = appUser.toMap();
     userData['created_at'] = FieldValue.serverTimestamp();
     userData['created_by'] = currentUserUid;
     userData['updated_at'] = FieldValue.serverTimestamp();
     userData['updated_by'] = currentUserUid;
-    
+
     batch.set(schoolUserRef, userData);
 
     // 3. Update global mapping
     final globalMappingRef = _db.collection('global_users_mapping').doc(uid);
-    
+
     // We use set with merge: true in case the document exists (e.g., they are already in another school)
     // But since this is a NEW firebase auth user, the document shouldn't exist.
-    batch.set(
-      globalMappingRef,
-      {
-        'email': email,
-        'name': name,
-        'registered_schools': {
-          schoolId: role,
-        }
-      },
-      SetOptions(merge: true),
-    );
+    batch.set(globalMappingRef, {
+      'email': email,
+      'name': name,
+      'registered_schools': {schoolId: role},
+    }, SetOptions(merge: true));
 
     await batch.commit();
   }
 
-  // Note: For existing users (adding an existing user to another school), 
+  // Note: For existing users (adding an existing user to another school),
   // you would skip the SecondaryAppService and just update the mapping and subcollection.
   // We'll keep it simple for now (assuming new users).
 
@@ -114,19 +110,21 @@ class UserManagementService {
         .doc(schoolId)
         .collection('users')
         .doc(user.id);
-        
+
     final currentUserUid = FirebaseAuth.instance.currentUser?.uid;
     final userData = user.toMap();
     userData.remove('created_at');
     userData.remove('created_by');
     userData['updated_at'] = FieldValue.serverTimestamp();
     userData['updated_by'] = currentUserUid;
-    
+
     batch.update(schoolUserRef, userData);
 
     // Update global mapping role if active, or remove if inactive (optional logic, but let's just update role)
-    final globalMappingRef = _db.collection('global_users_mapping').doc(user.id);
-    
+    final globalMappingRef = _db
+        .collection('global_users_mapping')
+        .doc(user.id);
+
     if (user.isActive) {
       batch.update(globalMappingRef, {
         'registered_schools.$schoolId': user.role,
@@ -151,9 +149,7 @@ class UserManagementService {
 
     // 1. Update global mapping
     final globalMappingRef = _db.collection('global_users_mapping').doc(uid);
-    batch.update(globalMappingRef, {
-      'name': newName,
-    });
+    batch.update(globalMappingRef, {'name': newName});
 
     // 2. Update user document in every registered school
     for (final schoolId in registeredSchools.keys) {
@@ -162,7 +158,7 @@ class UserManagementService {
           .doc(schoolId)
           .collection('users')
           .doc(uid);
-      
+
       batch.update(schoolUserRef, {
         'name': newName,
         'updated_at': FieldValue.serverTimestamp(),

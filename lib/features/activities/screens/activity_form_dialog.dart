@@ -30,10 +30,11 @@ class ActivityFormDialog extends StatefulWidget {
 class _ActivityFormDialogState extends State<ActivityFormDialog> {
   final _formKey = GlobalKey<FormState>();
   final _keteranganController = TextEditingController();
-  
-  final StudentActivityService _studentActivityService = StudentActivityService();
+
+  final StudentActivityService _studentActivityService =
+      StudentActivityService();
   final ActivityMasterService _activityMasterService = ActivityMasterService();
-  
+
   List<ActivityMaster> _masterActivities = [];
   String? _selectedActivityName;
   String _selectedStatus = 'Baik';
@@ -45,11 +46,10 @@ class _ActivityFormDialogState extends State<ActivityFormDialog> {
   @override
   void initState() {
     super.initState();
-    _statusOptions = const String.fromEnvironment('ACTIVITY_STATUSES', defaultValue: 'Baik,Cukup,Kurang,Buruk')
-        .split(',')
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
+    _statusOptions = const String.fromEnvironment(
+      'ACTIVITY_STATUSES',
+      defaultValue: 'Baik,Cukup,Kurang,Buruk',
+    ).split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
 
     _selectedStatus = _statusOptions.isNotEmpty ? _statusOptions.first : 'Baik';
     _loadMasterActivities();
@@ -76,9 +76,17 @@ class _ActivityFormDialogState extends State<ActivityFormDialog> {
         if (_selectedActivityName == null && list.isNotEmpty) {
           _selectedActivityName = list.first.nameActivity;
         } else if (_selectedActivityName != null) {
-          final exists = list.any((e) => e.nameActivity == _selectedActivityName);
+          final exists = list.any(
+            (e) => e.nameActivity == _selectedActivityName,
+          );
           if (!exists) {
-            _masterActivities.insert(0, ActivityMaster(idActivity: 'temp', nameActivity: _selectedActivityName!));
+            _masterActivities.insert(
+              0,
+              ActivityMaster(
+                idActivity: 'temp',
+                nameActivity: _selectedActivityName!,
+              ),
+            );
           }
         }
       });
@@ -106,7 +114,7 @@ class _ActivityFormDialogState extends State<ActivityFormDialog> {
         context: context,
         initialTime: TimeOfDay.fromDateTime(_selectedDate),
       );
-      
+
       if (timePicked != null) {
         setState(() {
           _selectedDate = DateTime(
@@ -136,7 +144,8 @@ class _ActivityFormDialogState extends State<ActivityFormDialog> {
 
     try {
       final userProvider = context.read<UserProvider>();
-      final currentUserName = userProvider.userMapping?.name ?? 'Unknown Teacher';
+      final currentUserName =
+          userProvider.userMapping?.name ?? 'Unknown Teacher';
 
       final newEntry = ActivityEntry(
         tgl: _selectedDate.toIso8601String(),
@@ -188,11 +197,19 @@ class _ActivityFormDialogState extends State<ActivityFormDialog> {
         ),
         child: Row(
           children: [
-            Icon(isEdit ? Icons.edit_note : Icons.add_circle_outline, color: Theme.of(context).primaryColor),
+            Icon(
+              isEdit ? Icons.edit_note : Icons.add_circle_outline,
+              color: Theme.of(context).primaryColor,
+            ),
             const SizedBox(width: 12),
-            Text(
-              isEdit ? 'Edit Kegiatan' : 'Tambah Kegiatan',
-              style: TextStyle(color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold),
+            Expanded(
+              child: Text(
+                isEdit ? 'Edit Kegiatan' : 'Tambah Kegiatan',
+                style: TextStyle(
+                  color: Theme.of(context).primaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         ),
@@ -213,16 +230,22 @@ class _ActivityFormDialogState extends State<ActivityFormDialog> {
                     child: const Icon(Icons.calendar_today, color: Colors.blue),
                   ),
                   title: const Text('Waktu Kegiatan'),
-                  subtitle: Text(DateFormat('dd MMM yyyy, HH:mm').format(_selectedDate)),
+                  subtitle: Text(
+                    DateFormat('dd MMM yyyy, HH:mm').format(_selectedDate),
+                  ),
                   onTap: () => _selectDate(context),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 const SizedBox(height: 20),
                 DropdownButtonFormField<String>(
                   decoration: InputDecoration(
                     labelText: 'Nama Kegiatan',
                     prefixIcon: const Icon(Icons.local_activity_outlined),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     filled: true,
                     fillColor: Colors.grey.withValues(alpha: 0.05),
                   ),
@@ -246,7 +269,9 @@ class _ActivityFormDialogState extends State<ActivityFormDialog> {
                   decoration: InputDecoration(
                     labelText: 'Keterangan',
                     prefixIcon: const Icon(Icons.description_outlined),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     filled: true,
                     fillColor: Colors.grey.withValues(alpha: 0.05),
                   ),
@@ -263,16 +288,15 @@ class _ActivityFormDialogState extends State<ActivityFormDialog> {
                   decoration: InputDecoration(
                     labelText: 'Status',
                     prefixIcon: const Icon(Icons.flaky),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     filled: true,
                     fillColor: Colors.grey.withValues(alpha: 0.05),
                   ),
                   initialValue: _selectedStatus,
                   items: _statusOptions.map((e) {
-                    return DropdownMenuItem(
-                      value: e,
-                      child: Text(e),
-                    );
+                    return DropdownMenuItem(value: e, child: Text(e));
                   }).toList(),
                   onChanged: (val) {
                     setState(() {
@@ -290,19 +314,30 @@ class _ActivityFormDialogState extends State<ActivityFormDialog> {
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.pop(context),
           style: TextButton.styleFrom(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
           ),
           child: const Text('Batal'),
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _submit,
           style: ElevatedButton.styleFrom(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           ),
-          child: _isLoading 
-            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) 
-            : const Text('Simpan'),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Text('Simpan'),
         ),
       ],
     );

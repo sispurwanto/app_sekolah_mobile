@@ -28,7 +28,9 @@ class SavingsSummary {
       balance: (data['balance'] ?? 0.0).toDouble(),
       totalDeposit: (data['total_deposit'] ?? 0.0).toDouble(),
       totalWithdrawal: (data['total_withdrawal'] ?? 0.0).toDouble(),
-      updatedAt: data['updated_at'] != null ? (data['updated_at'] as Timestamp).toDate() : null,
+      updatedAt: data['updated_at'] != null
+          ? (data['updated_at'] as Timestamp).toDate()
+          : null,
     );
   }
 }
@@ -58,9 +60,13 @@ class SavingsTransaction {
       id: doc.id,
       type: data['type'] ?? 'DEPOSIT',
       amount: (data['amount'] ?? 0.0).toDouble(),
-      date: data['date'] != null ? (data['date'] as Timestamp).toDate() : DateTime.now(),
+      date: data['date'] != null
+          ? (data['date'] as Timestamp).toDate()
+          : DateTime.now(),
       note: data['note'] ?? '',
-      createdAt: data['created_at'] != null ? (data['created_at'] as Timestamp).toDate() : null,
+      createdAt: data['created_at'] != null
+          ? (data['created_at'] as Timestamp).toDate()
+          : null,
       createdBy: data['created_by'] ?? '',
     );
   }

@@ -16,9 +16,7 @@ class UserListScreen extends StatelessWidget {
     final schoolId = context.watch<SchoolProvider>().activeSchoolId ?? '';
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Manajemen User'),
-      ),
+      appBar: AppBar(title: const Text('Manajemen User')),
       body: StreamBuilder<List<AppUser>>(
         stream: _userService.getUsers(schoolId),
         builder: (context, snapshot) {
@@ -48,8 +46,13 @@ class UserListScreen extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: ListTile(
                   leading: CircleAvatar(child: Text(user.role[0])),
-                  title: Text(user.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('${user.email}\nRole: ${user.role} | Status: ${user.isActive ? "Aktif" : "Non-Aktif"}'),
+                  title: Text(
+                    user.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    '${user.email}\nRole: ${user.role} | Status: ${user.isActive ? "Aktif" : "Non-Aktif"}',
+                  ),
                   isThreeLine: true,
                   trailing: IconButton(
                     icon: const Icon(Icons.edit, color: Colors.blue),
@@ -72,9 +75,7 @@ class UserListScreen extends StatelessWidget {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const UserFormScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const UserFormScreen()),
           );
         },
         child: const Icon(Icons.person_add),

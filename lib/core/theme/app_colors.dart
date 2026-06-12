@@ -5,10 +5,10 @@ class AppColors {
   static const Color primary = Color(0xFF2E7D32); // Green 800
   static const Color primaryLight = Color(0xFF4CAF50); // Green 500
   static const Color primaryDark = Color(0xFF1B5E20); // Green 900
-  
+
   // Secondary Colors
   static const Color secondary = Color(0xFFF9A825); // Yellow 800
-  
+
   // Backgrounds
   static const Color background = Color(0xFFF5F5F5); // Grey 100
   static const Color surface = Colors.white;

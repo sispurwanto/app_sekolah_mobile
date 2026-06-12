@@ -38,14 +38,24 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.school?.name ?? '');
-    _addressController = TextEditingController(text: widget.school?.address ?? '');
+    _addressController = TextEditingController(
+      text: widget.school?.address ?? '',
+    );
     _phoneController = TextEditingController(text: widget.school?.phone ?? '');
     _emailController = TextEditingController(text: widget.school?.email ?? '');
-    _studentLimitController = TextEditingController(text: widget.school?.studentLimit.toString() ?? '100');
-    _bankNameController = TextEditingController(text: widget.school?.bankName ?? '');
-    _bankAccountNumberController = TextEditingController(text: widget.school?.bankAccountNumber ?? '');
-    _bankAccountNameController = TextEditingController(text: widget.school?.bankAccountName ?? '');
-    
+    _studentLimitController = TextEditingController(
+      text: widget.school?.studentLimit.toString() ?? '100',
+    );
+    _bankNameController = TextEditingController(
+      text: widget.school?.bankName ?? '',
+    );
+    _bankAccountNumberController = TextEditingController(
+      text: widget.school?.bankAccountNumber ?? '',
+    );
+    _bankAccountNameController = TextEditingController(
+      text: widget.school?.bankAccountName ?? '',
+    );
+
     if (widget.school != null) {
       _status = widget.school!.status;
       _package = widget.school!.package;
@@ -72,7 +82,10 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
 
     String schoolId;
     if (widget.school == null) {
-      schoolId = _nameController.text.trim().toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '_');
+      schoolId = _nameController.text.trim().toLowerCase().replaceAll(
+        RegExp(r'[^a-z0-9]'),
+        '_',
+      );
     } else {
       schoolId = widget.school!.id;
     }
@@ -86,10 +99,18 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
       status: _status,
       package: _package,
       studentLimit: int.tryParse(_studentLimitController.text) ?? 100,
-      bankName: _bankNameController.text.trim().isEmpty ? null : _bankNameController.text.trim(),
-      bankAccountNumber: _bankAccountNumberController.text.trim().isEmpty ? null : _bankAccountNumberController.text.trim(),
-      bankAccountName: _bankAccountNameController.text.trim().isEmpty ? null : _bankAccountNameController.text.trim(),
-      createdAt: widget.school?.createdAt, // SchoolService will use serverTimestamp if null
+      bankName: _bankNameController.text.trim().isEmpty
+          ? null
+          : _bankNameController.text.trim(),
+      bankAccountNumber: _bankAccountNumberController.text.trim().isEmpty
+          ? null
+          : _bankAccountNumberController.text.trim(),
+      bankAccountName: _bankAccountNameController.text.trim().isEmpty
+          ? null
+          : _bankAccountNameController.text.trim(),
+      createdAt: widget
+          .school
+          ?.createdAt, // SchoolService will use serverTimestamp if null
     );
 
     try {
@@ -111,10 +132,15 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.school != null;
-    
+
     final activeSchoolId = context.watch<SchoolProvider>().activeSchoolId ?? '';
     final targetSchoolId = widget.school?.id ?? activeSchoolId;
-    final role = context.watch<UserProvider>().userMapping?.registeredSchools[targetSchoolId] ?? '';
+    final role =
+        context
+            .watch<UserProvider>()
+            .userMapping
+            ?.registeredSchools[targetSchoolId] ??
+        '';
     final isSuperAdmin = role == 'SUPER_ADMIN';
 
     return Scaffold(
@@ -131,7 +157,9 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
                   children: [
                     TextFormField(
                       controller: _nameController,
-                      decoration: const InputDecoration(labelText: 'Nama Sekolah *'),
+                      decoration: const InputDecoration(
+                        labelText: 'Nama Sekolah *',
+                      ),
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
                     const SizedBox(height: 16),
@@ -155,46 +183,65 @@ class _SchoolFormScreenState extends State<SchoolFormScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _studentLimitController,
-                      decoration: const InputDecoration(labelText: 'Batas Siswa'),
+                      decoration: const InputDecoration(
+                        labelText: 'Batas Siswa',
+                      ),
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
                     const Divider(height: 32),
-                    const Text('Informasi Rekening Sekolah', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Informasi Rekening Sekolah',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _bankNameController,
-                      decoration: const InputDecoration(labelText: 'Nama Bank (misal: BCA, BNI)'),
+                      decoration: const InputDecoration(
+                        labelText: 'Nama Bank (misal: BCA, BNI)',
+                      ),
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _bankAccountNumberController,
-                      decoration: const InputDecoration(labelText: 'Nomor Rekening'),
+                      decoration: const InputDecoration(
+                        labelText: 'Nomor Rekening',
+                      ),
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _bankAccountNameController,
-                      decoration: const InputDecoration(labelText: 'Atas Nama (A/N)'),
+                      decoration: const InputDecoration(
+                        labelText: 'Atas Nama (A/N)',
+                      ),
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
                       initialValue: _status,
                       decoration: const InputDecoration(labelText: 'Status'),
                       items: ['ACTIVE', 'INACTIVE']
-                          .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                          .map(
+                            (s) => DropdownMenuItem(value: s, child: Text(s)),
+                          )
                           .toList(),
-                      onChanged: isSuperAdmin ? (v) => setState(() => _status = v!) : null,
+                      onChanged: isSuperAdmin
+                          ? (v) => setState(() => _status = v!)
+                          : null,
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
                       initialValue: _package,
                       decoration: const InputDecoration(labelText: 'Paket'),
                       items: ['BASIC', 'PREMIUM', 'PRO']
-                          .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                          .map(
+                            (s) => DropdownMenuItem(value: s, child: Text(s)),
+                          )
                           .toList(),
-                      onChanged: isSuperAdmin ? (v) => setState(() => _package = v!) : null,
+                      onChanged: isSuperAdmin
+                          ? (v) => setState(() => _package = v!)
+                          : null,
                     ),
                     const SizedBox(height: 32),
                     SizedBox(

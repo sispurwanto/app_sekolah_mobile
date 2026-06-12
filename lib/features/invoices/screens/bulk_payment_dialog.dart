@@ -41,8 +41,8 @@ class _BulkPaymentDialogState extends State<BulkPaymentDialog> {
     final status = isBendahara ? 'APPROVED' : 'PENDING';
 
     final totalRemaining = widget.invoices.fold<double>(
-      0, 
-      (sum, inv) => sum + (inv.amount - inv.paidAmount)
+      0,
+      (sum, inv) => sum + (inv.amount - inv.paidAmount),
     );
 
     final payment = Payment(
@@ -51,7 +51,9 @@ class _BulkPaymentDialogState extends State<BulkPaymentDialog> {
       invoiceTitle: 'Pembayaran Kolektif (${widget.invoices.length} Tagihan)',
       invoiceIds: widget.invoices.map((e) => e.id).toList(),
       invoiceTitles: widget.invoices.map((e) => e.title).toList(),
-      invoiceAmounts: widget.invoices.map((e) => e.amount - e.paidAmount).toList(),
+      invoiceAmounts: widget.invoices
+          .map((e) => e.amount - e.paidAmount)
+          .toList(),
       studentId: widget.invoices.first.studentId,
       studentName: widget.invoices.first.studentName,
       classId: widget.invoices.first.classId,
@@ -64,8 +66,16 @@ class _BulkPaymentDialogState extends State<BulkPaymentDialog> {
     );
 
     try {
-      await _paymentService.createBulkPayment(schoolId, payment, widget.invoices);
-      SnackbarUtils.showSnackbar(isBendahara ? 'Pembayaran berhasil dicatat' : 'Bukti transfer berhasil dikirim. Menunggu validasi Bendahara.');
+      await _paymentService.createBulkPayment(
+        schoolId,
+        payment,
+        widget.invoices,
+      );
+      SnackbarUtils.showSnackbar(
+        isBendahara
+            ? 'Pembayaran berhasil dicatat'
+            : 'Bukti transfer berhasil dikirim. Menunggu validasi Bendahara.',
+      );
       if (mounted) Navigator.pop(context, true); // true indicates success
     } catch (e) {
       SnackbarUtils.showErrorSnackbar('Error: $e');
@@ -77,57 +87,85 @@ class _BulkPaymentDialogState extends State<BulkPaymentDialog> {
   @override
   Widget build(BuildContext context) {
     final schoolId = context.watch<SchoolProvider>().activeSchoolId ?? '';
-    final role = context.read<UserProvider>().userMapping?.registeredSchools[schoolId] ?? 'WALI';
+    final role =
+        context.read<UserProvider>().userMapping?.registeredSchools[schoolId] ??
+        'WALI';
     final isBendahara = ['BENDAHARA', 'ADMIN', 'SUPER_ADMIN'].contains(role);
-    
+
     final totalRemaining = widget.invoices.fold<double>(
-      0, 
-      (sum, inv) => sum + (inv.amount - inv.paidAmount)
+      0,
+      (sum, inv) => sum + (inv.amount - inv.paidAmount),
     );
 
     return CustomDialog(
       headerIcon: Icons.collections_bookmark,
-      title: isBendahara ? 'Penerimaan Kasir Kolektif' : 'Konfirmasi Transfer Kolektif',
+      title: isBendahara
+          ? 'Penerimaan Kasir Kolektif'
+          : 'Konfirmasi Transfer Kolektif',
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Daftar Tagihan:', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text(
+            'Daftar Tagihan:',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           const SizedBox(height: 8),
-          ...widget.invoices.map((inv) => Padding(
-            padding: const EdgeInsets.only(bottom: 4.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(child: Text('- ${inv.title}')),
-                Text(CurrencyUtils.formatRp(inv.amount - inv.paidAmount)),
-              ],
+          ...widget.invoices.map(
+            (inv) => Padding(
+              padding: const EdgeInsets.only(bottom: 4.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(child: Text('- ${inv.title}')),
+                  Text(CurrencyUtils.formatRp(inv.amount - inv.paidAmount)),
+                ],
+              ),
             ),
-          )),
+          ),
           const Divider(height: 24, thickness: 2),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Total Pembayaran:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              Text(CurrencyUtils.formatRp(totalRemaining), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blue)),
+              const Text(
+                'Total Pembayaran:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              Text(
+                CurrencyUtils.formatRp(totalRemaining),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.blue,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
           const Text(
             '*Pembayaran kolektif harus dilunasi penuh sesuai total.',
-            style: TextStyle(color: Colors.red, fontSize: 12, fontStyle: FontStyle.italic),
+            style: TextStyle(
+              color: Colors.red,
+              fontSize: 12,
+              fontStyle: FontStyle.italic,
+            ),
           ),
           const SizedBox(height: 16),
           if (!isBendahara) ...[
             FutureBuilder<School?>(
               future: SchoolService().getSchool(schoolId),
               builder: (context, snapshot) {
-                if (!snapshot.hasData || snapshot.data == null) return const SizedBox();
+                if (!snapshot.hasData || snapshot.data == null)
+                  return const SizedBox();
                 final school = snapshot.data!;
-                if (school.bankAccountNumber == null || school.bankAccountNumber!.isEmpty) {
+                if (school.bankAccountNumber == null ||
+                    school.bankAccountNumber!.isEmpty) {
                   return const Padding(
                     padding: EdgeInsets.only(bottom: 16.0),
-                    child: Text('Informasi rekening sekolah belum diatur.', style: TextStyle(color: Colors.red)),
+                    child: Text(
+                      'Informasi rekening sekolah belum diatur.',
+                      style: TextStyle(color: Colors.red),
+                    ),
                   );
                 }
                 return Container(
@@ -141,10 +179,19 @@ class _BulkPaymentDialogState extends State<BulkPaymentDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Silakan Transfer ke:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Silakan Transfer ke:',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       const SizedBox(height: 4),
                       Text('Bank: ${school.bankName ?? "-"}'),
-                      Text('No. Rekening: ${school.bankAccountNumber}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text(
+                        'No. Rekening: ${school.bankAccountNumber}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
                       Text('A/N: ${school.bankAccountName ?? "-"}'),
                     ],
                   ),

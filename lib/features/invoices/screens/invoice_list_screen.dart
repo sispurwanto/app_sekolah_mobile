@@ -21,9 +21,9 @@ class InvoiceListScreen extends StatefulWidget {
   final String? classId;
 
   const InvoiceListScreen({
-    super.key, 
-    this.studentId, 
-    this.academicYearId, 
+    super.key,
+    this.studentId,
+    this.academicYearId,
     this.classId,
   });
 
@@ -31,7 +31,8 @@ class InvoiceListScreen extends StatefulWidget {
   State<InvoiceListScreen> createState() => _InvoiceListScreenState();
 }
 
-class _InvoiceListScreenState extends State<InvoiceListScreen> with SingleTickerProviderStateMixin {
+class _InvoiceListScreenState extends State<InvoiceListScreen>
+    with SingleTickerProviderStateMixin {
   final InvoiceService _invoiceService = InvoiceService();
   late TabController _tabController;
   final Set<String> _selectedInvoiceIds = {};
@@ -51,7 +52,9 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> with SingleTicker
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
-      if (_tabController.index == 1 && _paidFuture == null && widget.studentId != null) {
+      if (_tabController.index == 1 &&
+          _paidFuture == null &&
+          widget.studentId != null) {
         _loadPaid();
       }
     });
@@ -72,8 +75,12 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> with SingleTicker
   void _loadUnpaid() {
     setState(() {
       _unpaidFuture = _invoiceService.fetchStudentInvoicesPaginated(
-        _currentSchoolId, _currentYearId, widget.classId!, widget.studentId!,
-        isPaid: false, limitCount: _showAllUnpaid ? null : 2,
+        _currentSchoolId,
+        _currentYearId,
+        widget.classId!,
+        widget.studentId!,
+        isPaid: false,
+        limitCount: _showAllUnpaid ? null : 2,
       );
     });
   }
@@ -81,8 +88,12 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> with SingleTicker
   void _loadPaid() {
     setState(() {
       _paidFuture = _invoiceService.fetchStudentInvoicesPaginated(
-        _currentSchoolId, _currentYearId, widget.classId!, widget.studentId!,
-        isPaid: true, limitCount: _showAllPaid ? null : 2,
+        _currentSchoolId,
+        _currentYearId,
+        widget.classId!,
+        widget.studentId!,
+        isPaid: true,
+        limitCount: _showAllPaid ? null : 2,
       );
     });
   }
@@ -97,7 +108,10 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> with SingleTicker
           _loadPaid();
         }
       } else {
-        _invoicesFuture = _invoiceService.fetchAllInvoices(schoolId, yearIdToUse);
+        _invoicesFuture = _invoiceService.fetchAllInvoices(
+          schoolId,
+          yearIdToUse,
+        );
       }
     });
   }
@@ -109,8 +123,11 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> with SingleTicker
         _selectedInvoices.removeWhere((i) => i.id == invoice.id);
       } else {
         // Enforce same student selection
-        if (_selectedInvoices.isNotEmpty && _selectedInvoices.first.studentId != invoice.studentId) {
-          SnackbarUtils.showErrorSnackbar('Pembayaran kolektif hanya bisa untuk tagihan dari siswa yang sama');
+        if (_selectedInvoices.isNotEmpty &&
+            _selectedInvoices.first.studentId != invoice.studentId) {
+          SnackbarUtils.showErrorSnackbar(
+            'Pembayaran kolektif hanya bisa untuk tagihan dari siswa yang sama',
+          );
           return;
         }
         _selectedInvoiceIds.add(invoice.id);
@@ -126,26 +143,37 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> with SingleTicker
     });
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     final schoolId = context.watch<SchoolProvider>().activeSchoolId ?? '';
-    final role = context.read<UserProvider>().userMapping?.registeredSchools[schoolId] ?? 'WALI';
-    
+    final role =
+        context.read<UserProvider>().userMapping?.registeredSchools[schoolId] ??
+        'WALI';
+
     // BENDAHARA, ADMIN, SUPER_ADMIN can add and edit invoices
-    final canManageInvoices = ['BENDAHARA', 'ADMIN', 'SUPER_ADMIN'].contains(role);
+    final canManageInvoices = [
+      'BENDAHARA',
+      'ADMIN',
+      'SUPER_ADMIN',
+    ].contains(role);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.studentId != null ? 'Tagihan Siswa' : 'Daftar Semua Tagihan'),
-        bottom: widget.studentId != null ? TabBar(
-          controller: _tabController,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
-          indicatorColor: Colors.white,
-          tabs: const [Tab(text: 'Belum Lunas'), Tab(text: 'Lunas')],
-        ) : null,
+        title: Text(
+          widget.studentId != null ? 'Tagihan Siswa' : 'Daftar Semua Tagihan',
+        ),
+        bottom: widget.studentId != null
+            ? TabBar(
+                controller: _tabController,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white70,
+                indicatorColor: Colors.white,
+                tabs: const [
+                  Tab(text: 'Belum Lunas'),
+                  Tab(text: 'Lunas'),
+                ],
+              )
+            : null,
         actions: [
           if (_selectedInvoiceIds.isNotEmpty)
             IconButton(
@@ -161,18 +189,25 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> with SingleTicker
           if (yearSnapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          
+
           final activeYear = yearSnapshot.data;
-          
+
           final yearIdToUse = widget.academicYearId ?? activeYear?.id;
 
           if (yearIdToUse == null || yearIdToUse.isEmpty) {
-            return const Center(child: Text('Tahun Ajaran Aktif tidak ditemukan.'));
+            return const Center(
+              child: Text('Tahun Ajaran Aktif tidak ditemukan.'),
+            );
           }
 
           // If showing for specific student, make sure class is provided
-          if (widget.studentId != null && (widget.classId == null || widget.classId!.isEmpty)) {
-            return const Center(child: Text('Data Kelas Siswa tidak lengkap untuk mengambil tagihan.'));
+          if (widget.studentId != null &&
+              (widget.classId == null || widget.classId!.isEmpty)) {
+            return const Center(
+              child: Text(
+                'Data Kelas Siswa tidak lengkap untuk mengambil tagihan.',
+              ),
+            );
           }
 
           if (widget.studentId != null) {
@@ -187,8 +222,8 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> with SingleTicker
               controller: _tabController,
               children: [
                 _buildTabContent(
-                  future: _unpaidFuture!, 
-                  showAll: _showAllUnpaid, 
+                  future: _unpaidFuture!,
+                  showAll: _showAllUnpaid,
                   onShowAll: () {
                     setState(() {
                       _showAllUnpaid = true;
@@ -199,21 +234,21 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> with SingleTicker
                   schoolId: schoolId,
                   yearIdToUse: yearIdToUse,
                 ),
-                _paidFuture == null 
-                  ? const Center(child: CircularProgressIndicator())
-                  : _buildTabContent(
-                      future: _paidFuture!, 
-                      showAll: _showAllPaid, 
-                      onShowAll: () {
-                        setState(() {
-                          _showAllPaid = true;
-                          _loadPaid();
-                        });
-                      },
-                      canManageInvoices: canManageInvoices,
-                      schoolId: schoolId,
-                      yearIdToUse: yearIdToUse,
-                    ),
+                _paidFuture == null
+                    ? const Center(child: CircularProgressIndicator())
+                    : _buildTabContent(
+                        future: _paidFuture!,
+                        showAll: _showAllPaid,
+                        onShowAll: () {
+                          setState(() {
+                            _showAllPaid = true;
+                            _loadPaid();
+                          });
+                        },
+                        canManageInvoices: canManageInvoices,
+                        schoolId: schoolId,
+                        yearIdToUse: yearIdToUse,
+                      ),
               ],
             );
           }
@@ -241,57 +276,71 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> with SingleTicker
                   return Center(child: Text('Error: ${snapshot.error}'));
                 }
 
-              final invoices = snapshot.data ?? [];
+                final invoices = snapshot.data ?? [];
 
-              var filteredInvoices = invoices;
-              if (_filterStatus == 'BELUM LUNAS') {
-                filteredInvoices = invoices.where((i) => i.status != 'PAID').toList();
-              } else if (_filterStatus == 'LUNAS') {
-                filteredInvoices = invoices.where((i) => i.status == 'PAID').toList();
-              }
+                var filteredInvoices = invoices;
+                if (_filterStatus == 'BELUM LUNAS') {
+                  filteredInvoices = invoices
+                      .where((i) => i.status != 'PAID')
+                      .toList();
+                } else if (_filterStatus == 'LUNAS') {
+                  filteredInvoices = invoices
+                      .where((i) => i.status == 'PAID')
+                      .toList();
+                }
 
-              return Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: SegmentedButton<String>(
-                      segments: const [
-                        ButtonSegment(value: 'SEMUA', label: Text('Semua')),
-                        ButtonSegment(value: 'BELUM LUNAS', label: Text('Tunggakan')),
-                        ButtonSegment(value: 'LUNAS', label: Text('Lunas')),
-                      ],
-                      selected: {_filterStatus},
-                      onSelectionChanged: (Set<String> newSelection) {
-                        setState(() {
-                          _filterStatus = newSelection.first;
-                          _clearSelection(); // Clear selection when filter changes
-                        });
-                      },
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: SegmentedButton<String>(
+                        segments: const [
+                          ButtonSegment(value: 'SEMUA', label: Text('Semua')),
+                          ButtonSegment(
+                            value: 'BELUM LUNAS',
+                            label: Text('Tunggakan'),
+                          ),
+                          ButtonSegment(value: 'LUNAS', label: Text('Lunas')),
+                        ],
+                        selected: {_filterStatus},
+                        onSelectionChanged: (Set<String> newSelection) {
+                          setState(() {
+                            _filterStatus = newSelection.first;
+                            _clearSelection(); // Clear selection when filter changes
+                          });
+                        },
+                      ),
                     ),
-                  ),
-                  if (filteredInvoices.isEmpty)
-                    const Expanded(child: EmptyStateWidget(
-                      icon: Icons.receipt_long,
-                      title: 'Tidak ada tagihan',
-                      subtitle: 'Tidak ada tagihan yang sesuai dengan filter ini.',
-                    ))
-                  else
-                    Expanded(
-                      child: _buildInvoiceList(filteredInvoices, canManageInvoices),
-                    ),
-                ],
-              );
-            },
-          ),
-        );
-      },
+                    if (filteredInvoices.isEmpty)
+                      const Expanded(
+                        child: EmptyStateWidget(
+                          icon: Icons.receipt_long,
+                          title: 'Tidak ada tagihan',
+                          subtitle:
+                              'Tidak ada tagihan yang sesuai dengan filter ini.',
+                        ),
+                      )
+                    else
+                      Expanded(
+                        child: _buildInvoiceList(
+                          filteredInvoices,
+                          canManageInvoices,
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          );
+        },
       ),
       floatingActionButton: _selectedInvoiceIds.isNotEmpty
           ? FloatingActionButton.extended(
               onPressed: () async {
                 final success = await showDialog<bool>(
                   context: context,
-                  builder: (context) => BulkPaymentDialog(invoices: _selectedInvoices),
+                  builder: (context) =>
+                      BulkPaymentDialog(invoices: _selectedInvoices),
                 );
                 if (success == true) {
                   _clearSelection();
@@ -307,32 +356,31 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> with SingleTicker
               label: Text('Bayar Terpilih (${_selectedInvoiceIds.length})'),
             )
           : (canManageInvoices
-              ? FloatingActionButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => InvoiceFormScreen(
-                          studentId: widget.studentId,
+                ? FloatingActionButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              InvoiceFormScreen(studentId: widget.studentId),
                         ),
-                      ),
-                    ).then((_) {
-                      if (widget.studentId != null) {
-                        _loadUnpaid();
-                      } else {
-                        _loadInvoices(_currentSchoolId, _currentYearId);
-                      }
-                    });
-                  },
-                  child: const Icon(Icons.add),
-                )
-              : null),
+                      ).then((_) {
+                        if (widget.studentId != null) {
+                          _loadUnpaid();
+                        } else {
+                          _loadInvoices(_currentSchoolId, _currentYearId);
+                        }
+                      });
+                    },
+                    child: const Icon(Icons.add),
+                  )
+                : null),
     );
   }
 
   Widget _buildTabContent({
-    required Future<List<Invoice>> future, 
-    required bool showAll, 
+    required Future<List<Invoice>> future,
+    required bool showAll,
     required VoidCallback onShowAll,
     required bool canManageInvoices,
     required String schoolId,
@@ -358,12 +406,12 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> with SingleTicker
           return Column(
             children: [
               Expanded(
-                child: invoices.isEmpty 
-                  ? const EmptyStateWidget(
-                      icon: Icons.receipt_long,
-                      title: 'Tidak ada tagihan',
-                    )
-                  : _buildInvoiceList(invoices, canManageInvoices),
+                child: invoices.isEmpty
+                    ? const EmptyStateWidget(
+                        icon: Icons.receipt_long,
+                        title: 'Tidak ada tagihan',
+                      )
+                    : _buildInvoiceList(invoices, canManageInvoices),
               ),
               if (!showAll && invoices.length == 2)
                 Padding(
@@ -387,15 +435,21 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> with SingleTicker
         final invoice = invoices[index];
         final isSelected = _selectedInvoiceIds.contains(invoice.id);
         final isSelectable = invoice.status != 'PAID';
-        final dueStr = invoice.dueDate != null ? DateFormat('dd/MM/yy').format(invoice.dueDate!) : '-';
-        final isOverdue = invoice.dueDate != null && invoice.dueDate!.isBefore(DateTime.now());
-        final dueColor = isOverdue && invoice.status != 'PAID' ? Colors.red : null;
+        final dueStr = invoice.dueDate != null
+            ? DateFormat('dd/MM/yy').format(invoice.dueDate!)
+            : '-';
+        final isOverdue =
+            invoice.dueDate != null &&
+            invoice.dueDate!.isBefore(DateTime.now());
+        final dueColor = isOverdue && invoice.status != 'PAID'
+            ? Colors.red
+            : null;
 
         return Card(
           color: isSelected ? Colors.blue.shade50 : null,
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: ListTile(
-            leading: isSelectable 
+            leading: isSelectable
                 ? Checkbox(
                     value: isSelected,
                     onChanged: (val) {
@@ -403,25 +457,37 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> with SingleTicker
                     },
                   )
                 : const Icon(Icons.check_circle, color: Colors.green),
-            title: Text(invoice.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(
+              invoice.title,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: RichText(
               text: TextSpan(
                 style: DefaultTextStyle.of(context).style.copyWith(height: 1.5),
                 children: [
-                  TextSpan(text: 'Siswa: ${invoice.studentName}\nTotal: ${CurrencyUtils.formatRp(invoice.amount)} | Dibayar: ${CurrencyUtils.formatRp(invoice.paidAmount)}\nStatus: '),
+                  TextSpan(
+                    text:
+                        'Siswa: ${invoice.studentName}\nTotal: ${CurrencyUtils.formatRp(invoice.amount)} | Dibayar: ${CurrencyUtils.formatRp(invoice.paidAmount)}\nStatus: ',
+                  ),
                   TextSpan(
                     text: invoice.status,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: invoice.status == 'PAID' ? Colors.green : (invoice.status == 'UNPAID' ? Colors.red : Colors.orange),
+                      color: invoice.status == 'PAID'
+                          ? Colors.green
+                          : (invoice.status == 'UNPAID'
+                                ? Colors.red
+                                : Colors.orange),
                     ),
                   ),
                   const TextSpan(text: '\nJatuh Tempo: '),
                   TextSpan(
                     text: dueStr,
                     style: TextStyle(
-                      color: dueColor, 
-                      fontWeight: isOverdue && invoice.status != 'PAID' ? FontWeight.bold : null,
+                      color: dueColor,
+                      fontWeight: isOverdue && invoice.status != 'PAID'
+                          ? FontWeight.bold
+                          : null,
                     ),
                   ),
                 ],
@@ -434,17 +500,24 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> with SingleTicker
                 if (value == 'edit') {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => InvoiceFormScreen(invoice: invoice)),
-                  ).then((_) => _loadInvoices(_currentSchoolId, _currentYearId));
+                    MaterialPageRoute(
+                      builder: (context) => InvoiceFormScreen(invoice: invoice),
+                    ),
+                  ).then(
+                    (_) => _loadInvoices(_currentSchoolId, _currentYearId),
+                  );
                 } else if (value == 'pay') {
                   showDialog(
                     context: context,
                     builder: (context) => PaymentDialog(invoice: invoice),
-                  ).then((_) => _loadInvoices(_currentSchoolId, _currentYearId));
+                  ).then(
+                    (_) => _loadInvoices(_currentSchoolId, _currentYearId),
+                  );
                 } else if (value == 'view_payments') {
                   showDialog(
                     context: context,
-                    builder: (context) => PaymentHistoryDialog(invoice: invoice),
+                    builder: (context) =>
+                        PaymentHistoryDialog(invoice: invoice),
                   );
                 }
               },
@@ -452,7 +525,11 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> with SingleTicker
                 if (invoice.status != 'PAID' && _selectedInvoiceIds.isEmpty)
                   PopupMenuItem(
                     value: 'pay',
-                    child: Text(canManageInvoices ? 'Terima Pembayaran' : 'Bayar via Transfer'),
+                    child: Text(
+                      canManageInvoices
+                          ? 'Terima Pembayaran'
+                          : 'Bayar via Transfer',
+                    ),
                   ),
                 if (invoice.paidAmount > 0)
                   const PopupMenuItem(

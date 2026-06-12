@@ -7,13 +7,12 @@ class ClassService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   Stream<List<AppClass>> getClasses(String schoolId, {String? teacherId}) {
-    var query = _db
-        .collection('schools')
-        .doc(schoolId)
-        .collection('classes');
-        
+    var query = _db.collection('schools').doc(schoolId).collection('classes');
+
     if (teacherId != null && teacherId.isNotEmpty) {
-      return query.where('teacher_id', isEqualTo: teacherId).snapshots().map((snapshot) {
+      return query.where('teacher_id', isEqualTo: teacherId).snapshots().map((
+        snapshot,
+      ) {
         return snapshot.docs.map((doc) => AppClass.fromFirestore(doc)).toList();
       });
     }
@@ -26,7 +25,7 @@ class ClassService {
   Future<void> addClass(String schoolId, AppClass appClass) async {
     final idToUse = appClass.id;
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    
+
     final data = appClass.toMap();
     data['created_at'] = FieldValue.serverTimestamp();
     data['created_by'] = uid;
@@ -40,10 +39,12 @@ class ClassService {
         .doc(schoolId)
         .collection('classes')
         .doc(idToUse);
-        
+
     batch.set(classRef, data);
 
-    final activeYear = await AcademicYearService().getActiveAcademicYear(schoolId);
+    final activeYear = await AcademicYearService().getActiveAcademicYear(
+      schoolId,
+    );
     if (activeYear != null) {
       final classDataRef = _db
           .collection('schools')
@@ -52,15 +53,14 @@ class ClassService {
           .doc(activeYear.id)
           .collection('class_data')
           .doc(idToUse);
-          
+
       batch.set(classDataRef, {
         'status': 'ACTIVE',
         'updated_at': FieldValue.serverTimestamp(),
         'updated_by': uid,
-        'teacher': appClass.teacherId != null ? {
-          'id': appClass.teacherId,
-          'name': appClass.teacherName,
-        } : null,
+        'teacher': appClass.teacherId != null
+            ? {'id': appClass.teacherId, 'name': appClass.teacherName}
+            : null,
       }, SetOptions(merge: true));
     }
 
@@ -70,11 +70,11 @@ class ClassService {
   Future<void> updateClass(String schoolId, AppClass appClass) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     final data = appClass.toMap();
-    
+
     // Jangan ubah created_at & created_by
     data.remove('created_at');
     data.remove('created_by');
-    
+
     data['updated_at'] = FieldValue.serverTimestamp();
     data['updated_by'] = uid;
 
@@ -85,10 +85,12 @@ class ClassService {
         .doc(schoolId)
         .collection('classes')
         .doc(appClass.id);
-        
+
     batch.update(classRef, data);
 
-    final activeYear = await AcademicYearService().getActiveAcademicYear(schoolId);
+    final activeYear = await AcademicYearService().getActiveAcademicYear(
+      schoolId,
+    );
     if (activeYear != null) {
       final classDataRef = _db
           .collection('schools')
@@ -97,15 +99,14 @@ class ClassService {
           .doc(activeYear.id)
           .collection('class_data')
           .doc(appClass.id);
-          
+
       batch.set(classDataRef, {
         'status': 'ACTIVE',
         'updated_at': FieldValue.serverTimestamp(),
         'updated_by': uid,
-        'teacher': appClass.teacherId != null ? {
-          'id': appClass.teacherId,
-          'name': appClass.teacherName,
-        } : null,
+        'teacher': appClass.teacherId != null
+            ? {'id': appClass.teacherId, 'name': appClass.teacherName}
+            : null,
       }, SetOptions(merge: true));
     }
 

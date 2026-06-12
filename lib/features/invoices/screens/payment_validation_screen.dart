@@ -16,17 +16,23 @@ class PaymentValidationScreen extends StatefulWidget {
   const PaymentValidationScreen({super.key});
 
   @override
-  State<PaymentValidationScreen> createState() => _PaymentValidationScreenState();
+  State<PaymentValidationScreen> createState() =>
+      _PaymentValidationScreenState();
 }
 
 class _PaymentValidationScreenState extends State<PaymentValidationScreen> {
   final _paymentService = PaymentService();
   final _invoiceService = InvoiceService();
 
-  Future<void> _handleAction(BuildContext context, String schoolId, Payment payment, bool isApprove) async {
+  Future<void> _handleAction(
+    BuildContext context,
+    String schoolId,
+    Payment payment,
+    bool isApprove,
+  ) async {
     final confirm = await DialogUtils.showConfirmationDialog(
       title: isApprove ? 'Setujui Pembayaran' : 'Tolak Pembayaran',
-      content: isApprove 
+      content: isApprove
           ? 'Anda yakin uang sudah masuk ke rekening untuk tagihan ${payment.invoiceTitle} sebesar ${CurrencyUtils.formatRp(payment.amount)}?\n\nMetode: ${payment.method}\nReferensi: ${payment.referenceNote.isEmpty ? "-" : payment.referenceNote}'
           : 'Yakin ingin menolak pembayaran ini?',
       confirmText: isApprove ? 'Setujui' : 'Tolak',
@@ -37,7 +43,7 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen> {
 
     try {
       if (isApprove) {
-        // We need the Invoice object to approve. Since we don't store the whole object in Payment, 
+        // We need the Invoice object to approve. Since we don't store the whole object in Payment,
         // we can fetch it first or we could construct a dummy one just with IDs.
         // Wait, PaymentService needs the Invoice to know its current paidAmount.
         // Let's fetch it from InvoiceService.
@@ -63,9 +69,11 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen> {
               .collection('invoice_data')
               .doc(payment.invoiceId)
               .get();
-              
+
           if (!invoiceDoc.exists) {
-            SnackbarUtils.showErrorSnackbar('Data tagihan asli tidak ditemukan.');
+            SnackbarUtils.showErrorSnackbar(
+              'Data tagihan asli tidak ditemukan.',
+            );
             return;
           }
 
@@ -87,9 +95,7 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen> {
     final schoolId = context.watch<SchoolProvider>().activeSchoolId ?? '';
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Validasi Transfer Wali'),
-      ),
+      appBar: AppBar(title: const Text('Validasi Transfer Wali')),
       body: FutureBuilder(
         future: AcademicYearService().getActiveAcademicYear(schoolId),
         builder: (context, yearSnapshot) {
@@ -97,7 +103,10 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           final activeYear = yearSnapshot.data;
-          if (activeYear == null) return const Center(child: Text('Tahun Ajaran Aktif tidak ditemukan.'));
+          if (activeYear == null)
+            return const Center(
+              child: Text('Tahun Ajaran Aktif tidak ditemukan.'),
+            );
 
           return StreamBuilder<List<Payment>>(
             stream: _paymentService.getPendingPayments(schoolId, activeYear.id),
@@ -120,20 +129,46 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen> {
                 itemBuilder: (context, index) {
                   final payment = payments[index];
                   return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     child: ListTile(
-                      title: Text('${payment.studentName} - ${payment.invoiceTitle}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      title: Text(
+                        '${payment.studentName} - ${payment.invoiceTitle}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       subtitle: RichText(
                         text: TextSpan(
-                          style: DefaultTextStyle.of(context).style.copyWith(height: 1.5),
+                          style: DefaultTextStyle.of(
+                            context,
+                          ).style.copyWith(height: 1.5),
                           children: [
-                            if (payment.invoiceTitles != null && payment.invoiceTitles!.isNotEmpty)
-                              TextSpan(text: 'Rincian: ${payment.invoiceTitles!.join(", ")}\n', style: const TextStyle(fontStyle: FontStyle.italic)),
-                            TextSpan(text: 'Nominal: ${CurrencyUtils.formatRp(payment.amount)}\nMetode: ${payment.method} | '),
-                            const TextSpan(text: 'Catatan: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                            if (payment.invoiceTitles != null &&
+                                payment.invoiceTitles!.isNotEmpty)
+                              TextSpan(
+                                text:
+                                    'Rincian: ${payment.invoiceTitles!.join(", ")}\n',
+                                style: const TextStyle(
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
                             TextSpan(
-                              text: payment.referenceNote.isEmpty ? "-" : payment.referenceNote, 
-                              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+                              text:
+                                  'Nominal: ${CurrencyUtils.formatRp(payment.amount)}\nMetode: ${payment.method} | ',
+                            ),
+                            const TextSpan(
+                              text: 'Catatan: ',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(
+                              text: payment.referenceNote.isEmpty
+                                  ? "-"
+                                  : payment.referenceNote,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue,
+                              ),
                             ),
                           ],
                         ),
@@ -144,11 +179,17 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen> {
                         children: [
                           IconButton(
                             icon: const Icon(Icons.close, color: Colors.red),
-                            onPressed: () => _handleAction(context, schoolId, payment, false),
+                            onPressed: () => _handleAction(
+                              context,
+                              schoolId,
+                              payment,
+                              false,
+                            ),
                           ),
                           IconButton(
                             icon: const Icon(Icons.check, color: Colors.green),
-                            onPressed: () => _handleAction(context, schoolId, payment, true),
+                            onPressed: () =>
+                                _handleAction(context, schoolId, payment, true),
                           ),
                         ],
                       ),
@@ -158,7 +199,7 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen> {
               );
             },
           );
-        }
+        },
       ),
     );
   }

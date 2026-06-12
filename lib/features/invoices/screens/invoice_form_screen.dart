@@ -39,12 +39,20 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
   @override
   void initState() {
     super.initState();
-    _studentNameController = TextEditingController(text: widget.invoice?.studentName ?? '');
-    _studentIdController = TextEditingController(text: widget.invoice?.studentId ?? widget.studentId ?? '');
+    _studentNameController = TextEditingController(
+      text: widget.invoice?.studentName ?? '',
+    );
+    _studentIdController = TextEditingController(
+      text: widget.invoice?.studentId ?? widget.studentId ?? '',
+    );
     _titleController = TextEditingController(text: widget.invoice?.title ?? '');
     _amountController = TextEditingController();
     if (widget.invoice != null) {
-      final formatter = NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0);
+      final formatter = NumberFormat.currency(
+        locale: 'id_ID',
+        symbol: '',
+        decimalDigits: 0,
+      );
       _amountController.text = formatter.format(widget.invoice!.amount).trim();
     }
 
@@ -62,7 +70,10 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
     setState(() => _isLoading = true);
     try {
       final schoolId = context.read<SchoolProvider>().activeSchoolId!;
-      final student = await StudentService().getStudentById(schoolId, studentId);
+      final student = await StudentService().getStudentById(
+        schoolId,
+        studentId,
+      );
       if (student != null) {
         _studentNameController.text = student.name;
       }
@@ -102,9 +113,13 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
 
     try {
       // Fetch Active Academic Year
-      final activeYear = await AcademicYearService().getActiveAcademicYear(schoolId);
+      final activeYear = await AcademicYearService().getActiveAcademicYear(
+        schoolId,
+      );
       if (activeYear == null) {
-        throw Exception('Tidak ada Tahun Ajaran yang Aktif! Silakan aktifkan di Master Data.');
+        throw Exception(
+          'Tidak ada Tahun Ajaran yang Aktif! Silakan aktifkan di Master Data.',
+        );
       }
 
       final studentId = _studentIdController.text.trim();
@@ -113,7 +128,10 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
       }
 
       // Fetch Student Data to get Class ID
-      final student = await StudentService().getStudentById(schoolId, studentId);
+      final student = await StudentService().getStudentById(
+        schoolId,
+        studentId,
+      );
       if (student == null) {
         throw Exception('Siswa dengan ID $studentId tidak ditemukan.');
       }
@@ -126,7 +144,11 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
         studentId: studentId,
         studentName: student.name, // Auto override with real name
         title: _titleController.text.trim(),
-        amount: double.tryParse(_amountController.text.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0.0,
+        amount:
+            double.tryParse(
+              _amountController.text.replaceAll(RegExp(r'[^0-9]'), ''),
+            ) ??
+            0.0,
         status: _status,
         dueDate: _dueDate,
         schoolId: schoolId,
@@ -152,7 +174,7 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
 
   void _delete() async {
     if (widget.invoice == null) return;
-    
+
     final schoolId = context.read<SchoolProvider>().activeSchoolId!;
 
     final confirm = await DialogUtils.showConfirmationDialog(
@@ -207,27 +229,36 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
                   children: [
                     TextFormField(
                       controller: _titleController,
-                      decoration: const InputDecoration(labelText: 'Judul Tagihan (misal: SPP Juli 2026) *'),
+                      decoration: const InputDecoration(
+                        labelText: 'Judul Tagihan (misal: SPP Juli 2026) *',
+                      ),
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _studentIdController,
-                      decoration: const InputDecoration(labelText: 'ID Siswa (NIS) *'),
+                      decoration: const InputDecoration(
+                        labelText: 'ID Siswa (NIS) *',
+                      ),
                       readOnly: _isStudentLocked,
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _studentNameController,
-                      decoration: const InputDecoration(labelText: 'Nama Siswa *', helperText: 'Otomatis tersimpan berdasarkan NIS'),
+                      decoration: const InputDecoration(
+                        labelText: 'Nama Siswa *',
+                        helperText: 'Otomatis tersimpan berdasarkan NIS',
+                      ),
                       readOnly: _isStudentLocked,
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _amountController,
-                      decoration: const InputDecoration(labelText: 'Nominal (Rp) *'),
+                      decoration: const InputDecoration(
+                        labelText: 'Nominal (Rp) *',
+                      ),
                       keyboardType: TextInputType.number,
                       inputFormatters: [CurrencyInputFormatter()],
                       validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
@@ -236,7 +267,9 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Jatuh Tempo'),
-                      subtitle: Text('${_dueDate.day}/${_dueDate.month}/${_dueDate.year}'),
+                      subtitle: Text(
+                        '${_dueDate.day}/${_dueDate.month}/${_dueDate.year}',
+                      ),
                       trailing: const Icon(Icons.calendar_today),
                       onTap: _pickDueDate,
                     ),
@@ -245,7 +278,9 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
                       initialValue: _status,
                       decoration: const InputDecoration(labelText: 'Status'),
                       items: ['UNPAID', 'PARTIAL', 'PAID']
-                          .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                          .map(
+                            (s) => DropdownMenuItem(value: s, child: Text(s)),
+                          )
                           .toList(),
                       onChanged: (v) => setState(() => _status = v!),
                     ),

@@ -16,9 +16,7 @@ class ClassListScreen extends StatelessWidget {
     final schoolId = context.watch<SchoolProvider>().activeSchoolId ?? '';
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Data Kelas'),
-      ),
+      appBar: AppBar(title: const Text('Data Kelas')),
       body: StreamBuilder<List<AppClass>>(
         stream: _service.getClasses(schoolId),
         builder: (context, snapshot) {
@@ -47,11 +45,14 @@ class ClassListScreen extends StatelessWidget {
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: ListTile(
-                  title: Text(appClass.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  title: Text(
+                    appClass.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   subtitle: Text(
                     'Tingkat: ${appClass.level}\n'
                     'Wali Kelas: ${appClass.teacherName ?? "Belum Ditentukan"}\n'
-                    '${appClass.description}'
+                    '${appClass.description}',
                   ),
                   isThreeLine: true,
                   trailing: IconButton(
@@ -60,7 +61,8 @@ class ClassListScreen extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => ClassFormScreen(appClass: appClass),
+                          builder: (context) =>
+                              ClassFormScreen(appClass: appClass),
                         ),
                       );
                     },
@@ -75,9 +77,7 @@ class ClassListScreen extends StatelessWidget {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const ClassFormScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const ClassFormScreen()),
           );
         },
         child: const Icon(Icons.add),
