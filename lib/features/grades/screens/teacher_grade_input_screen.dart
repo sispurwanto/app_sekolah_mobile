@@ -27,7 +27,8 @@ class _TeacherGradeInputScreenState extends State<TeacherGradeInputScreen> {
   String? _selectedClassId;
   String? _selectedSubjectId;
   String? _selectedSubjectName;
-  String _gradeType = 'Tugas 1';
+  late List<String> _gradeTypes;
+  late String _gradeType;
   DateTime _selectedDate = DateTime.now();
 
   List<Student> _students = [];
@@ -36,11 +37,16 @@ class _TeacherGradeInputScreenState extends State<TeacherGradeInputScreen> {
 
   final Map<String, Map<String, TextEditingController>> _controllers = {};
 
-  final List<String> _gradeTypes = [
-    'Tugas 1', 'Tugas 2', 'Tugas 3', 'Tugas 4',
-    'Ulangan Harian 1', 'Ulangan Harian 2', 'Ulangan Harian 3',
-    'UTS', 'UAS'
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _gradeTypes = const String.fromEnvironment(
+      'GRADE_TYPES',
+      defaultValue: 'Tugas 1,Tugas 2,Tugas 3,Tugas 4,Ulangan Harian 1,Ulangan Harian 2,Ulangan Harian 3,UTS,UAS',
+    ).split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+    
+    _gradeType = _gradeTypes.isNotEmpty ? _gradeTypes.first : 'Tugas 1';
+  }
 
   Future<void> _fetchStudents(String schoolId) async {
     if (_selectedClassId == null) return;
