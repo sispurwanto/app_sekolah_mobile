@@ -367,11 +367,17 @@ class _FinancialReportScreenState extends State<FinancialReportScreen>
                               ? p.invoiceTitle
                               : 'Pembayaran',
                         ),
-                        if (p.invoiceTitles != null && p.invoiceTitles!.length > 1)
+                        if (p.invoiceIds != null &&
+                            p.invoiceIds!.isNotEmpty &&
+                            p.invoiceId == 'MULTIPLE')
                           Padding(
-                            padding: const EdgeInsets.only(top: 4.0, left: 4.0, bottom: 2.0),
+                            padding: const EdgeInsets.only(
+                              top: 4.0,
+                              left: 4.0,
+                              bottom: 2.0,
+                            ),
                             child: Text(
-                              '- ${p.invoiceTitles!.join('\n- ')}',
+                              '- ${p.invoiceTitles?.join('\n- ') ?? ''}',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.blueGrey.shade600,
