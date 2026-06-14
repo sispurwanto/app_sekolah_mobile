@@ -179,9 +179,55 @@ class _ScheduleListScreenState extends State<ScheduleListScreen> {
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Guru: ${schedule.teacherName}'),
-                                  Text(
-                                    'Jam: ${schedule.startTime} - ${schedule.endTime}',
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.person,
+                                        size: 14,
+                                        color: Colors.grey[800],
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        schedule.teacherName,
+                                        style: TextStyle(
+                                          color: Colors.grey[800],
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context)
+                                          .primaryColor
+                                          .withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.access_time,
+                                          size: 14,
+                                          color: Theme.of(context).primaryColor,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          '${schedule.dayName}, ${schedule.startTime} - ${schedule.endTime}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: Theme.of(context).primaryColor,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ],
                               ),
@@ -259,7 +305,7 @@ class _ScheduleListScreenState extends State<ScheduleListScreen> {
     );
     if (confirmed == true) {
       try {
-        await _scheduleService.deleteSchedule(schoolId, yearId, schedule.id);
+        await _scheduleService.deleteSchedule(schoolId, yearId, schedule.teacherId, schedule.id);
         SnackbarUtils.showSnackbar('Jadwal berhasil dihapus');
       } catch (e) {
         SnackbarUtils.showErrorSnackbar('Gagal menghapus: $e');
@@ -410,7 +456,7 @@ class _ScheduleFormDialogState extends State<ScheduleFormDialog> {
 
     try {
       final schedule = ClassSchedule(
-        id: widget.existingSchedule?.id ?? '',
+        id: widget.existingSchedule?.id,
         classId: widget.classId,
         className: widget.className,
         subjectId: _selectedSubjectId!,

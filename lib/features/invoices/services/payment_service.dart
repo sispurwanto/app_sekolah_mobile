@@ -124,6 +124,7 @@ class PaymentService {
     String schoolId,
     Payment payment, [
     Invoice? invoice,
+    String? approverName,
   ]) async {
     if (payment.status == 'APPROVED') return;
 
@@ -139,11 +140,15 @@ class PaymentService {
         .collection('payments')
         .doc(payment.id);
 
-    batch.update(paymentRef, {
+    final updateData = {
       'status': 'APPROVED',
       'updated_at': FieldValue.serverTimestamp(),
       'updated_by': uid,
-    });
+    };
+    if (approverName != null) {
+      updateData['approved_by_name'] = approverName;
+    }
+    batch.update(paymentRef, updateData);
 
     if (payment.invoiceIds != null && payment.invoiceIds!.isNotEmpty) {
       // MULTIPLE OR SINGLE PAYMENT WITHOUT INVOICE OBJECT

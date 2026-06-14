@@ -5,6 +5,7 @@ import '../../../core/models/payment.dart';
 import '../../../core/models/invoice.dart';
 import '../../../core/utils/currency_utils.dart';
 import '../../../core/providers/school_provider.dart';
+import '../../../core/providers/user_provider.dart';
 import '../services/payment_service.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../services/invoice_service.dart';
@@ -30,6 +31,8 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen> {
     Payment payment,
     bool isApprove,
   ) async {
+    final approverName = context.read<UserProvider>().userMapping?.name ?? 'Admin';
+
     final confirm = await DialogUtils.showConfirmationDialog(
       title: isApprove ? 'Setujui Pembayaran' : 'Tolak Pembayaran',
       content: isApprove
@@ -51,9 +54,10 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen> {
         // We will fetch it manually here or add a method.
         // For simplicity, let's just do a direct Firebase call or add `getInvoice` to `InvoiceService`.
         // Actually, Payment has classId, studentId, invoiceId, academicYearId.
+        
         if (payment.invoiceIds != null && payment.invoiceIds!.isNotEmpty) {
           // Bulk Payment: No need to fetch single invoice, PaymentService handles it
-          await _paymentService.approvePayment(schoolId, payment);
+          await _paymentService.approvePayment(schoolId, payment, null, approverName);
           SnackbarUtils.showSnackbar('Pembayaran disetujui');
         } else {
           // Single Payment
@@ -78,7 +82,7 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen> {
           }
 
           final invoice = Invoice.fromFirestore(invoiceDoc);
-          await _paymentService.approvePayment(schoolId, payment, invoice);
+          await _paymentService.approvePayment(schoolId, payment, invoice, approverName);
           SnackbarUtils.showSnackbar('Pembayaran disetujui');
         }
       } else {

@@ -82,7 +82,13 @@ class ParentGradeScreen extends StatelessWidget {
                         child: const Icon(Icons.book),
                       ),
                       title: Text(subject.subjectName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text('${subject.scores.length} data nilai'),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Guru: ${subject.teacherName}'),
+                          Text('${subject.scores.length} data nilai'),
+                        ],
+                      ),
                       children: subject.scores.map((score) {
                         return ListTile(
                           dense: true,
@@ -101,7 +107,7 @@ class ParentGradeScreen extends StatelessWidget {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              score.score.toStringAsFixed(0),
+                              score.score == score.score.toInt() ? score.score.toInt().toString() : score.score.toString(),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: score.score >= 75 ? Colors.green[800] : Colors.red[800],

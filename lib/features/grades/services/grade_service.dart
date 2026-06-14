@@ -26,22 +26,19 @@ class GradeService {
     required String yearId,
     required String subjectId,
     required String subjectName,
+    required String teacherName,
     required String gradeType,
     required String dateStr,
     required List<Map<String, dynamic>>
     studentGradesData, // [{ 'id': '...', 'name': '...', 'score': 80, 'notes': '...' }]
   }) async {
     final batch = _firestore.batch();
-
+    
     for (var student in studentGradesData) {
       final studentId = student['id'];
       final studentName = student['name'];
-      final grade = GradeEntry(
-        type: gradeType,
-        score: student['score'],
-        date: dateStr,
-        notes: student['notes'],
-      );
+      final newScore = student['score'];
+      final newNotes = student['notes'];
 
       final docRef = _firestore
           .collection('schools')
@@ -51,14 +48,49 @@ class GradeService {
           .collection('student_grades')
           .doc(studentId);
 
-      // Gunakan set dengan merge: true agar struktur dasar terbentuk jika belum ada
+      final docSnapshot = await docRef.get();
+      List<Map<String, dynamic>> existingScoresMapList = [];
+      
+      if (docSnapshot.exists) {
+        final data = docSnapshot.data() as Map<String, dynamic>?;
+        if (data != null && data['grades'] != null) {
+          final gradesData = data['grades'] as Map<String, dynamic>;
+          if (gradesData[subjectId] != null && gradesData[subjectId]['scores'] != null) {
+            existingScoresMapList = List<Map<String, dynamic>>.from(gradesData[subjectId]['scores']);
+          }
+        }
+      }
+
+      // Cari apakah tipe nilai ini sudah ada
+      int existingIndex = existingScoresMapList.indexWhere((s) => s['type'] == gradeType);
+      
+      if (existingIndex >= 0) {
+        // Jika sudah ada, timpa data lamanya
+        existingScoresMapList[existingIndex] = {
+          'type': gradeType,
+          'score': newScore,
+          'date': dateStr,
+          'notes': newNotes,
+        };
+      } else {
+        // Jika belum ada, tambahkan
+        existingScoresMapList.add({
+          'type': gradeType,
+          'score': newScore,
+          'date': dateStr,
+          'notes': newNotes,
+        });
+      }
+
+      // Tulis ulang (overwrite specific subject)
       batch.set(docRef, {
         'id_siswa': studentId,
         'name_siswa': studentName,
         'grades': {
           subjectId: {
             'subject_name': subjectName,
-            'scores': FieldValue.arrayUnion([grade.toMap()]),
+            'teacher_name': teacherName,
+            'scores': existingScoresMapList,
           },
         },
       }, SetOptions(merge: true));

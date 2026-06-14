@@ -39,6 +39,7 @@ class _BulkPaymentDialogState extends State<BulkPaymentDialog> {
     final isBendahara = ['BENDAHARA', 'ADMIN', 'SUPER_ADMIN'].contains(role);
     final method = isBendahara ? 'CASH' : 'TRANSFER';
     final status = isBendahara ? 'APPROVED' : 'PENDING';
+    final approverName = isBendahara ? context.read<UserProvider>().userMapping?.name ?? 'Admin' : null;
 
     final totalRemaining = widget.invoices.fold<double>(
       0,
@@ -63,6 +64,7 @@ class _BulkPaymentDialogState extends State<BulkPaymentDialog> {
       referenceNote: _noteController.text.trim(),
       schoolId: schoolId,
       academicYearId: widget.invoices.first.academicYearId,
+      approvedByName: approverName,
     );
 
     try {

@@ -182,24 +182,24 @@ class WaliDashboardView extends StatelessWidget {
                                       },
                                       Colors.green,
                                     ),
-                                    const SizedBox(width: 8),
-                                    _buildActionButton(
-                                      context,
-                                      Icons.library_books,
-                                      'Raport',
-                                      () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (c) => ParentReportScreen(
-                                              studentId: childId,
-                                              studentName: student.name,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                      Colors.orange,
-                                    ),
+                                    // const SizedBox(width: 8),
+                                    // _buildActionButton(
+                                    //   context,
+                                    //   Icons.library_books,
+                                    //   'Raport',
+                                    //   () {
+                                    //     Navigator.push(
+                                    //       context,
+                                    //       MaterialPageRoute(
+                                    //         builder: (c) => ParentReportScreen(
+                                    //           studentId: childId,
+                                    //           studentName: student.name,
+                                    //         ),
+                                    //       ),
+                                    //     );
+                                    //   },
+                                    //   Colors.orange,
+                                    // ),
                                     // const SizedBox(width: 8),
                                     // _buildActionButton(context, Icons.fact_check, 'Absensi', () {
                                     //   SnackbarUtils.showErrorSnackbar('Modul Absensi sedang dalam pengembangan');

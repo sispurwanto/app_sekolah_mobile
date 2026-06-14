@@ -29,14 +29,16 @@ class GradeEntry {
 
 class SubjectGrade {
   final String subjectName;
+  final String teacherName;
   final List<GradeEntry> scores;
 
-  SubjectGrade({required this.subjectName, required this.scores});
+  SubjectGrade({required this.subjectName, required this.teacherName, required this.scores});
 
   factory SubjectGrade.fromMap(Map<String, dynamic> map) {
     var list = map['scores'] as List? ?? [];
     return SubjectGrade(
       subjectName: map['subject_name'] ?? '',
+      teacherName: map['teacher_name'] ?? '',
       scores: list
           .map((e) => GradeEntry.fromMap(e as Map<String, dynamic>))
           .toList(),
@@ -46,6 +48,7 @@ class SubjectGrade {
   Map<String, dynamic> toMap() {
     return {
       'subject_name': subjectName,
+      'teacher_name': teacherName,
       'scores': scores.map((e) => e.toMap()).toList(),
     };
   }

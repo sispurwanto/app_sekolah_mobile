@@ -26,11 +26,17 @@ class StudentService {
     String statusFilter = 'SEMUA',
     Source source = Source.serverAndCache,
   }) async {
-    var query = _db.collection('schools').doc(schoolId).collection('students');
+    final collectionName = statusFilter == 'ACTIVE'
+        ? 'students'
+        : 'students_graduated';
+    var query = _db
+        .collection('schools')
+        .doc(schoolId)
+        .collection(collectionName);
 
-    // Base Query with status filter (if not ALL)
+    // Base Query with status filter (if not ALL and not ACTIVE since ACTIVE is guaranteed in 'students' path)
     Query<Map<String, dynamic>> finalQuery = query;
-    if (statusFilter != 'SEMUA') {
+    if (statusFilter != 'SEMUA' && statusFilter != 'ACTIVE') {
       finalQuery = finalQuery.where('status', isEqualTo: statusFilter);
     }
 
@@ -49,12 +55,21 @@ class StudentService {
   }
 
   Future<Student?> getStudentById(String schoolId, String studentId) async {
-    final doc = await _db
+    var doc = await _db
         .collection('schools')
         .doc(schoolId)
         .collection('students')
         .doc(studentId)
         .get();
+
+    if (!doc.exists) {
+      doc = await _db
+          .collection('schools')
+          .doc(schoolId)
+          .collection('students_graduated')
+          .doc(studentId)
+          .get();
+    }
 
     if (doc.exists) {
       return Student.fromFirestore(doc);
@@ -63,16 +78,24 @@ class StudentService {
   }
 
   // Get stream of a single student (useful for WALI)
-  Stream<Student?> getStudentStream(String schoolId, String studentId) {
-    return _db
+  Stream<Student?> getStudentStream(String schoolId, String studentId) async* {
+    final doc = await _db
         .collection('schools')
         .doc(schoolId)
         .collection('students')
         .doc(studentId)
+        .get();
+    final collectionName = doc.exists ? 'students' : 'students_graduated';
+
+    yield* _db
+        .collection('schools')
+        .doc(schoolId)
+        .collection(collectionName)
+        .doc(studentId)
         .snapshots()
-        .map((doc) {
-          if (!doc.exists) return null;
-          return Student.fromFirestore(doc);
+        .map((snapshot) {
+          if (!snapshot.exists) return null;
+          return Student.fromFirestore(snapshot);
         });
   }
 
@@ -144,15 +167,26 @@ class StudentService {
   // Update student
   Future<void> updateStudent(String schoolId, Student student) async {
     final batch = _db.batch();
+    final isStatusActive = student.status == 'ACTIVE';
+    final targetCollection = isStatusActive ? 'students' : 'students_graduated';
+    final otherCollection = isStatusActive ? 'students_graduated' : 'students';
+
     final studentRef = _db
         .collection('schools')
         .doc(schoolId)
-        .collection('students')
+        .collection(targetCollection)
+        .doc(student.id);
+
+    final otherRef = _db
+        .collection('schools')
+        .doc(schoolId)
+        .collection(otherCollection)
         .doc(student.id);
 
     // To handle guardian changes perfectly, we would need the old guardian id to remove the child from their map.
     // For simplicity, we just ensure the new guardian gets the child added.
-    batch.update(studentRef, student.toMap());
+    batch.set(studentRef, student.toMap(), SetOptions(merge: true));
+    batch.delete(otherRef);
 
     if (student.guardianId.isNotEmpty) {
       final guardianRef = _db
@@ -206,8 +240,14 @@ class StudentService {
         .doc(schoolId)
         .collection('students')
         .doc(studentId);
+    final graduatedRef = _db
+        .collection('schools')
+        .doc(schoolId)
+        .collection('students_graduated')
+        .doc(studentId);
 
     batch.delete(studentRef);
+    batch.delete(graduatedRef);
 
     if (guardianId.isNotEmpty) {
       final guardianRef = _db

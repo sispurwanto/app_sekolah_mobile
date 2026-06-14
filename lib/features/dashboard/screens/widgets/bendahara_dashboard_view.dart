@@ -28,36 +28,20 @@ class BendaharaDashboardView extends StatelessWidget {
             childAspectRatio: 0.85,
             physics: const NeverScrollableScrollPhysics(),
             children: [
-              if (role != 'KEPALA_SEKOLAH')
-                _buildMenuCard(
-                  context,
-                  title: 'Kasir (Cari Siswa)',
-                  icon: Icons.point_of_sale,
-                  color: Colors.blue,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const StudentListScreen(),
-                      ),
-                    );
-                  },
-                ),
-              if (role == 'KEPALA_SEKOLAH')
-                _buildMenuCard(
-                  context,
-                  title: 'Data Siswa',
-                  icon: Icons.people,
-                  color: Colors.blue,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const StudentListScreen(),
-                      ),
-                    );
-                  },
-                ),
+              _buildMenuCard(
+                context,
+                title: role == 'BENDAHARA' ? 'Kasir' : 'Data Siswa',
+                icon: role == 'BENDAHARA' ? Icons.point_of_sale : Icons.people,
+                color: Colors.blue,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const StudentListScreen(),
+                    ),
+                  );
+                },
+              ),
               if (role != 'KEPALA_SEKOLAH')
                 _buildMenuCard(
                   context,

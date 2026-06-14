@@ -53,6 +53,14 @@ class _StudentListScreenState extends State<StudentListScreen> {
 
   void _loadStudents() {
     final schoolId = context.read<SchoolProvider>().activeSchoolId ?? '';
+    
+    if (widget.activeOnly && _selectedClassFilter.isEmpty) {
+      setState(() {
+        _studentsFuture = null;
+      });
+      return;
+    }
+
     setState(() {
       _studentsFuture = _studentService.fetchStudentsByClass(
         schoolId,
@@ -180,16 +188,18 @@ class _StudentListScreenState extends State<StudentListScreen> {
                         _selectedClassFilter.isEmpty &&
                         classes.isNotEmpty) {
                       WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted)
-                          setState(
-                            () => _selectedClassFilter = classes.first.id,
-                          );
+                        if (mounted) {
+                          setState(() {
+                            _selectedClassFilter = classes.first.id;
+                            _loadStudents();
+                          });
+                        }
                       });
                     }
 
                     return DropdownButtonFormField<String>(
                       value: _selectedClassFilter.isEmpty
-                          ? null
+                          ? ''
                           : _selectedClassFilter,
                       decoration: InputDecoration(
                         fillColor: Colors.white,
@@ -200,17 +210,17 @@ class _StudentListScreenState extends State<StudentListScreen> {
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        hintText: 'Filter berdasarkan Kelas (Max 100)',
+                        hintText: 'Pilih Kelas',
                       ),
                       items: [
-                        if (!isGuru)
+                        if (!widget.activeOnly)
                           const DropdownMenuItem(
-                            value: null,
-                            child: Text('Semua Kelas (Max 100)'),
+                            value: '',
+                            child: Text('Semua Kelas (Max 500)'),
                           ),
-                        if (isGuru && _selectedClassFilter.isEmpty)
+                        if (widget.activeOnly)
                           const DropdownMenuItem(
-                            value: null,
+                            value: '',
                             child: Text('Pilih Kelas...'),
                           ),
                         ...classes.map(
@@ -237,9 +247,15 @@ class _StudentListScreenState extends State<StudentListScreen> {
       body: RefreshIndicator(
         onRefresh: () async {
           _loadStudents();
-          await _studentsFuture;
+          if (_studentsFuture != null) await _studentsFuture;
         },
-        child: FutureBuilder<List<Student>>(
+        child: _studentsFuture == null 
+            ? const EmptyStateWidget(
+                icon: Icons.class_,
+                title: 'Silakan Pilih Kelas',
+                subtitle: 'Pilih kelas dari dropdown di atas untuk menampilkan data siswa.',
+              )
+            : FutureBuilder<List<Student>>(
           future: _studentsFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {

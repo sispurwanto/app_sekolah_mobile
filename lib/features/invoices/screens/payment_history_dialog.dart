@@ -76,6 +76,7 @@ class PaymentHistoryDialog extends StatelessWidget {
                   return ListView.builder(
                     itemCount: payments.length,
                     itemBuilder: (context, index) {
+                      // debugPrint('index: ${payments[index].id}');
                       final payment = payments[index];
                       final dateStr = payment.createdAt != null
                           ? DateFormat(
@@ -167,6 +168,15 @@ class PaymentHistoryDialog extends StatelessWidget {
                                   Icons.note,
                                   'Catatan',
                                   payment.referenceNote,
+                                ),
+                              ],
+                              if (payment.status == 'APPROVED' &&
+                                  payment.approvedByName != null) ...[
+                                const SizedBox(height: 4),
+                                _buildDetailRow(
+                                  Icons.verified_user,
+                                  'Penerima',
+                                  payment.approvedByName!,
                                 ),
                               ],
                               if (isBulk) ...[

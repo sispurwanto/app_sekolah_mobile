@@ -135,55 +135,112 @@ class GuruDashboardView extends StatelessWidget {
             final schedules = snapshot.data ?? [];
             final todaySchedules = schedules.where((s) => s.dayOfWeek == todayWeekday).toList();
 
+            double totalHoursNum = 0;
+            for (var s in schedules) {
+              try {
+                final startParts = s.startTime.split(':');
+                final endParts = s.endTime.split(':');
+                if (startParts.length >= 2 && endParts.length >= 2) {
+                  final startMin = int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
+                  final endMin = int.parse(endParts[0]) * 60 + int.parse(endParts[1]);
+                  if (endMin > startMin) {
+                    totalHoursNum += (endMin - startMin) / 60.0;
+                  }
+                }
+              } catch (_) {}
+            }
+            String formattedHours = totalHoursNum.toStringAsFixed(1);
+            if (formattedHours.endsWith('.0')) {
+              formattedHours = formattedHours.substring(0, formattedHours.length - 2);
+            }
+
             if (todaySchedules.isEmpty) {
-              return Card(
-                elevation: 2,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Row(
-                    children: [
-                      Icon(Icons.event_available, color: Colors.green),
-                      SizedBox(width: 12),
-                      Expanded(child: Text('Anda tidak ada jadwal mengajar hari ini.')),
-                    ],
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildWeeklyHoursInfo(formattedHours),
+                  const SizedBox(height: 12),
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Row(
+                        children: [
+                          Icon(Icons.event_available, color: Colors.green),
+                          SizedBox(width: 12),
+                          Expanded(child: Text('Anda tidak ada jadwal mengajar hari ini.')),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                ],
               );
             }
 
-            return ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: todaySchedules.length,
-              itemBuilder: (context, index) {
-                final schedule = todaySchedules[index];
-                return Card(
-                  elevation: 2,
-                  margin: const EdgeInsets.only(bottom: 8),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                      child: Icon(Icons.access_time, color: Theme.of(context).primaryColor),
-                    ),
-                    title: Text(
-                      schedule.subjectName,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Text('Kelas: ${schedule.className}'),
-                    trailing: Text(
-                      '${schedule.startTime}\n-\n${schedule.endTime}',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                );
-              },
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildWeeklyHoursInfo(formattedHours),
+                const SizedBox(height: 12),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: todaySchedules.length,
+                  itemBuilder: (context, index) {
+                    final schedule = todaySchedules[index];
+                    return Card(
+                      elevation: 2,
+                      margin: const EdgeInsets.only(bottom: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                          child: Icon(Icons.access_time, color: Theme.of(context).primaryColor),
+                        ),
+                        title: Text(
+                          schedule.subjectName,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text('Kelas: ${schedule.className}'),
+                        trailing: Text(
+                          '${schedule.startTime}\n-\n${schedule.endTime}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
             );
           },
         );
       }
+    );
+  }
+
+  Widget _buildWeeklyHoursInfo(String totalHours) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
+          const SizedBox(width: 8),
+          Text(
+            'Total Mengajar: $totalHours Jam/Pekan',
+            style: TextStyle(
+              color: Colors.blue.shade900,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

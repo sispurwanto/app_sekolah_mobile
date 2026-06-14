@@ -1,4 +1,42 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
+
+class TeacherSchedule {
+  final String teacherId;
+  final String teacherName;
+  final List<ClassSchedule> data;
+
+  TeacherSchedule({
+    required this.teacherId,
+    required this.teacherName,
+    required this.data,
+  });
+
+  factory TeacherSchedule.fromFirestore(DocumentSnapshot doc) {
+    Map<String, dynamic> docData = doc.data() as Map<String, dynamic>? ?? {};
+    List<dynamic> dataList = docData['data'] ?? [];
+    
+    return TeacherSchedule(
+      teacherId: doc.id,
+      teacherName: docData['teacherName'] ?? '',
+      data: dataList.map((item) {
+        return ClassSchedule.fromMap(
+          item as Map<String, dynamic>,
+          doc.id,
+          docData['teacherName'] ?? '',
+        );
+      }).toList(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'teacherId': teacherId,
+      'teacherName': teacherName,
+      'data': data.map((item) => item.toMap()).toList(),
+    };
+  }
+}
 
 class ClassSchedule {
   final String id;
@@ -13,7 +51,7 @@ class ClassSchedule {
   final String endTime;
 
   ClassSchedule({
-    required this.id,
+    String? id,
     required this.classId,
     required this.className,
     required this.subjectId,
@@ -23,18 +61,17 @@ class ClassSchedule {
     required this.dayOfWeek,
     required this.startTime,
     required this.endTime,
-  });
+  }) : id = id ?? const Uuid().v4();
 
-  factory ClassSchedule.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+  factory ClassSchedule.fromMap(Map<String, dynamic> data, String tId, String tName) {
     return ClassSchedule(
-      id: doc.id,
+      id: data['id'],
       classId: data['classId'] ?? '',
       className: data['className'] ?? '',
       subjectId: data['subjectId'] ?? '',
       subjectName: data['subjectName'] ?? '',
-      teacherId: data['teacherId'] ?? '',
-      teacherName: data['teacherName'] ?? '',
+      teacherId: tId,
+      teacherName: tName,
       dayOfWeek: data['dayOfWeek'] ?? 1,
       startTime: data['startTime'] ?? '',
       endTime: data['endTime'] ?? '',
@@ -43,12 +80,14 @@ class ClassSchedule {
 
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'classId': classId,
       'className': className,
       'subjectId': subjectId,
       'subjectName': subjectName,
-      'teacherId': teacherId,
-      'teacherName': teacherName,
+      // teacherId and teacherName are stored in the parent doc, 
+      // but we can store them here too for redundancy or ignore them.
+      // Better to not store them to save space since they are in parent.
       'dayOfWeek': dayOfWeek,
       'startTime': startTime,
       'endTime': endTime,

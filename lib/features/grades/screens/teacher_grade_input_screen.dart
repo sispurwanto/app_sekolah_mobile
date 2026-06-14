@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/providers/school_provider.dart';
-import '../../../../core/models/app_class.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/models/student.dart';
-import '../../../../core/models/subject_master.dart';
-import '../../master_data/services/class_service.dart';
-import '../../master_data/services/subject_service.dart';
+import '../../../../core/models/class_schedule.dart';
+import '../../master_data/services/schedule_service.dart';
 import '../../master_data/services/academic_year_service.dart';
 import '../../student_management/services/student_service.dart';
 import '../services/grade_service.dart';
@@ -19,14 +20,14 @@ class TeacherGradeInputScreen extends StatefulWidget {
 }
 
 class _TeacherGradeInputScreenState extends State<TeacherGradeInputScreen> {
-  final ClassService _classService = ClassService();
-  final SubjectService _subjectService = SubjectService();
+  final ScheduleService _scheduleService = ScheduleService();
   final StudentService _studentService = StudentService();
   final GradeService _gradeService = GradeService();
 
   String? _selectedClassId;
   String? _selectedSubjectId;
   String? _selectedSubjectName;
+  String? _currentTeacherName;
   late List<String> _gradeTypes;
   late String _gradeType;
   DateTime _selectedDate = DateTime.now();
@@ -48,7 +49,7 @@ class _TeacherGradeInputScreenState extends State<TeacherGradeInputScreen> {
     _gradeType = _gradeTypes.isNotEmpty ? _gradeTypes.first : 'Tugas 1';
   }
 
-  Future<void> _fetchStudents(String schoolId) async {
+  Future<void> _fetchStudents(String schoolId, String yearId) async {
     if (_selectedClassId == null) return;
     setState(() {
       _isLoadingStudents = true;
@@ -57,21 +58,70 @@ class _TeacherGradeInputScreenState extends State<TeacherGradeInputScreen> {
 
     try {
       final snapshot = await _studentService.fetchStudentsByClass(schoolId, _selectedClassId!);
-      setState(() {
-        _students = snapshot;
-        for (var s in _students) {
-          _controllers[s.id] = {
-            'score': TextEditingController(),
-            'notes': TextEditingController(),
-          };
-        }
-      });
+      _students = snapshot;
+      for (var s in _students) {
+        _controllers[s.id] = {
+          'score': TextEditingController(),
+          'notes': TextEditingController(),
+        };
+      }
+      
+      if (_selectedSubjectId != null) {
+        await _fetchExistingGrades(schoolId, yearId);
+      }
+      
+      setState(() {});
     } catch (e) {
       SnackbarUtils.showErrorSnackbar('Gagal memuat daftar siswa');
     } finally {
       setState(() {
         _isLoadingStudents = false;
       });
+    }
+  }
+
+  Future<void> _fetchExistingGrades(String schoolId, String yearId) async {
+    if (_selectedSubjectId == null || _students.isEmpty) return;
+
+    try {
+      for (var s in _students) {
+        final doc = await FirebaseFirestore.instance
+            .collection('schools')
+            .doc(schoolId)
+            .collection('transactions_year')
+            .doc(yearId)
+            .collection('student_grades')
+            .doc(s.id)
+            .get();
+            
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          if (data['grades'] != null && data['grades'][_selectedSubjectId] != null) {
+             final scores = data['grades'][_selectedSubjectId]['scores'] as List<dynamic>? ?? [];
+             final matchingScore = scores.firstWhere(
+               (element) => element['type'] == _gradeType, 
+               orElse: () => null
+             );
+             if (matchingScore != null) {
+               double scoreVal = (matchingScore['score'] ?? 0).toDouble();
+               _controllers[s.id]!['score']!.text = scoreVal == scoreVal.toInt() ? scoreVal.toInt().toString() : scoreVal.toString();
+               _controllers[s.id]!['notes']!.text = matchingScore['notes']?.toString() ?? '';
+             } else {
+               _controllers[s.id]!['score']!.clear();
+               _controllers[s.id]!['notes']!.clear();
+             }
+          } else {
+             _controllers[s.id]!['score']!.clear();
+             _controllers[s.id]!['notes']!.clear();
+          }
+        } else {
+          _controllers[s.id]!['score']!.clear();
+          _controllers[s.id]!['notes']!.clear();
+        }
+      }
+      setState(() {});
+    } catch (e) {
+       // Ignore error
     }
   }
 
@@ -114,10 +164,13 @@ class _TeacherGradeInputScreenState extends State<TeacherGradeInputScreen> {
         yearId: yearId,
         subjectId: _selectedSubjectId!,
         subjectName: _selectedSubjectName!,
+        teacherName: _currentTeacherName ?? FirebaseAuth.instance.currentUser?.displayName ?? 'Guru',
         gradeType: _gradeType,
         dateStr: dateStr,
         studentGradesData: studentDataList,
       );
+
+      if (!mounted) return;
 
       SnackbarUtils.showSnackbar('Berhasil menyimpan nilai untuk ${studentDataList.length} siswa');
       Navigator.pop(context);
@@ -184,50 +237,89 @@ class _TeacherGradeInputScreenState extends State<TeacherGradeInputScreen> {
                 color: Colors.white,
                 child: Column(
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: StreamBuilder<List<AppClass>>(
-                            stream: _classService.getClasses(schoolId),
-                            builder: (context, snapshot) {
-                              final classes = snapshot.data ?? [];
-                              return DropdownButtonFormField<String>(
-                                isExpanded: true,
-                                decoration: const InputDecoration(labelText: 'Kelas', border: OutlineInputBorder()),
-                                value: _selectedClassId,
-                                items: classes.map((c) => DropdownMenuItem(value: c.id, child: Text(c.name, overflow: TextOverflow.ellipsis))).toList(),
-                                onChanged: (val) {
+                    Builder(
+                      builder: (context) {
+                        final teacherId = FirebaseAuth.instance.currentUser?.uid;
+                        if (teacherId == null) return const Text('Guru tidak terautentikasi');
+
+                        return StreamBuilder<List<ClassSchedule>>(
+                          stream: _scheduleService.getSchedulesByTeacher(schoolId, yearId, teacherId),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return const Center(child: CircularProgressIndicator());
+                            }
+                            
+                            final schedules = snapshot.data ?? [];
+                            
+                            if (schedules.isNotEmpty) {
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                if (mounted && _currentTeacherName != schedules.first.teacherName) {
                                   setState(() {
-                                    _selectedClassId = val;
+                                    _currentTeacherName = schedules.first.teacherName;
                                   });
-                                  _fetchStudents(schoolId);
-                                },
-                              );
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: StreamBuilder<List<SubjectMaster>>(
-                            stream: _subjectService.getSubjects(schoolId),
-                            builder: (context, snapshot) {
-                              final subjects = snapshot.data ?? [];
-                              return DropdownButtonFormField<String>(
-                                isExpanded: true,
-                                decoration: const InputDecoration(labelText: 'Mata Pelajaran', border: OutlineInputBorder()),
-                                value: _selectedSubjectId,
-                                items: subjects.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis))).toList(),
-                                onChanged: (val) {
-                                  setState(() {
-                                    _selectedSubjectId = val;
-                                    _selectedSubjectName = subjects.firstWhere((s) => s.id == val).name;
-                                  });
-                                },
-                              );
-                            },
-                          ),
-                        ),
-                      ],
+                                }
+                              });
+                            }
+                            
+                            // Ekstrak Kelas Unik
+                            final Map<String, String> uniqueClasses = {};
+                            for (var s in schedules) {
+                              uniqueClasses[s.classId] = s.className;
+                            }
+                            final classItems = uniqueClasses.entries
+                                .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value, overflow: TextOverflow.ellipsis)))
+                                .toList();
+
+                            // Ekstrak Mapel Unik berdasar kelas terpilih
+                            final Map<String, String> uniqueSubjects = {};
+                            if (_selectedClassId != null && uniqueClasses.containsKey(_selectedClassId)) {
+                              for (var s in schedules.where((s) => s.classId == _selectedClassId)) {
+                                uniqueSubjects[s.subjectId] = s.subjectName;
+                              }
+                            }
+                            final subjectItems = uniqueSubjects.entries
+                                .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value, overflow: TextOverflow.ellipsis)))
+                                .toList();
+
+                            return Row(
+                              children: [
+                                Expanded(
+                                  child: DropdownButtonFormField<String>(
+                                    isExpanded: true,
+                                    decoration: const InputDecoration(labelText: 'Kelas (Jadwal)', border: OutlineInputBorder()),
+                                    value: uniqueClasses.containsKey(_selectedClassId) ? _selectedClassId : null,
+                                    items: classItems,
+                                    onChanged: (val) {
+                                      setState(() {
+                                        _selectedClassId = val;
+                                        _selectedSubjectId = null; 
+                                        _selectedSubjectName = null;
+                                      });
+                                      _fetchStudents(schoolId, yearId);
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: DropdownButtonFormField<String>(
+                                    isExpanded: true,
+                                    decoration: const InputDecoration(labelText: 'Mata Pelajaran (Jadwal)', border: OutlineInputBorder()),
+                                    value: uniqueSubjects.containsKey(_selectedSubjectId) ? _selectedSubjectId : null,
+                                    items: subjectItems,
+                                    onChanged: (val) {
+                                      setState(() {
+                                        _selectedSubjectId = val;
+                                        _selectedSubjectName = uniqueSubjects[val];
+                                      });
+                                      _fetchExistingGrades(schoolId, yearId);
+                                    },
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+                        );
+                      }
                     ),
                     const SizedBox(height: 16),
                     Row(
@@ -238,7 +330,10 @@ class _TeacherGradeInputScreenState extends State<TeacherGradeInputScreen> {
                             decoration: const InputDecoration(labelText: 'Jenis Penilaian', border: OutlineInputBorder()),
                             value: _gradeType,
                             items: _gradeTypes.map((t) => DropdownMenuItem(value: t, child: Text(t, overflow: TextOverflow.ellipsis))).toList(),
-                            onChanged: (val) => setState(() => _gradeType = val!),
+                            onChanged: (val) {
+                              setState(() => _gradeType = val!);
+                              _fetchExistingGrades(schoolId, yearId);
+                            },
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -283,14 +378,18 @@ class _TeacherGradeInputScreenState extends State<TeacherGradeInputScreen> {
                                       CircleAvatar(child: Text('${index + 1}')),
                                       const SizedBox(width: 16),
                                       Expanded(
-                                        flex: 2,
+                                        flex: 3,
                                         child: Text(student.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                                       ),
+                                      const SizedBox(width: 8),
                                       Expanded(
-                                        flex: 1,
+                                        flex: 2,
                                         child: TextField(
                                           controller: _controllers[student.id]!['score'],
-                                          keyboardType: TextInputType.number,
+                                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                          inputFormatters: [
+                                            FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                                          ],
                                           decoration: const InputDecoration(
                                             labelText: 'Nilai',
                                             isDense: true,
@@ -300,7 +399,7 @@ class _TeacherGradeInputScreenState extends State<TeacherGradeInputScreen> {
                                       ),
                                       const SizedBox(width: 8),
                                       Expanded(
-                                        flex: 2,
+                                        flex: 3,
                                         child: TextField(
                                           controller: _controllers[student.id]!['notes'],
                                           decoration: const InputDecoration(

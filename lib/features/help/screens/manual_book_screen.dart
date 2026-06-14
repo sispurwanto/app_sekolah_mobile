@@ -8,98 +8,166 @@ class ManualBookScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Buku Panduan'),
-        backgroundColor: Colors.blue.shade800,
+        backgroundColor: Colors.green.shade800,
         foregroundColor: Colors.white,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const Padding(
-            padding: EdgeInsets.only(bottom: 16.0),
-            child: Text(
-              'Panduan Penggunaan Aplikasi',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildSectionTitle('Alur Implementasi Aplikasi (Wajib Berurutan)'),
+            const SizedBox(height: 8),
+            const Text(
+              'Untuk memastikan seluruh siklus sistem berjalan lancar tanpa error, pengguna diwajibkan menginput data master secara berurutan sesuai alur berikut:',
+              style: TextStyle(fontSize: 14),
             ),
-          ),
+            const SizedBox(height: 24),
 
-          _buildAccordion(
-            icon: Icons.admin_panel_settings,
-            title: '1. Manajemen Pengguna & Hak Akses',
-            content:
-                'Aplikasi ini mendukung berbagai tingkat hak akses (Role):\n'
-                '• Super Admin & Admin: Memiliki akses penuh ke semua fitur dan pengaturan sekolah.\n'
-                '• Kepala Sekolah: Dapat melihat semua laporan, keuangan, dan data tanpa bisa mengubah pengaturan utama.\n'
-                '• Bendahara: Bertanggung jawab atas tagihan, penerimaan pembayaran, dan memvalidasi setoran tabungan.\n'
-                '• Guru: Dapat melihat data siswa di kelas yang diajarnya dan absensi/nilai (jika modul diaktifkan).\n'
-                '• Wali / Orang Tua: Dapat melihat daftar tagihan, riwayat pembayaran, dan riwayat tabungan untuk anaknya saja.',
-          ),
+            _buildPhaseTitle('FASE 1: PERSIAPAN DATA MASTER'),
+            const SizedBox(height: 12),
+            _buildStepCard(
+              number: '1',
+              title: 'Tahun Ajaran Aktif (Admin)',
+              content:
+                  'Masuk ke menu Tahun Ajaran -> Tambah Data -> Set status ke "Aktif". Seluruh transaksi terikat pada tahun ajaran ini.',
+            ),
+            _buildStepCard(
+              number: '2',
+              title: 'Manajemen Pengguna (Admin)',
+              content:
+                  'Tambahkan akun login dan hak akses staf sekolah (Admin, Bendahara, Kepsek, Guru, Wali).',
+            ),
+            _buildStepCard(
+              number: '3',
+              title: 'Master Data Kelas (Admin)',
+              content:
+                  'Tambahkan kelas dan pilih wali kelas dari daftar pengguna (Guru/Wali).',
+            ),
+            _buildStepCard(
+              number: '4',
+              title: 'Master Mata Pelajaran (Admin)',
+              content: 'Daftarkan katalog mata pelajaran yang akan diajarkan.',
+            ),
+            _buildStepCard(
+              number: '5',
+              title: 'Jadwal Pelajaran (Admin)',
+              content:
+                  'Susun jadwal berdasarkan Kelas, Hari, Jam Mulai-Selesai, Pelajaran, dan Guru pengajar.',
+            ),
+            _buildStepCard(
+              number: '6',
+              title: 'Kegiatan Siswa (Admin)',
+              content:
+                  'Tambahkan daftar kegiatan (Ekskul, LDKS, dll) yang diikuti siswa.',
+            ),
+            _buildStepCard(
+              number: '7',
+              title: 'Master Tagihan (Admin)',
+              content:
+                  'Definisikan template biaya tagihan wajib (Uang Pangkal, Uang Daftar Ulang, SPP, Uang Seragam, dll).',
+            ),
+            _buildStepCard(
+              number: '8',
+              title: 'Data Siswa (Admin)',
+              content:
+                  'Masukkan data siswa (Pilih status Active) dan daftarkan ke kelas aktif.',
+            ),
 
-          _buildAccordion(
-            icon: Icons.dataset,
-            title: '2. Master Data',
-            content:
-                'Master data adalah data inti yang harus disiapkan sebelum menggunakan fitur transaksi:\n'
-                '• Tahun Ajaran: Buat periode tahun ajaran (contoh: 2026/2027) dan tandai yang sedang aktif.\n'
-                '• Data Kelas: Tambahkan nama-nama kelas (contoh: Kelas 1A, Kelas 2B) dan tentukan Wali Kelasnya.\n'
-                '• Master Tagihan: Buat templat tarif biaya (contoh: SPP Bulanan Rp100.000, Uang Gedung Rp500.000) yang nanti akan digunakan saat membuat tagihan massal.',
-          ),
+            const SizedBox(height: 24),
+            _buildPhaseTitle('FASE 2: TRANSAKSI HARIAN'),
+            const SizedBox(height: 12),
 
-          _buildAccordion(
-            icon: Icons.people,
-            title: '3. Manajemen Siswa',
-            content:
-                'Pada menu ini Anda dapat mendata seluruh siswa:\n'
-                '• Saat menambahkan siswa, isi informasi seperti NIS, Nama, Kelas, dan Tahun Ajaran.\n'
-                '• Pusat Transaksi: Untuk mempermudah penggunaan aplikasi, semua transaksi (Tagihan dan Tabungan) diakses langsung dari Daftar Siswa. Cukup cari nama siswa, lalu klik tombol "Tagihan" atau "Tabungan" pada profil mereka.\n'
-                '• Anda dapat menautkan akun "Wali Murid" (jika sudah terdaftar di menu User) agar orang tua tersebut bisa login dan melihat data anaknya.\n'
-                '• Pastikan data "Nama Orang Tua / Wali" dan "No. HP" diisi untuk mempermudah komunikasi dan identifikasi laporan.',
-          ),
+            _buildInfoBlock(
+              icon: Icons.receipt_long,
+              title: 'A. Sistem Tagihan (Invoicing)',
+              content:
+                  '1. Via Master Tagihan: Bisa di-generate secara kolektif ke semua siswa yang masuk kriteria kategori master tagihan tersebut.\n'
+                  '2. Via Data Siswa: Pada tiap profil siswa, bisa di-generate tagihan otomatis untuk siswa tersebut (mengambil semua master tagihan yang sesuai).\n'
+                  '3. Tagihan Manual: Di halaman Tagihan Siswa, Anda bisa membuat tagihan baru yang spesifik/khusus untuk siswa tersebut.',
+            ),
+            _buildInfoBlock(
+              icon: Icons.payments,
+              title: 'B. Transaksi & Pembayaran',
+              content:
+                  'Terdapat 2 jalur pembayaran:\n'
+                  '1. Via Transfer Wali Murid: Konfirmasi dilakukan dengan mencatat asal Bank, A/n, dan No. Referensi (saat ini belum bisa upload bukti transfer) lalu menunggu validasi.\n'
+                  '2. Via Kasir (Bendahara): Pembayaran langsung terverifikasi otomatis.\n\n'
+                  'Metode Pelunasan (berlaku untuk kedua jalur di atas):\n'
+                  '• Bayar Satuan: Melalui menu titik tiga di samping tagihan. Sistem mendukung bayar Parsial (dicicil) maupun Lunas.\n'
+                  '• Bayar Sekaligus: Melalui checklist beberapa tagihan sekaligus. Sistem mewajibkan pembayaran LUNAS sesuai total akumulasi semua tagihan yang dicentang tersebut.',
+            ),
+            _buildInfoBlock(
+              icon: Icons.domain_verification,
+              title: 'C. Validasi Pembayaran',
+              content:
+                  'Bendahara memiliki menu khusus "Validasi Pembayaran" di Dashboard. Pada menu ini, Bendahara bertugas memverifikasi konfirmasi transfer dari Wali Murid dengan mengklik "Setujui" jika dana sudah masuk, atau "Tolak" jika tidak valid. Tagihan baru akan terhitung Lunas/Tercicil setelah disetujui.',
+            ),
+            _buildInfoBlock(
+              icon: Icons.account_balance_wallet,
+              title: 'D. Transaksi Tabungan',
+              content:
+                  'Akses profil siswa melalui menu Data Siswa (atau Kasir), lalu buka tab "Tabungan". Di sana Anda dapat mencatat riwayat Setor Tunai (menambah saldo) maupun Tarik Tunai (mengurangi saldo) secara real-time.',
+            ),
+            _buildInfoBlock(
+              icon: Icons.local_activity,
+              title: 'E. Input Kegiatan Siswa',
+              content:
+                  'Guru atau Admin dapat mencatat partisipasi dan absensi kegiatan ekstrakurikuler/harian siswa melalui menu "Kegiatan Siswa" untuk memantau keaktifan non-akademik.',
+            ),
+            _buildInfoBlock(
+              icon: Icons.edit_document,
+              title: 'F. Penilaian Akademik',
+              content:
+                  'Guru masuk ke menu "Input Nilai", pilih kelas dan mata pelajaran yang diajarkan, lalu input nilai siswa (Tugas, UTS, UAS).',
+            ),
+            _buildInfoBlock(
+              icon: Icons.analytics,
+              title: 'G. Laporan & Monitoring',
+              content:
+                  'Pantau arus kas di "Laporan Pembayaran", riwayat saldo di "Laporan Tabungan", dan total jam mengajar mingguan secara otomatis di Dasbor Guru.',
+            ),
 
-          _buildAccordion(
-            icon: Icons.receipt_long,
-            title: '4. Tagihan (Invoice)',
-            content:
-                'Fitur Tagihan digunakan untuk menagih biaya sekolah kepada siswa:\n'
-                '• Buat Tagihan Massal: Gunakan tombol + di menu Tagihan untuk men-*generate* tagihan per kelas secara otomatis. Pilih Kelas, Tahun Ajaran, dan Master Tagihan (Templat Tarif).\n'
-                '• Status Tagihan: UNPAID (Belum Bayar), PARTIAL (Bayar Sebagian/Mencicil), dan PAID (Lunas).\n',
-          ),
+            const SizedBox(height: 40),
+            Center(
+              child: Text(
+                'ApSekolah v1.0',
+                style: TextStyle(color: Colors.grey.shade500),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
 
-          _buildAccordion(
-            icon: Icons.payment,
-            title: '5. Pembayaran (Payment)',
-            content:
-                'Untuk melunasi tagihan yang sudah dibuat:\n'
-                '• Buka daftar Tagihan, pilih tagihan yang ingin dibayar, lalu klik tombol "Bayar".\n'
-                '• Masukkan jumlah nominal yang dibayar (bisa dibayar lunas atau dicicil sebagian).\n'
-                '• Validasi: Bendahara memiliki menu "Validasi Pembayaran" untuk memverifikasi pembayaran yang mungkin dilakukan melalui transfer agar statusnya disahkan.',
-          ),
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    );
+  }
 
-          _buildAccordion(
-            icon: Icons.account_balance_wallet,
-            title: '6. Tabungan Siswa',
-            content:
-                'Modul ini membantu sekolah mencatat uang tabungan harian siswa:\n'
-                '• Setor & Tarik: Cari nama siswa di menu Tabungan, lalu pilih aksi Setor Tunai (Deposit) atau Tarik Tunai (Withdrawal).\n'
-                '• Transaksi Real-time: Setiap penyetoran dan penarikan akan langsung memotong/menambah Saldo Saat Ini milik siswa.\n'
-                '• Riwayat: Di bagian bawah profil siswa, terdapat daftar 30 hari terakhir dari transaksi tabungannya.',
-          ),
-
-          _buildAccordion(
-            icon: Icons.analytics,
-            title: '7. Laporan (Reports)',
-            content:
-                'Semua transaksi terekap otomatis di menu Laporan:\n'
-                '• Laporan Keuangan: Membandingkan total Pemasukan (Pembayaran Lunas/Sebagian) dengan Tunggakan (Tagihan yang belum dibayar) pada rentang waktu tertentu.\n'
-                '• Laporan Tabungan: Menampilkan daftar lengkap saldo tabungan seluruh siswa, yang memfilter hanya siswa bersaldo lebih dari 0.\n'
-                '• Export Data: Anda dapat mengunduh laporan-laporan ini ke dalam bentuk Excel maupun PDF untuk dicetak atau diarsip.',
-          ),
-
-          const SizedBox(height: 40),
-          Center(
+  Widget _buildPhaseTitle(String title) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.green.shade50,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.green.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.flag, color: Colors.green.shade700, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
             child: Text(
-              'Versi Aplikasi 1.0.0\nTim IT Support',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade500),
+              title,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.green.shade900,
+              ),
             ),
           ),
         ],
@@ -107,28 +175,107 @@ class ManualBookScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAccordion({
-    required IconData icon,
+  Widget _buildStepCard({
+    required String number,
     required String title,
     required String content,
   }) {
     return Card(
+      elevation: 0,
       margin: const EdgeInsets.only(bottom: 12),
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 2,
-      child: ExpansionTile(
-        leading: CircleAvatar(
-          backgroundColor: Colors.blue.shade50,
-          child: Icon(icon, color: Colors.blue.shade800),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: Colors.grey.shade300),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              radius: 14,
+              backgroundColor: Colors.green.shade600,
+              child: Text(
+                number,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    content,
+                    style: TextStyle(
+                      color: Colors.grey.shade700,
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+      ),
+    );
+  }
+
+  Widget _buildInfoBlock({
+    required IconData icon,
+    required String title,
+    required String content,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Divider(),
-          const SizedBox(height: 8),
-          Text(content, style: const TextStyle(height: 1.5, fontSize: 14)),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade50,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: Colors.orange.shade700, size: 24),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  content,
+                  style: TextStyle(
+                    color: Colors.grey.shade700,
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

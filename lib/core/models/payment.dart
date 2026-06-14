@@ -20,6 +20,7 @@ class Payment {
   final String? createdBy;
   final DateTime? updatedAt;
   final String? updatedBy;
+  final String? approvedByName;
 
   Payment({
     required this.id,
@@ -41,6 +42,7 @@ class Payment {
     this.createdBy,
     this.updatedAt,
     this.updatedBy,
+    this.approvedByName,
   });
 
   factory Payment.fromFirestore(DocumentSnapshot doc) {
@@ -77,6 +79,7 @@ class Payment {
           ? (data['updated_at'] as Timestamp).toDate()
           : null,
       updatedBy: data['updated_by'],
+      approvedByName: data['approved_by_name'],
     );
   }
 
@@ -100,6 +103,7 @@ class Payment {
     if (invoiceIds != null) result['invoice_ids'] = invoiceIds;
     if (invoiceTitles != null) result['invoice_titles'] = invoiceTitles;
     if (invoiceAmounts != null) result['invoice_amounts'] = invoiceAmounts;
+    if (approvedByName != null) result['approved_by_name'] = approvedByName;
     return result;
   }
 }

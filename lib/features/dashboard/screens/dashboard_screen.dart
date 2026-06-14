@@ -20,6 +20,7 @@ import '../../savings/screens/savings_report_screen.dart';
 import 'widgets/wali_dashboard_view.dart';
 import 'widgets/bendahara_dashboard_view.dart';
 import 'widgets/siswa_dashboard_view.dart';
+
 import 'widgets/guru_dashboard_view.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -315,10 +316,10 @@ class DashboardScreen extends StatelessWidget {
             ),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.help_outline, color: Colors.blue),
+              leading: const Icon(Icons.help_outline, color: Colors.green),
               title: const Text(
                 'Buku Panduan',
-                style: TextStyle(color: Colors.blue),
+                style: TextStyle(color: Colors.green),
               ),
               onTap: () {
                 Navigator.pop(context);

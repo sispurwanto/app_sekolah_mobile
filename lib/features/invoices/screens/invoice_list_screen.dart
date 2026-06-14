@@ -445,9 +445,24 @@ class _InvoiceListScreenState extends State<InvoiceListScreen>
             ? Colors.red
             : null;
 
-        return Card(
-          color: isSelected ? Colors.blue.shade50 : null,
+        return Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.blue.shade50 : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? Colors.blue.shade300 : Colors.grey.shade200,
+              width: isSelected ? 1.5 : 1.0,
+            ),
+            boxShadow: [
+              if (!isSelected)
+                BoxShadow(
+                  color: Colors.black.withAlpha(10),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+            ],
+          ),
           child: ListTile(
             leading: isSelectable
                 ? Checkbox(
@@ -461,39 +476,143 @@ class _InvoiceListScreenState extends State<InvoiceListScreen>
               invoice.title,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            subtitle: RichText(
-              text: TextSpan(
-                style: DefaultTextStyle.of(context).style.copyWith(height: 1.5),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  TextSpan(
-                    text:
-                        'Siswa: ${invoice.studentName}\nTotal: ${CurrencyUtils.formatRp(invoice.amount)} | Dibayar: ${CurrencyUtils.formatRp(invoice.paidAmount)}\nStatus: ',
+                  Row(
+                    children: [
+                      Icon(Icons.person, size: 16, color: Colors.grey.shade600),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          invoice.studentName,
+                          style: TextStyle(
+                            color: Colors.grey.shade800,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  TextSpan(
-                    text: invoice.status,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: invoice.status == 'PAID'
-                          ? Colors.green
-                          : (invoice.status == 'UNPAID'
-                                ? Colors.red
-                                : Colors.orange),
-                    ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Total Tagihan',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              CurrencyUtils.formatRp(invoice.amount),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue.shade700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        height: 30,
+                        width: 1,
+                        color: Colors.grey.shade300,
+                        margin: const EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Telah Dibayar',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              CurrencyUtils.formatRp(invoice.paidAmount),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  const TextSpan(text: '\nJatuh Tempo: '),
-                  TextSpan(
-                    text: dueStr,
-                    style: TextStyle(
-                      color: dueColor,
-                      fontWeight: isOverdue && invoice.status != 'PAID'
-                          ? FontWeight.bold
-                          : null,
-                    ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: invoice.status == 'PAID'
+                              ? Colors.green.shade50
+                              : (invoice.status == 'UNPAID'
+                                  ? Colors.red.shade50
+                                  : Colors.orange.shade50),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: invoice.status == 'PAID'
+                                ? Colors.green.shade200
+                                : (invoice.status == 'UNPAID'
+                                    ? Colors.red.shade200
+                                    : Colors.orange.shade200),
+                          ),
+                        ),
+                        child: Text(
+                          invoice.status,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: invoice.status == 'PAID'
+                                ? Colors.green.shade700
+                                : (invoice.status == 'UNPAID'
+                                    ? Colors.red.shade700
+                                    : Colors.orange.shade700),
+                          ),
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today,
+                            size: 14,
+                            color: dueColor ?? Colors.grey.shade600,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            dueStr,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: dueColor ?? Colors.grey.shade700,
+                              fontWeight: isOverdue && invoice.status != 'PAID'
+                                  ? FontWeight.bold
+                                  : null,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            isThreeLine: true,
             onTap: isSelectable ? () => _toggleSelection(invoice) : null,
             trailing: PopupMenuButton<String>(
               onSelected: (value) {

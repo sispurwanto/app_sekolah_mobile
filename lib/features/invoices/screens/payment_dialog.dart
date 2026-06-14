@@ -72,6 +72,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
     final isBendahara = ['BENDAHARA', 'ADMIN', 'SUPER_ADMIN'].contains(role);
     final method = isBendahara ? 'CASH' : 'TRANSFER';
     final status = isBendahara ? 'APPROVED' : 'PENDING';
+    final approverName = isBendahara ? context.read<UserProvider>().userMapping?.name ?? 'Admin' : null;
 
     final payment = Payment(
       id: '', // Auto ID
@@ -89,6 +90,7 @@ class _PaymentDialogState extends State<PaymentDialog> {
       referenceNote: _noteController.text.trim(),
       schoolId: schoolId,
       academicYearId: widget.invoice.academicYearId,
+      approvedByName: approverName,
     );
 
     try {
