@@ -357,8 +357,38 @@ class _FinancialReportScreenState extends State<FinancialReportScreen>
                     p.studentName,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  subtitle: Text(
-                    p.invoiceTitle.isNotEmpty ? p.invoiceTitle : 'Pembayaran',
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 4.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          p.invoiceTitle.isNotEmpty
+                              ? p.invoiceTitle
+                              : 'Pembayaran',
+                        ),
+                        if (p.invoiceTitles != null && p.invoiceTitles!.length > 1)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4.0, left: 4.0, bottom: 2.0),
+                            child: Text(
+                              '- ${p.invoiceTitles!.join('\n- ')}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.blueGrey.shade600,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${p.createdAt != null ? DateFormat('dd/MM/yy HH:mm').format(p.createdAt!) : '-'} • Penerima: ${p.approvedByName ?? '-'}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   trailing: Text(
                     CurrencyUtils.formatRp(p.amount),
