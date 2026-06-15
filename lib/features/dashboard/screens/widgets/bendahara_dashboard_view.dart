@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+
 import '../../../student_management/screens/student_list_screen.dart';
 import '../../../invoices/screens/payment_validation_screen.dart';
 import '../../../savings/screens/savings_report_screen.dart';
 import '../../../reports/screens/financial_report_screen.dart';
+import '../../../invoices/screens/bulk_invoice_generation_dialog.dart';
 
 class BendaharaDashboardView extends StatelessWidget {
   final String role;
@@ -81,6 +83,21 @@ class BendaharaDashboardView extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (_) => const FinancialReportScreen(),
+                    ),
+                  );
+                },
+              ),
+              _buildMenuCard(
+                context,
+                title: 'Distribusi Tagihan',
+                icon: Icons.send_to_mobile,
+                color: Colors.teal,
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) => BulkInvoiceGenerationDialog(
+                      onSuccess: () {},
                     ),
                   );
                 },

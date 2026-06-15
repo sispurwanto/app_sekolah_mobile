@@ -129,7 +129,7 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
         await _studentService.updateStudent(schoolId, student);
         SnackbarUtils.showSnackbar('Siswa berhasil diperbarui');
       }
-      if (mounted) Navigator.pop(context);
+      if (mounted) Navigator.pop(context, true);
     } catch (e) {
       SnackbarUtils.showErrorSnackbar('Error: $e');
     } finally {
@@ -158,7 +158,7 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
           widget.student!.guardianId,
         );
         SnackbarUtils.showSnackbar('Siswa dihapus');
-        if (mounted) Navigator.pop(context);
+        if (mounted) Navigator.pop(context, true);
       } catch (e) {
         SnackbarUtils.showErrorSnackbar('Gagal menghapus: $e');
       } finally {

@@ -22,7 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      SnackbarUtils.showErrorSnackbar('Email dan Password harus diisi!');
+      SnackbarUtils.showErrorSnackbar('Email dan Kata Sandi harus diisi!');
       return;
     }
 
@@ -49,12 +49,12 @@ class _LoginScreenState extends State<LoginScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Reset Password'),
+          title: const Text('Atur Ulang Sandi'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                'Masukkan email Anda untuk menerima link reset password:',
+                'Masukkan email Anda untuk menerima tautan atur ulang sandi:',
               ),
               const SizedBox(height: 16),
               TextField(
@@ -87,14 +87,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   );
                   await authService.sendPasswordResetEmail(email);
                   if (mounted) {
+                    Navigator.pop(context);
                     SnackbarUtils.showSnackbar(
-                      'Link reset password telah dikirim ke $email',
+                      'Tautan atur ulang sandi telah dikirim ke $email',
                     );
                   }
                 } catch (e) {
                   if (mounted) {
+                    Navigator.pop(context);
                     SnackbarUtils.showErrorSnackbar(
-                      'Gagal mengirim link reset: $e',
+                      'Gagal mengirim tautan atur ulang: $e',
                     );
                   }
                 }
@@ -201,7 +203,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextField(
                           controller: _passwordController,
                           decoration: InputDecoration(
-                            labelText: 'Password',
+                            labelText: 'Kata Sandi',
                             prefixIcon: const Icon(Icons.lock_outline),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -234,7 +236,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextButton(
                           onPressed: _showResetPasswordDialog,
                           child: const Text(
-                            'Lupa Password?',
+                            'Lupa Sandi?',
                             style: TextStyle(color: Colors.green),
                           ),
                         ),

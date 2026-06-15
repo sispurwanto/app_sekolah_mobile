@@ -9,6 +9,7 @@ import '../services/invoice_service.dart';
 import '../../master_data/services/academic_year_service.dart';
 import '../../../core/models/academic_year.dart';
 import 'invoice_form_screen.dart';
+import 'invoice_generation_sheet.dart';
 import 'payment_dialog.dart';
 import 'payment_history_dialog.dart';
 import 'bulk_payment_dialog.dart';
@@ -44,8 +45,6 @@ class _InvoiceListScreenState extends State<InvoiceListScreen>
 
   Future<List<Invoice>>? _unpaidFuture;
   Future<List<Invoice>>? _paidFuture;
-  bool _showAllUnpaid = false;
-  bool _showAllPaid = false;
 
   @override
   void initState() {
@@ -80,7 +79,6 @@ class _InvoiceListScreenState extends State<InvoiceListScreen>
         widget.classId!,
         widget.studentId!,
         isPaid: false,
-        limitCount: _showAllUnpaid ? null : 2,
       );
     });
   }
@@ -93,7 +91,6 @@ class _InvoiceListScreenState extends State<InvoiceListScreen>
         widget.classId!,
         widget.studentId!,
         isPaid: true,
-        limitCount: _showAllPaid ? null : 2,
       );
     });
   }
@@ -223,31 +220,19 @@ class _InvoiceListScreenState extends State<InvoiceListScreen>
               children: [
                 _buildTabContent(
                   future: _unpaidFuture!,
-                  showAll: _showAllUnpaid,
-                  onShowAll: () {
-                    setState(() {
-                      _showAllUnpaid = true;
-                      _loadUnpaid();
-                    });
-                  },
                   canManageInvoices: canManageInvoices,
                   schoolId: schoolId,
                   yearIdToUse: yearIdToUse,
+                  isPaidTab: false,
                 ),
                 _paidFuture == null
                     ? const Center(child: CircularProgressIndicator())
                     : _buildTabContent(
                         future: _paidFuture!,
-                        showAll: _showAllPaid,
-                        onShowAll: () {
-                          setState(() {
-                            _showAllPaid = true;
-                            _loadPaid();
-                          });
-                        },
                         canManageInvoices: canManageInvoices,
                         schoolId: schoolId,
                         yearIdToUse: yearIdToUse,
+                        isPaidTab: true,
                       ),
               ],
             );
@@ -356,23 +341,38 @@ class _InvoiceListScreenState extends State<InvoiceListScreen>
               label: Text('Bayar Terpilih (${_selectedInvoiceIds.length})'),
             )
           : (canManageInvoices
-                ? FloatingActionButton(
+                ? FloatingActionButton.extended(
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              InvoiceFormScreen(studentId: widget.studentId),
-                        ),
-                      ).then((_) {
-                        if (widget.studentId != null) {
+                      if (widget.studentId != null) {
+                        // Personal invoice directly to form
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                InvoiceFormScreen(studentId: widget.studentId),
+                          ),
+                        ).then((_) {
                           _loadUnpaid();
-                        } else {
-                          _loadInvoices(_currentSchoolId, _currentYearId);
-                        }
-                      });
+                        });
+                      } else {
+                        // Global invoice, show the sheet
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (context) => InvoiceGenerationSheet(
+                            onRefresh: () => _loadInvoices(_currentSchoolId, _currentYearId),
+                          ),
+                        );
+                      }
                     },
-                    child: const Icon(Icons.add),
+                    icon: const Icon(Icons.add),
+                    label: Text(widget.studentId != null 
+                        ? 'Buat Tagihan Khusus' 
+                        : 'Buat Tagihan Baru'),
+                    tooltip: widget.studentId != null 
+                        ? 'Buat tagihan kondisional khusus untuk siswa ini' 
+                        : 'Buat tagihan baru',
                   )
                 : null),
     );
@@ -380,11 +380,10 @@ class _InvoiceListScreenState extends State<InvoiceListScreen>
 
   Widget _buildTabContent({
     required Future<List<Invoice>> future,
-    required bool showAll,
-    required VoidCallback onShowAll,
     required bool canManageInvoices,
     required String schoolId,
     required String yearIdToUse,
+    required bool isPaidTab,
   }) {
     return RefreshIndicator(
       onRefresh: () async {
@@ -402,9 +401,61 @@ class _InvoiceListScreenState extends State<InvoiceListScreen>
           }
 
           final invoices = snapshot.data ?? [];
+          
+          double totalAmount = 0;
+          for (var inv in invoices) {
+            totalAmount += isPaidTab ? inv.paidAmount : (inv.amount - inv.paidAmount);
+          }
 
           return Column(
             children: [
+              if (invoices.isNotEmpty)
+                Container(
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: isPaidTab
+                          ? [Colors.green.shade400, Colors.green.shade600]
+                          : [Colors.orange.shade400, Colors.orange.shade600],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isPaidTab ? Icons.check_circle : Icons.warning_amber_rounded,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isPaidTab 
+                                  ? '${invoices.length} Tagihan Lunas' 
+                                  : '${invoices.length} Tagihan Belum Lunas',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                              ),
+                            ),
+                            Text(
+                              CurrencyUtils.formatRp(totalAmount),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               Expanded(
                 child: invoices.isEmpty
                     ? const EmptyStateWidget(
@@ -413,14 +464,6 @@ class _InvoiceListScreenState extends State<InvoiceListScreen>
                       )
                     : _buildInvoiceList(invoices, canManageInvoices),
               ),
-              if (!showAll && invoices.length == 2)
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: TextButton(
-                    onPressed: onShowAll,
-                    child: const Text('Lihat Semua'),
-                  ),
-                ),
             ],
           );
         },
@@ -430,6 +473,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen>
 
   Widget _buildInvoiceList(List<Invoice> invoices, bool canManageInvoices) {
     return ListView.builder(
+      padding: const EdgeInsets.only(bottom: 80),
       itemCount: invoices.length,
       itemBuilder: (context, index) {
         final invoice = invoices[index];

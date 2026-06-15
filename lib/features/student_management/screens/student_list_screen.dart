@@ -76,49 +76,6 @@ class _StudentListScreenState extends State<StudentListScreen> {
     super.dispose();
   }
 
-  Future<void> _handleGenerateInvoice(
-    BuildContext context,
-    String schoolId,
-    Student student,
-  ) async {
-    if (student.status != 'ACTIVE') {
-      SnackbarUtils.showErrorSnackbar(
-        'Tagihan hanya bisa dibuat untuk siswa aktif',
-      );
-      return;
-    }
-    if (student.academicYearId.isEmpty || student.classId.isEmpty) {
-      SnackbarUtils.showErrorSnackbar(
-        'Siswa belum memiliki Kelas atau Tahun Ajaran aktif',
-      );
-      return;
-    }
-
-    final confirm = await DialogUtils.showConfirmationDialog(
-      title: 'Generate Tagihan',
-      content:
-          'Generate tagihan untuk ${student.name} (Kelas: ${student.classId}) berdasarkan Master Tagihan?',
-      confirmText: 'Generate',
-    );
-
-    if (confirm == true) {
-      setState(() => _isGenerating = true);
-      try {
-        await InvoiceService().generateInvoicesForStudent(
-          schoolId: schoolId,
-          academicYearId: student.academicYearId,
-          classId: student.classId,
-          studentId: student.id,
-          studentName: student.name,
-        );
-        SnackbarUtils.showSnackbar('Tagihan berhasil di-generate!');
-      } catch (e) {
-        SnackbarUtils.showErrorSnackbar('Gagal: $e');
-      } finally {
-        if (mounted) setState(() => _isGenerating = false);
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -486,9 +443,9 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                   ],
                                 ),
                                 trailing: PopupMenuButton<String>(
-                                  onSelected: (value) {
+                                  onSelected: (value) async {
                                     if (value == 'edit') {
-                                      Navigator.push(
+                                      final result = await Navigator.push(
                                         context,
                                         MaterialPageRoute(
                                           builder: (context) =>
@@ -497,12 +454,9 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                               ),
                                         ),
                                       );
-                                    } else if (value == 'generate') {
-                                      _handleGenerateInvoice(
-                                        context,
-                                        schoolId,
-                                        student,
-                                      );
+                                      if (result == true) {
+                                        _loadStudents();
+                                      }
                                     } else if (value == 'kegiatan') {
                                       Navigator.push(
                                         context,
@@ -524,14 +478,6 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                             child: ListTile(
                                               leading: Icon(Icons.edit),
                                               title: Text('Edit Siswa'),
-                                              contentPadding: EdgeInsets.zero,
-                                            ),
-                                          ),
-                                          const PopupMenuItem<String>(
-                                            value: 'generate',
-                                            child: ListTile(
-                                              leading: Icon(Icons.add_card),
-                                              title: Text('Generate Tagihan'),
                                               contentPadding: EdgeInsets.zero,
                                             ),
                                           ),
@@ -564,11 +510,14 @@ class _StudentListScreenState extends State<StudentListScreen> {
           ? const LinearProgressIndicator()
           : null,
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
+        onPressed: () async {
+          final result = await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const StudentFormScreen()),
           );
+          if (result == true) {
+            _loadStudents();
+          }
         },
         child: const Icon(Icons.add),
       ),

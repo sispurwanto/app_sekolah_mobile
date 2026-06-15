@@ -12,6 +12,7 @@ import '../../student_management/screens/student_list_screen.dart';
 import '../../master_data/screens/class_list_screen.dart';
 import '../../master_data/screens/academic_year_list_screen.dart';
 import '../../master_data/screens/fee_template_list_screen.dart';
+import '../../invoices/screens/bulk_invoice_generation_dialog.dart';
 import '../../master_data/screens/activity_master_list_screen.dart';
 import '../../master_data/screens/subject_list_screen.dart';
 import '../../master_data/screens/schedule_list_screen.dart';
@@ -28,9 +29,10 @@ class DashboardScreen extends StatelessWidget {
 
   void _handleLogout(BuildContext context) async {
     final shouldLogout = await DialogUtils.showConfirmationDialog(
-      title: 'Konfirmasi Logout',
+
+      title: 'Konfirmasi Keluar',
       content: 'Apakah Anda yakin ingin keluar dari aplikasi?',
-      confirmText: 'Logout',
+      confirmText: 'Keluar',
       isDestructive: true,
     );
 
@@ -98,8 +100,8 @@ class DashboardScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.pop(context); // Close drawer
                   Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => SchoolListScreen()),
+                      context,
+                      MaterialPageRoute(builder: (context) => SchoolListScreen()),
                   );
                 },
               ),
@@ -108,12 +110,12 @@ class DashboardScreen extends StatelessWidget {
             if (role == 'SUPER_ADMIN' || role == 'ADMIN')
               ListTile(
                 leading: const Icon(Icons.people),
-                title: const Text('Manajemen User'),
+                title: const Text('Manajemen Pengguna'),
                 onTap: () {
                   Navigator.pop(context); // Close drawer
                   Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => UserListScreen()),
+                      context,
+                      MaterialPageRoute(builder: (context) => UserListScreen()),
                   );
                 },
               ),
@@ -131,8 +133,8 @@ class DashboardScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
-                        context,
-                        MaterialPageRoute(
+                      context,
+                      MaterialPageRoute(
                           builder: (context) => StudentListScreen(),
                         ),
                       );
@@ -145,8 +147,8 @@ class DashboardScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
-                        context,
-                        MaterialPageRoute(
+                      context,
+                      MaterialPageRoute(
                           builder: (context) =>
                               const StudentListScreen(activeOnly: false),
                         ),
@@ -160,8 +162,8 @@ class DashboardScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
-                        context,
-                        MaterialPageRoute(
+                      context,
+                      MaterialPageRoute(
                           builder: (context) => ClassListScreen(),
                         ),
                       );
@@ -174,8 +176,8 @@ class DashboardScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
-                        context,
-                        MaterialPageRoute(
+                      context,
+                      MaterialPageRoute(
                           builder: (context) => ActivityMasterListScreen(),
                         ),
                       );
@@ -188,8 +190,8 @@ class DashboardScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
-                        context,
-                        MaterialPageRoute(
+                      context,
+                      MaterialPageRoute(
                           builder: (context) => SubjectListScreen(),
                         ),
                       );
@@ -202,8 +204,8 @@ class DashboardScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
-                        context,
-                        MaterialPageRoute(
+                      context,
+                      MaterialPageRoute(
                           builder: (context) => const ScheduleListScreen(),
                         ),
                       );
@@ -216,8 +218,8 @@ class DashboardScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
-                        context,
-                        MaterialPageRoute(
+                      context,
+                      MaterialPageRoute(
                           builder: (context) => AcademicYearListScreen(),
                         ),
                       );
@@ -230,9 +232,24 @@ class DashboardScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
-                        context,
-                        MaterialPageRoute(
+                      context,
+                      MaterialPageRoute(
                           builder: (context) => FeeTemplateListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.send_to_mobile),
+                    title: const Text('Distribusi Tagihan'),
+                    contentPadding: const EdgeInsets.only(left: 40),
+                    onTap: () {
+                      Navigator.pop(context);
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) => BulkInvoiceGenerationDialog(
+                          onSuccess: () {},
                         ),
                       );
                     },
@@ -247,8 +264,8 @@ class DashboardScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.push(
-                    context,
-                    MaterialPageRoute(
+                      context,
+                      MaterialPageRoute(
                       builder: (context) => const StudentListScreen(),
                     ),
                   );
@@ -273,8 +290,8 @@ class DashboardScreen extends StatelessWidget {
                         onTap: () {
                           Navigator.pop(context); // Close drawer
                           Navigator.push(
-                            context,
-                            MaterialPageRoute(
+                      context,
+                      MaterialPageRoute(
                               builder: (context) =>
                                   const FinancialReportScreen(),
                             ),
@@ -288,8 +305,8 @@ class DashboardScreen extends StatelessWidget {
                         onTap: () {
                           Navigator.pop(context); // Close drawer
                           Navigator.push(
-                            context,
-                            MaterialPageRoute(
+                      context,
+                      MaterialPageRoute(
                               builder: (context) => const SavingsReportScreen(),
                             ),
                           );
@@ -307,8 +324,8 @@ class DashboardScreen extends StatelessWidget {
               onTap: () {
                 Navigator.pop(context); // Close drawer
                 Navigator.push(
-                  context,
-                  MaterialPageRoute(
+                      context,
+                      MaterialPageRoute(
                     builder: (context) => const ProfileScreen(),
                   ),
                 );
@@ -324,8 +341,8 @@ class DashboardScreen extends StatelessWidget {
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
-                  context,
-                  MaterialPageRoute(
+                      context,
+                      MaterialPageRoute(
                     builder: (context) => const ManualBookScreen(),
                   ),
                 );
@@ -333,7 +350,7 @@ class DashboardScreen extends StatelessWidget {
             ),
             ListTile(
               leading: const Icon(Icons.logout, color: Colors.red),
-              title: const Text('Logout', style: TextStyle(color: Colors.red)),
+              title: const Text('Keluar', style: TextStyle(color: Colors.red)),
               onTap: () {
                 Navigator.pop(context);
                 _handleLogout(context);
@@ -402,7 +419,7 @@ class DashboardScreen extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text('Welcome to Dashboard!', style: TextStyle(fontSize: 24)),
+          Text('Selamat Datang di Beranda!', style: TextStyle(fontSize: 24)),
         ],
       ),
     );

@@ -6,7 +6,7 @@ class TeacherReportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Generate Raport')),
+      appBar: AppBar(title: const Text('Cetak Rapor')),
       body: const Center(
         child: Text(
           'Modul Pembuatan & Cetak Raport sedang dalam pengembangan.\n(Nantinya akan menarik data dari StudentGrades secara otomatis)',
