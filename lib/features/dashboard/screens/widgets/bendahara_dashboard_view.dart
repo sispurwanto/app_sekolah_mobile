@@ -4,7 +4,7 @@ import '../../../student_management/screens/student_list_screen.dart';
 import '../../../invoices/screens/payment_validation_screen.dart';
 import '../../../savings/screens/savings_report_screen.dart';
 import '../../../reports/screens/financial_report_screen.dart';
-import '../../../invoices/screens/bulk_invoice_generation_dialog.dart';
+import '../../../invoices/screens/invoice_distribution_log_screen.dart';
 
 class BendaharaDashboardView extends StatelessWidget {
   final String role;
@@ -93,11 +93,10 @@ class BendaharaDashboardView extends StatelessWidget {
                 icon: Icons.send_to_mobile,
                 color: Colors.teal,
                 onTap: () {
-                  showDialog(
-                    context: context,
-                    barrierDismissible: false,
-                    builder: (context) => BulkInvoiceGenerationDialog(
-                      onSuccess: () {},
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const InvoiceDistributionLogScreen(),
                     ),
                   );
                 },

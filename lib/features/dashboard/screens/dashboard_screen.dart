@@ -23,6 +23,7 @@ import 'widgets/bendahara_dashboard_view.dart';
 import 'widgets/siswa_dashboard_view.dart';
 
 import 'widgets/guru_dashboard_view.dart';
+import '../../invoices/screens/invoice_distribution_log_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -245,11 +246,10 @@ class DashboardScreen extends StatelessWidget {
                     contentPadding: const EdgeInsets.only(left: 40),
                     onTap: () {
                       Navigator.pop(context);
-                      showDialog(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (context) => BulkInvoiceGenerationDialog(
-                          onSuccess: () {},
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const InvoiceDistributionLogScreen(),
                         ),
                       );
                     },

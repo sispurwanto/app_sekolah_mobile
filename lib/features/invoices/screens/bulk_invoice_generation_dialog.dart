@@ -52,12 +52,18 @@ class _BulkInvoiceGenerationDialogState
     if (confirm == true) {
       setState(() => _isGenerating = true);
       try {
-        await InvoiceService().generateInvoicesForTemplate(
+        final generatedCount = await InvoiceService().generateInvoicesForTemplate(
           schoolId: schoolId,
           academicYearId: activeYear.id,
           template: _selectedTemplate!,
         );
-        SnackbarUtils.showSnackbar('Tagihan massal berhasil diterbitkan!');
+
+        if (generatedCount > 0) {
+          SnackbarUtils.showSnackbar('Tagihan massal berhasil diterbitkan ke $generatedCount siswa!');
+        } else {
+          SnackbarUtils.showErrorSnackbar('Gagal menerbitkan: Semua siswa sudah memiliki tagihan ini!');
+        }
+
         if (mounted) {
           Navigator.pop(context);
           widget.onSuccess();

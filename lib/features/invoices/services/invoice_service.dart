@@ -509,7 +509,7 @@ class InvoiceService {
   }
 
   // Bulk Generate Invoices for a specific Template across all applicable students
-  Future<void> generateInvoicesForTemplate({
+  Future<int> generateInvoicesForTemplate({
     required String schoolId,
     required String academicYearId,
     required FeeTemplate template,
@@ -530,10 +530,13 @@ class InvoiceService {
     }
 
     final studentSnapshots = await query.get();
-    if (studentSnapshots.docs.isEmpty) return; // No students found
+    if (studentSnapshots.docs.isEmpty) return 0; // No students found
 
     final students = studentSnapshots.docs;
     final uid = FirebaseAuth.instance.currentUser?.uid;
+
+    int totalDistributed = 0;
+    List<Map<String, dynamic>> logData = [];
 
     // Process in chunks of 100 students to avoid exceeding Firestore batch limit of 500
     for (var i = 0; i < students.length; i += 100) {
@@ -572,6 +575,8 @@ class InvoiceService {
           'updated_at': FieldValue.serverTimestamp(),
           'updated_by': uid,
         }, SetOptions(merge: true));
+
+        int generatedCount = 0;
 
         if (template.frequency == 'MONTHLY') {
           // Generate 12 months
@@ -637,6 +642,7 @@ class InvoiceService {
                 'updated_at': FieldValue.serverTimestamp(),
                 'updated_by': uid,
               });
+              generatedCount++;
             }
           }
         } else {
@@ -666,11 +672,56 @@ class InvoiceService {
               'updated_at': FieldValue.serverTimestamp(),
               'updated_by': uid,
             });
+            generatedCount++;
           }
+        }
+
+        if (generatedCount > 0) {
+          totalDistributed++;
+          logData.add({
+            'siswa': {
+              'id': studentId,
+              'name': studentName,
+            },
+            'jml_item': generatedCount,
+          });
         }
       }
 
       await batch.commit();
     }
+
+    if (totalDistributed > 0) {
+      final logRef = _db
+          .collection('schools')
+          .doc(schoolId)
+          .collection('transactions_year')
+          .doc(academicYearId)
+          .collection('distribution_logs')
+          .doc();
+
+      await logRef.set({
+        'template_id': template.id,
+        'template_name': template.title,
+        'target_class': template.classId?.isNotEmpty == true ? template.classId : 'SEMUA KELAS',
+        'distributed_count': totalDistributed,
+        'created_at': FieldValue.serverTimestamp(),
+        'created_by': uid,
+        'data': logData,
+      });
+    }
+
+    return totalDistributed;
+  }
+
+  Stream<QuerySnapshot> getDistributionLogs(String schoolId, String academicYearId) {
+    return _db
+        .collection('schools')
+        .doc(schoolId)
+        .collection('transactions_year')
+        .doc(academicYearId)
+        .collection('distribution_logs')
+        .orderBy('created_at', descending: true)
+        .snapshots();
   }
 }
