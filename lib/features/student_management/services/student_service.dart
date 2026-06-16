@@ -26,7 +26,7 @@ class StudentService {
     String statusFilter = 'SEMUA',
     Source source = Source.serverAndCache,
   }) async {
-    final collectionName = statusFilter == 'ACTIVE'
+    final collectionName = (statusFilter == 'ACTIVE' || statusFilter == 'SEMUA')
         ? 'students'
         : 'students_graduated';
     var query = _db

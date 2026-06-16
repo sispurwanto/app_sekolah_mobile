@@ -34,54 +34,49 @@ class GuruDashboardView extends StatelessWidget {
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 16,
-            runSpacing: 16,
+          GridView.count(
+            crossAxisCount: 4,
+            shrinkWrap: true,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 0.85,
+            physics: const NeverScrollableScrollPhysics(),
             children: [
-              SizedBox(
-                width: 100,
-                child: _buildMenuCard(
-                  context,
-                  title: 'Seluruh Jadwal',
-                  icon: Icons.calendar_month,
-                  color: Colors.blue,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => TeacherScheduleScreen()),
-                    );
-                  },
-                ),
+              _buildMenuCard(
+                context,
+                title: 'Seluruh Jadwal',
+                icon: Icons.calendar_month,
+                color: Colors.blue,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => TeacherScheduleScreen()),
+                  );
+                },
               ),
-              SizedBox(
-                width: 100,
-                child: _buildMenuCard(
-                  context,
-                  title: 'Data Siswa',
-                  icon: Icons.people,
-                  color: Colors.green,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const StudentListScreen()),
-                    );
-                  },
-                ),
+              _buildMenuCard(
+                context,
+                title: 'Data Siswa',
+                icon: Icons.people,
+                color: Colors.green,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const StudentListScreen()),
+                  );
+                },
               ),
-              SizedBox(
-                width: 100,
-                child: _buildMenuCard(
-                  context,
-                  title: 'Input Nilai',
-                  icon: Icons.edit_note,
-                  color: Colors.orange,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const TeacherGradeInputScreen()),
-                    );
-                  },
-                ),
+              _buildMenuCard(
+                context,
+                title: 'Input Nilai',
+                icon: Icons.edit_note,
+                color: Colors.orange,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const TeacherGradeInputScreen()),
+                  );
+                },
               ),
             ],
           ),
@@ -158,8 +153,6 @@ class GuruDashboardView extends StatelessWidget {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildWeeklyHoursInfo(formattedHours),
-                  const SizedBox(height: 12),
                   Card(
                     elevation: 2,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -181,8 +174,6 @@ class GuruDashboardView extends StatelessWidget {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildWeeklyHoursInfo(formattedHours),
-                const SizedBox(height: 12),
                 ListView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -220,30 +211,6 @@ class GuruDashboardView extends StatelessWidget {
     );
   }
 
-  Widget _buildWeeklyHoursInfo(String totalHours) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blue.shade200),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.info_outline, color: Colors.blue.shade700, size: 20),
-          const SizedBox(width: 8),
-          Text(
-            'Total Mengajar: $totalHours Jam/Pekan',
-            style: TextStyle(
-              color: Colors.blue.shade900,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildMenuCard(BuildContext context, {required String title, required IconData icon, required Color color, required VoidCallback onTap}) {
     return Card(
       elevation: 4,
@@ -252,7 +219,7 @@ class GuruDashboardView extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+          padding: const EdgeInsets.all(8.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -261,7 +228,9 @@ class GuruDashboardView extends StatelessWidget {
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

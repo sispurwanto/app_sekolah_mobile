@@ -57,7 +57,7 @@ class _TeacherGradeInputScreenState extends State<TeacherGradeInputScreen> {
     });
 
     try {
-      final snapshot = await _studentService.fetchStudentsByClass(schoolId, _selectedClassId!);
+      final snapshot = await _studentService.fetchStudentsByClass(schoolId, _selectedClassId!, statusFilter: 'ACTIVE');
       _students = snapshot;
       for (var s in _students) {
         _controllers[s.id] = {
