@@ -43,29 +43,87 @@ class ClassListScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final appClass = classes[index];
               return Card(
+                elevation: 3,
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: ListTile(
-                  title: Text(
-                    appClass.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text(
-                    'Tingkat: ${appClass.level}\n'
-                    'Wali Kelas: ${appClass.teacherName ?? "Belum Ditentukan"}\n'
-                    '${appClass.description}',
-                  ),
-                  isThreeLine: true,
-                  trailing: IconButton(
-                    icon: const Icon(Icons.edit, color: Colors.blue),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              ClassFormScreen(appClass: appClass),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      );
-                    },
+                        child: Icon(
+                          Icons.class_,
+                          color: Theme.of(context).primaryColor,
+                          size: 32,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              appClass.name,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Wali: ${appClass.teacherName ?? "Belum Ditentukan"}',
+                              style: TextStyle(color: Colors.grey.shade700, fontWeight: FontWeight.w500),
+                            ),
+                            if (appClass.description.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                appClass.description,
+                                style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(
+                              'Tk. ${appClass.level}',
+                              style: TextStyle(
+                                color: Colors.blue.shade800,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.blue),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ClassFormScreen(appClass: appClass),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               );

@@ -28,6 +28,7 @@ class _ClassFormScreenState extends State<ClassFormScreen> {
   String? _selectedTeacherId;
   String? _selectedTeacherName;
   bool _isLoading = false;
+  List<AppClass> _allClasses = [];
 
   @override
   void initState() {
@@ -42,6 +43,23 @@ class _ClassFormScreenState extends State<ClassFormScreen> {
     );
     _selectedTeacherId = widget.appClass?.teacherId;
     _selectedTeacherName = widget.appClass?.teacherName;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchAllClasses();
+    });
+  }
+
+  void _fetchAllClasses() async {
+    final schoolId = context.read<SchoolProvider>().activeSchoolId;
+    if (schoolId == null) return;
+    
+    _service.getClasses(schoolId).first.then((classes) {
+      if (mounted) {
+        setState(() {
+          _allClasses = classes;
+        });
+      }
+    });
   }
 
   @override
@@ -182,7 +200,16 @@ class _ClassFormScreenState extends State<ClassFormScreen> {
                           return const CircularProgressIndicator();
                         }
 
-                        final users = snapshot.data ?? [];
+                        final users = List<AppUser>.from(snapshot.data ?? []);
+                        
+                        if (_selectedTeacherId != null && !users.any((u) => u.id == _selectedTeacherId)) {
+                          users.add(AppUser(
+                            id: _selectedTeacherId!,
+                            name: '$_selectedTeacherName (Nonaktif/Ganti Role)',
+                            email: '',
+                            role: 'UNKNOWN',
+                          ));
+                        }
 
                         return DropdownButtonFormField<String>(
                           value: _selectedTeacherId,
@@ -202,6 +229,18 @@ class _ClassFormScreenState extends State<ClassFormScreen> {
                             ),
                           ],
                           onChanged: (val) {
+                            if (val != null) {
+                              final existingClass = _allClasses.where((c) => c.teacherId == val && c.id != widget.appClass?.id).firstOrNull;
+                              if (existingClass != null) {
+                                SnackbarUtils.showErrorSnackbar('Guru telah jadi wali kelas di kelas ${existingClass.name}');
+                                setState(() {
+                                  _selectedTeacherId = null;
+                                  _selectedTeacherName = null;
+                                });
+                                return;
+                              }
+                            }
+
                             setState(() {
                               _selectedTeacherId = val;
                               if (val != null) {

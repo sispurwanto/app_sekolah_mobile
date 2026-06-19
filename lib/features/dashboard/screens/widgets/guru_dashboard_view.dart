@@ -9,6 +9,8 @@ import '../../../../core/providers/user_provider.dart';
 import '../../../master_data/services/academic_year_service.dart';
 import '../../../../core/models/class_schedule.dart';
 import '../../../master_data/services/schedule_service.dart';
+import '../../../master_data/services/class_service.dart';
+import '../../../../core/models/app_class.dart';
 
 class GuruDashboardView extends StatelessWidget {
   const GuruDashboardView({super.key});
@@ -16,70 +18,81 @@ class GuruDashboardView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final userName = context.watch<UserProvider>().userMapping?.name ?? 'Guru / Wali Kelas';
+    final schoolId = context.watch<SchoolProvider>().activeSchoolId;
+    final teacherId = FirebaseAuth.instance.currentUser?.uid;
 
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            'Menu $userName',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          if (schoolId != null && teacherId != null)
+            StreamBuilder<List<AppClass>>(
+              stream: ClassService().getClasses(schoolId, teacherId: teacherId),
+              builder: (context, snapshot) {
+                final isWaliKelas = snapshot.hasData && snapshot.data!.isNotEmpty;
+                
+                return GridView.count(
+                  crossAxisCount: 4,
+                  shrinkWrap: true,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 0.85,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    _buildMenuCard(
+                      context,
+                      title: 'Seluruh Jadwal',
+                      icon: Icons.calendar_month,
+                      color: Colors.blue,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => TeacherScheduleScreen()),
+                        );
+                      },
+                    ),
+                    if (isWaliKelas)
+                      _buildMenuCard(
+                        context,
+                        title: 'Data Siswa',
+                        icon: Icons.people,
+                        color: Colors.green,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const StudentListScreen()),
+                          );
+                        },
+                      ),
+                    _buildMenuCard(
+                      context,
+                      title: 'Input Nilai',
+                      icon: Icons.edit_note,
+                      color: Colors.orange,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const TeacherGradeInputScreen()),
+                        );
+                      },
+                    ),
+                  ],
+                );
+              },
+            ),
+          const SizedBox(height: 24),
           const Text(
             'Jadwal Mengajar Hari Ini',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           _buildTodaySchedule(context),
-          const SizedBox(height: 24),
-          Text(
-            'Menu $userName',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          GridView.count(
-            crossAxisCount: 4,
-            shrinkWrap: true,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 0.85,
-            physics: const NeverScrollableScrollPhysics(),
-            children: [
-              _buildMenuCard(
-                context,
-                title: 'Seluruh Jadwal',
-                icon: Icons.calendar_month,
-                color: Colors.blue,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => TeacherScheduleScreen()),
-                  );
-                },
-              ),
-              _buildMenuCard(
-                context,
-                title: 'Data Siswa',
-                icon: Icons.people,
-                color: Colors.green,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const StudentListScreen()),
-                  );
-                },
-              ),
-              _buildMenuCard(
-                context,
-                title: 'Input Nilai',
-                icon: Icons.edit_note,
-                color: Colors.orange,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const TeacherGradeInputScreen()),
-                  );
-                },
-              ),
-            ],
-          ),
         ],
       ),
     );
