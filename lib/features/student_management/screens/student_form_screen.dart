@@ -316,7 +316,7 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                           items: [
                             const DropdownMenuItem<String>(
                               value: null,
-                              child: Text('Tidak ada / Belum ditentukan'),
+                              child: Text('Pilih Kelas (Wajib)'),
                             ),
                             ...classes.map(
                               (c) => DropdownMenuItem(
@@ -325,6 +325,12 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
                               ),
                             ),
                           ],
+                          validator: (val) {
+                            if (val == null || val.isEmpty) {
+                              return 'Kelas wajib dipilih';
+                            }
+                            return null;
+                          },
                           onChanged: (v) =>
                               setState(() => _selectedClassId = v),
                         );
