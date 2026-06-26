@@ -5,6 +5,7 @@ class FeeTemplate {
   final String title;
   final double amount;
   final String? classId;
+  final String academicYearId;
   final String frequency; // ONCE, MONTHLY, YEARLY
   final int? dueDateDay; // For MONTHLY
   final DateTime? exactDueDate; // For ONCE / YEARLY
@@ -18,6 +19,7 @@ class FeeTemplate {
     required this.title,
     required this.amount,
     this.classId,
+    this.academicYearId = '',
     this.frequency = 'ONCE',
     this.dueDateDay,
     this.exactDueDate,
@@ -34,6 +36,7 @@ class FeeTemplate {
       title: data['title'] ?? '',
       amount: (data['amount'] ?? 0).toDouble(),
       classId: data['class_id'],
+      academicYearId: data['academic_year_id'] ?? '',
       frequency: data['frequency'] ?? 'ONCE',
       dueDateDay: data['due_date_day'],
       exactDueDate: data['exact_due_date'] != null
@@ -55,6 +58,7 @@ class FeeTemplate {
       'title': title,
       'amount': amount,
       'class_id': classId,
+      'academic_year_id': academicYearId,
       'frequency': frequency,
       'due_date_day': dueDateDay,
       'exact_due_date': exactDueDate != null

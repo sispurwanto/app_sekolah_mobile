@@ -5,11 +5,12 @@ import '../../../core/models/fee_template.dart';
 class FeeTemplateService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  Stream<List<FeeTemplate>> getFeeTemplates(String schoolId) {
+  Stream<List<FeeTemplate>> getFeeTemplates(String schoolId, String academicYearId) {
     return _db
         .collection('schools')
         .doc(schoolId)
         .collection('fee_templates')
+        .where('academic_year_id', isEqualTo: academicYearId)
         .snapshots()
         .map((snapshot) {
           return snapshot.docs

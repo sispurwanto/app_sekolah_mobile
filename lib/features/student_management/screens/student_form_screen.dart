@@ -10,6 +10,7 @@ import '../../../core/models/app_user.dart';
 import '../../master_data/services/class_service.dart';
 import '../../../core/models/app_class.dart';
 import '../../master_data/services/academic_year_service.dart';
+import '../../invoices/services/invoice_service.dart';
 import '../../../core/models/academic_year.dart';
 import '../../../core/components/custom_button.dart';
 
@@ -102,11 +103,35 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
   void _save() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() => _isLoading = true);
     final schoolId = context.read<SchoolProvider>().activeSchoolId!;
 
+    // Check for class change warning
+    final isEditing = widget.student != null;
+    final oldClassId = widget.student?.classId ?? '';
+    final newClassId = _selectedClassId ?? '';
+    final studentId = _nisController.text.trim();
+
+    if (isEditing && oldClassId.isNotEmpty && newClassId.isNotEmpty && oldClassId != newClassId) {
+      setState(() => _isLoading = true);
+      final hasUnpaidInvoices = await InvoiceService().hasUnpaidInvoicesInClass(schoolId, studentId, oldClassId);
+      setState(() => _isLoading = false);
+
+      if (hasUnpaidInvoices) {
+        if (!mounted) return;
+        final confirm = await DialogUtils.showConfirmationDialog(
+          title: 'Peringatan Pindah Kelas',
+          content: 'Siswa ini masih memiliki tagihan yang BELUM LUNAS di kelas lama. Jika dilanjutkan pindah kelas, Anda harus membuat tagihan baru untuk siswa ini di kelas barunya. Tagihan lama tetap ada (tidak dihapus).\n\nLanjutkan?',
+          confirmText: 'Lanjutkan',
+          cancelText: 'Batal',
+        );
+        if (confirm != true) return;
+      }
+    }
+
+    setState(() => _isLoading = true);
+
     final student = Student(
-      id: _nisController.text.trim(), // Use NIS as Document ID
+      id: studentId, // Use NIS as Document ID
       nis: _nisController.text.trim(),
       nisn: _nisnController.text.trim(),
       name: _nameController.text.trim(),

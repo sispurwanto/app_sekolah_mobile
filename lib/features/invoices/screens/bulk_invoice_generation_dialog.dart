@@ -115,43 +115,56 @@ class _BulkInvoiceGenerationDialogState
               style: TextStyle(fontSize: 14, color: Colors.black87),
             ),
             const SizedBox(height: 16),
-            StreamBuilder<List<FeeTemplate>>(
-              stream: _feeTemplateService.getFeeTemplates(schoolId),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+            FutureBuilder(
+              future: AcademicYearService().getActiveAcademicYear(schoolId),
+              builder: (context, yearSnapshot) {
+                if (yearSnapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                if (snapshot.hasError || !snapshot.hasData) {
-                  return const Text('Gagal memuat Master Tagihan');
+                final activeYear = yearSnapshot.data;
+                if (activeYear == null) {
+                  return const Text('Tahun Ajaran aktif belum diatur.', style: TextStyle(color: Colors.red));
                 }
 
-                final templates = snapshot.data!;
-                if (templates.isEmpty) {
-                  return const Text('Belum ada Master Tagihan yang dibuat.');
-                }
+                return StreamBuilder<List<FeeTemplate>>(
+                  stream: _feeTemplateService.getFeeTemplates(schoolId, activeYear.id),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError || !snapshot.hasData) {
+                      return const Text('Gagal memuat Master Tagihan');
+                    }
 
-                return DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(
-                    labelText: 'Pilih Master Tagihan',
-                    border: OutlineInputBorder(),
-                  ),
-                  value: _selectedTemplateId,
-                  isExpanded: true,
-                  items: templates.map((template) {
-                    final target = (template.classId != null &&
-                            template.classId!.isNotEmpty)
-                        ? 'Khusus Kelas ${template.classId}'
-                        : 'Semua Kelas';
-                    return DropdownMenuItem<String>(
-                      value: template.id,
-                      child: Text('${template.title} ($target)'),
+                    final templates = snapshot.data!;
+                    if (templates.isEmpty) {
+                      return const Text('Belum ada Master Tagihan di tahun ini.');
+                    }
+
+                    return DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Pilih Master Tagihan',
+                        border: OutlineInputBorder(),
+                      ),
+                      value: _selectedTemplateId,
+                      isExpanded: true,
+                      items: templates.map((template) {
+                        final target = (template.classId != null &&
+                                template.classId!.isNotEmpty)
+                            ? 'Khusus Kelas ${template.classId}'
+                            : 'Semua Kelas';
+                        return DropdownMenuItem<String>(
+                          value: template.id,
+                          child: Text('${template.title} ($target)'),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          _selectedTemplateId = val;
+                          _selectedTemplate = templates.firstWhere((t) => t.id == val);
+                        });
+                      },
                     );
-                  }).toList(),
-                  onChanged: (val) {
-                    setState(() {
-                      _selectedTemplateId = val;
-                      _selectedTemplate = templates.firstWhere((t) => t.id == val);
-                    });
                   },
                 );
               },

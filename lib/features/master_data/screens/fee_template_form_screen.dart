@@ -4,6 +4,7 @@ import '../../../core/models/fee_template.dart';
 import '../../../core/models/app_class.dart';
 import '../../../core/providers/school_provider.dart';
 import '../services/fee_template_service.dart';
+import '../services/academic_year_service.dart';
 import '../services/class_service.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 import '../../../../core/utils/currency_input_formatter.dart';
@@ -88,6 +89,13 @@ class _FeeTemplateFormScreenState extends State<FeeTemplateFormScreen> {
       }
     }
 
+    final activeYear = await AcademicYearService().getActiveAcademicYear(schoolId);
+    if (activeYear == null) {
+      SnackbarUtils.showErrorSnackbar('Tahun Ajaran aktif belum diatur');
+      setState(() => _isLoading = false);
+      return;
+    }
+
     final template = FeeTemplate(
       id: _idController.text.trim(),
       title: _titleController.text.trim(),
@@ -97,6 +105,7 @@ class _FeeTemplateFormScreenState extends State<FeeTemplateFormScreen> {
           ) ??
           0.0,
       classId: _classId,
+      academicYearId: activeYear.id,
       frequency: _frequency,
       dueDateDay: dueDateDay,
       exactDueDate: _frequency != 'MONTHLY' ? _exactDueDate : null,

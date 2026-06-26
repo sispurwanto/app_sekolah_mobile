@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../core/models/student.dart';
+import '../../invoices/services/invoice_service.dart';
+import '../../invoices/services/payment_service.dart';
 
 class StudentService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;

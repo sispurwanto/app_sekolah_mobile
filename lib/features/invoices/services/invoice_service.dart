@@ -522,7 +522,6 @@ class InvoiceService {
         .collection('schools')
         .doc(schoolId)
         .collection('students')
-        .where('academic_year_id', isEqualTo: academicYearId)
         .where('status', isEqualTo: 'ACTIVE');
 
     if (template.classId != null && template.classId!.isNotEmpty) {
@@ -723,5 +722,42 @@ class InvoiceService {
         .collection('distribution_logs')
         .orderBy('created_at', descending: true)
         .snapshots();
+  }
+
+  // Check if a student has any UNPAID invoices in a specific class
+  Future<bool> hasUnpaidInvoicesInClass(
+    String schoolId,
+    String studentId,
+    String classId,
+  ) async {
+    if (classId.isEmpty) return false;
+
+    final yearsSnap = await _db
+        .collection('schools')
+        .doc(schoolId)
+        .collection('transactions_year')
+        .get();
+
+    for (var yearDoc in yearsSnap.docs) {
+      final yearId = yearDoc.id;
+      final invoicesSnap = await _db
+          .collection('schools')
+          .doc(schoolId)
+          .collection('transactions_year')
+          .doc(yearId)
+          .collection('invoices')
+          .doc(classId)
+          .collection('invoices_class_data')
+          .doc(studentId)
+          .collection('invoice_data')
+          .where('status', isNotEqualTo: 'PAID')
+          .limit(1)
+          .get();
+
+      if (invoicesSnap.docs.isNotEmpty) {
+        return true;
+      }
+    }
+    return false;
   }
 }

@@ -356,13 +356,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                                     builder: (context) =>
                                                         InvoiceListScreen(
                                                           studentId: student.id,
-                                                          academicYearId:
-                                                              student
-                                                                  .academicYearId
-                                                                  .isNotEmpty
-                                                              ? student
-                                                                    .academicYearId
-                                                              : null,
+                                                          academicYearId: null,
                                                           classId:
                                                               student
                                                                   .classId

@@ -4,28 +4,83 @@ import 'package:intl/intl.dart';
 import '../../../../core/providers/school_provider.dart';
 import '../../../../core/models/student.dart';
 import '../../../../core/models/student_activity.dart';
+import '../../../../core/models/academic_year.dart';
 import '../services/student_activity_service.dart';
+import '../../master_data/services/academic_year_service.dart';
 import 'activity_form_dialog.dart';
 import '../../../../core/utils/dialog_utils.dart';
 import '../../../../core/utils/snackbar_utils.dart';
 import '../../../../core/widgets/empty_state_widget.dart';
 
-class StudentActivityScreen extends StatelessWidget {
+class StudentActivityScreen extends StatefulWidget {
   final Student student;
   final bool isReadOnly;
 
-  final StudentActivityService _activityService = StudentActivityService();
-
-  StudentActivityScreen({
+  const StudentActivityScreen({
     super.key,
     required this.student,
     this.isReadOnly = false,
   });
 
   @override
+  State<StudentActivityScreen> createState() => _StudentActivityScreenState();
+}
+
+class _StudentActivityScreenState extends State<StudentActivityScreen> {
+  final StudentActivityService _activityService = StudentActivityService();
+  final AcademicYearService _academicYearService = AcademicYearService();
+
+  String? _selectedAcademicYearId;
+  String? _activeAcademicYearId;
+  bool _isLoadingYears = true;
+  List<AcademicYear> _academicYears = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    final schoolId = context.read<SchoolProvider>().activeSchoolId;
+    if (schoolId == null) {
+      if (mounted) setState(() => _isLoadingYears = false);
+      return;
+    }
+
+    try {
+      final years = await _academicYearService.getAcademicYears(schoolId).first;
+      if (years.isNotEmpty) {
+        final activeYear = years.firstWhere((y) => y.isActive, orElse: () => years.first);
+        if (mounted) {
+          setState(() {
+            _academicYears = years;
+            _activeAcademicYearId = activeYear.id;
+            _selectedAcademicYearId = activeYear.id;
+            _isLoadingYears = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _selectedAcademicYearId = widget.student.academicYearId;
+            _isLoadingYears = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _selectedAcademicYearId = widget.student.academicYearId;
+          _isLoadingYears = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final schoolId = context.watch<SchoolProvider>().activeSchoolId;
-    final academicYearId = student.academicYearId;
 
     if (schoolId == null) {
       return Scaffold(
@@ -34,172 +89,182 @@ class StudentActivityScreen extends StatelessWidget {
       );
     }
 
+    final canEdit = !widget.isReadOnly && _selectedAcademicYearId == _activeAcademicYearId;
+
     return Scaffold(
-      appBar: AppBar(title: Text('Kegiatan: ${student.name}')),
-      body: StreamBuilder<StudentActivity>(
-        stream: _activityService.getStudentActivity(
-          schoolId,
-          academicYearId,
-          student.id,
-        ),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Terjadi kesalahan: ${snapshot.error}'));
-          }
-
-          final studentActivity = snapshot.data;
-          final activities = studentActivity?.data ?? [];
-
-          activities.sort((a, b) => b.tgl.compareTo(a.tgl));
-
-          if (activities.isEmpty) {
-            return EmptyStateWidget(
-              icon: Icons.local_activity_outlined,
-              title: 'Belum ada data kegiatan',
-              subtitle: isReadOnly
-                  ? 'Belum ada catatan kegiatan untuk siswa ini.'
-                  : 'Tambahkan data kegiatan siswa melalui tombol di bawah.',
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(8),
-            itemCount: activities.length,
-            itemBuilder: (context, index) {
-              final activity = activities[index];
-              return Card(
-                elevation: 2,
-                margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              activity.name,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _getStatusColor(
-                                activity.status,
-                              ).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              activity.status,
-                              style: TextStyle(
-                                color: _getStatusColor(activity.status),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                        ],
+      appBar: AppBar(title: Text('Kegiatan: ${widget.student.name}')),
+      body: _isLoadingYears
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                if (_academicYears.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedAcademicYearId,
+                      decoration: const InputDecoration(
+                        labelText: 'Tahun Ajaran',
+                        border: OutlineInputBorder(),
                       ),
-                      const SizedBox(height: 8),
-                      Text(activity.keterangan),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            _formatDate(activity.tgl),
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 12,
-                            ),
+                      items: _academicYears.map((ay) {
+                        return DropdownMenuItem(
+                          value: ay.id,
+                          child: Text('${ay.name} ${ay.isActive ? "(Aktif)" : ""}'),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) {
+                          setState(() => _selectedAcademicYearId = val);
+                        }
+                      },
+                    ),
+                  ),
+                Expanded(
+                  child: StreamBuilder<StudentActivity>(
+                    stream: _selectedAcademicYearId == null
+                        ? const Stream.empty()
+                        : _activityService.getStudentActivity(
+                            schoolId,
+                            _selectedAcademicYearId!,
+                            widget.student.id,
                           ),
-                          Text(
-                            'Guru: ${activity.namaGuru}',
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 12,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (snapshot.hasError) {
+                        return Center(child: Text('Terjadi kesalahan: ${snapshot.error}'));
+                      }
+
+                      final studentActivity = snapshot.data;
+                      final activities = studentActivity?.data ?? [];
+
+                      activities.sort((a, b) => b.tgl.compareTo(a.tgl));
+
+                      if (activities.isEmpty) {
+                        return EmptyStateWidget(
+                          icon: Icons.local_activity_outlined,
+                          title: 'Belum ada data kegiatan',
+                          subtitle: canEdit
+                              ? 'Tambahkan data kegiatan siswa melalui tombol di bawah.'
+                              : 'Belum ada catatan kegiatan untuk tahun ajaran ini.',
+                        );
+                      }
+
+                      return ListView.builder(
+                        padding: const EdgeInsets.all(8),
+                        itemCount: activities.length,
+                        itemBuilder: (context, index) {
+                          final activity = activities[index];
+                          return Card(
+                            elevation: 2,
+                            margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          activity.name,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: _getStatusColor(activity.status).withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          activity.status,
+                                          style: TextStyle(
+                                            color: _getStatusColor(activity.status),
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(activity.keterangan),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        _formatDate(activity.tgl),
+                                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                      ),
+                                      Text(
+                                        'Guru: ${activity.namaGuru}',
+                                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                      ),
+                                    ],
+                                  ),
+                                  if (canEdit) ...[
+                                    const Divider(),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        TextButton.icon(
+                                          onPressed: () => _showActivityForm(
+                                            context,
+                                            schoolId,
+                                            _selectedAcademicYearId!,
+                                            activity: activity,
+                                          ),
+                                          icon: const Icon(Icons.edit, size: 16),
+                                          label: const Text('Edit'),
+                                        ),
+                                        TextButton.icon(
+                                          onPressed: () => _confirmDelete(
+                                            context,
+                                            schoolId,
+                                            _selectedAcademicYearId!,
+                                            activity,
+                                          ),
+                                          icon: const Icon(Icons.delete, size: 16, color: Colors.red),
+                                          label: const Text('Hapus', style: TextStyle(color: Colors.red)),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      if (!isReadOnly) ...[
-                        const Divider(),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            TextButton.icon(
-                              onPressed: () => _showActivityForm(
-                                context,
-                                schoolId,
-                                academicYearId,
-                                activity: activity,
-                              ),
-                              icon: const Icon(Icons.edit, size: 16),
-                              label: const Text('Edit'),
-                            ),
-                            TextButton.icon(
-                              onPressed: () => _confirmDelete(
-                                context,
-                                schoolId,
-                                academicYearId,
-                                activity,
-                              ),
-                              icon: const Icon(
-                                Icons.delete,
-                                size: 16,
-                                color: Colors.red,
-                              ),
-                              label: const Text(
-                                'Hapus',
-                                style: TextStyle(color: Colors.red),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
+                          );
+                        },
+                      );
+                    },
                   ),
                 ),
-              );
-            },
-          );
-        },
-      ),
-      floatingActionButton: isReadOnly
-          ? null
-          : FloatingActionButton(
-              onPressed: () =>
-                  _showActivityForm(context, schoolId, academicYearId),
-              child: const Icon(Icons.add),
+              ],
             ),
+      floatingActionButton: canEdit
+          ? FloatingActionButton(
+              onPressed: () => _showActivityForm(context, schoolId, _selectedAcademicYearId!),
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
-      // case 'hadir':
-      // case 'selesai':
       case 'baik':
         return Colors.green;
-      // case 'izin':
       case 'cukup':
         return Colors.blue;
-      // case 'sakit':
       case 'kurang':
         return Colors.orange;
-      // case 'alpha':
       case 'buruk':
         return Colors.red;
       default:
@@ -227,7 +292,7 @@ class StudentActivityScreen extends StatelessWidget {
       builder: (context) => ActivityFormDialog(
         schoolId: schoolId,
         academicYearId: academicYearId,
-        student: student,
+        student: widget.student,
         existingEntry: activity,
       ),
     );
@@ -251,7 +316,7 @@ class StudentActivityScreen extends StatelessWidget {
         await _activityService.removeActivityEntry(
           schoolId,
           academicYearId,
-          student.id,
+          widget.student.id,
           activity,
         );
         SnackbarUtils.showSnackbar('Kegiatan berhasil dihapus');

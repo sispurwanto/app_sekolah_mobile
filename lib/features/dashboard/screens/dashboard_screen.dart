@@ -21,9 +21,12 @@ import '../../savings/screens/savings_report_screen.dart';
 import 'widgets/wali_dashboard_view.dart';
 import 'widgets/bendahara_dashboard_view.dart';
 import 'widgets/siswa_dashboard_view.dart';
+import '../../master_data/services/academic_year_service.dart';
 
 import 'widgets/guru_dashboard_view.dart';
 import '../../invoices/screens/invoice_distribution_log_screen.dart';
+import '../../student_management/screens/bulk_promotion_screen.dart';
+import '../../invoices/screens/arrears_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -121,37 +124,35 @@ class DashboardScreen extends StatelessWidget {
                 },
               ),
 
+            if (role == 'SUPER_ADMIN' || role == 'ADMIN' || role == 'GURU')
+              ListTile(
+                leading: const Icon(Icons.upgrade),
+                title: const Text('Kenaikan Kelas Massal'),
+                onTap: () {
+                  Navigator.pop(context); // Close drawer
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const BulkPromotionScreen()),
+                  );
+                },
+              ),
+
             // Menu untuk SUPER_ADMIN dan ADMIN dikelompokkan ke Data Master
-            if (role == 'SUPER_ADMIN' || role == 'ADMIN')
+            if (role == 'SUPER_ADMIN' || role == 'ADMIN') ...[
               ExpansionTile(
                 leading: const Icon(Icons.storage),
                 title: const Text('Data Master'),
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.face),
-                    title: const Text('Siswa'),
+                    leading: const Icon(Icons.calendar_month),
+                    title: const Text('Tahun Ajaran'),
                     contentPadding: const EdgeInsets.only(left: 40),
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => StudentListScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.face),
-                    title: const Text('Siswa Lulus / Nonaktif'),
-                    contentPadding: const EdgeInsets.only(left: 40),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) =>
-                              const StudentListScreen(activeOnly: false),
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AcademicYearListScreen(),
                         ),
                       );
                     },
@@ -163,8 +164,8 @@ class DashboardScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
-                      context,
-                      MaterialPageRoute(
+                        context,
+                        MaterialPageRoute(
                           builder: (context) => ClassListScreen(),
                         ),
                       );
@@ -177,8 +178,8 @@ class DashboardScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
-                      context,
-                      MaterialPageRoute(
+                        context,
+                        MaterialPageRoute(
                           builder: (context) => ActivityMasterListScreen(),
                         ),
                       );
@@ -191,13 +192,47 @@ class DashboardScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
-                      context,
-                      MaterialPageRoute(
+                        context,
+                        MaterialPageRoute(
                           builder: (context) => SubjectListScreen(),
                         ),
                       );
                     },
                   ),
+                  ListTile(
+                    leading: const Icon(Icons.face),
+                    title: const Text('Siswa'),
+                    contentPadding: const EdgeInsets.only(left: 40),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => StudentListScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.face),
+                    title: const Text('Siswa Lulus / Nonaktif'),
+                    contentPadding: const EdgeInsets.only(left: 40),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const StudentListScreen(activeOnly: false),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+              ExpansionTile(
+                leading: const Icon(Icons.compare_arrows),
+                title: const Text('Transaksi'),
+                children: [
                   ListTile(
                     leading: const Icon(Icons.calendar_view_week),
                     title: const Text('Jadwal Pelajaran'),
@@ -205,23 +240,9 @@ class DashboardScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
-                      context,
-                      MaterialPageRoute(
+                        context,
+                        MaterialPageRoute(
                           builder: (context) => const ScheduleListScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  ListTile(
-                    leading: const Icon(Icons.calendar_month),
-                    title: const Text('Tahun Ajaran'),
-                    contentPadding: const EdgeInsets.only(left: 40),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => AcademicYearListScreen(),
                         ),
                       );
                     },
@@ -233,8 +254,8 @@ class DashboardScreen extends StatelessWidget {
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
-                      context,
-                      MaterialPageRoute(
+                        context,
+                        MaterialPageRoute(
                           builder: (context) => FeeTemplateListScreen(),
                         ),
                       );
@@ -256,6 +277,7 @@ class DashboardScreen extends StatelessWidget {
                   ),
                 ],
               ),
+            ],
 
             if (role == 'KEPALA_SEKOLAH')
               ListTile(
@@ -267,6 +289,21 @@ class DashboardScreen extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                       builder: (context) => const StudentListScreen(),
+                    ),
+                  );
+                },
+              ),
+
+            if (role == 'SUPER_ADMIN' || role == 'ADMIN' || role == 'BENDAHARA')
+              ListTile(
+                leading: const Icon(Icons.history_edu, color: Colors.red),
+                title: const Text('Tunggakan Lintas Tahun', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ArrearsScreen(),
                     ),
                   );
                 },
@@ -373,25 +410,39 @@ class DashboardScreen extends StatelessWidget {
           ],
         ),
         child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Active School: ${schoolId.split('_').map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '').join(' ')}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-              Text(
-                'Your Role: $role',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue,
-                  fontSize: 12,
-                ),
-              ),
-            ],
+          child: FutureBuilder(
+            future: AcademicYearService().getActiveAcademicYear(schoolId),
+            builder: (context, snapshot) {
+              final activeYear = snapshot.data?.name ?? 'Belum Diatur';
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Active School: ${schoolId.split('_').map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '').join(' ')}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                  Text(
+                    'Your Role: $role',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                      fontSize: 12,
+                    ),
+                  ),
+                  Text(
+                    'T.A Aktif: $activeYear',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
