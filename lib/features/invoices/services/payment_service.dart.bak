@@ -6,76 +6,6 @@ import '../../../core/models/invoice.dart';
 class PaymentService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  DocumentReference _getStudentSummaryRef(String schoolId, String academicYearId, String studentId) {
-    return _db
-        .collection('schools')
-        .doc(schoolId)
-        .collection('transactions_year')
-        .doc(academicYearId)
-        .collection('invoices')
-        .doc(studentId);
-  }
-
-  DocumentReference _getGlobalSummaryRef(String schoolId, String academicYearId) {
-    return _db
-        .collection('schools')
-        .doc(schoolId)
-        .collection('transactions_year')
-        .doc(academicYearId)
-        .collection('invoice_summary')
-        .doc('global');
-  }
-
-  void _incrementSummary(WriteBatch batch, DocumentReference ref, {
-    int unpaidCount = 0, double unpaidAmount = 0,
-    int paidCount = 0, double paidAmount = 0,
-    int partialCount = 0, double partialAmount = 0,
-  }) {
-    Map<String, dynamic> updates = {};
-    if (unpaidCount != 0) updates['unpaid_count'] = FieldValue.increment(unpaidCount);
-    if (unpaidAmount != 0) updates['unpaid_amount'] = FieldValue.increment(unpaidAmount);
-    if (paidCount != 0) updates['paid_count'] = FieldValue.increment(paidCount);
-    if (paidAmount != 0) updates['paid_amount'] = FieldValue.increment(paidAmount);
-    if (partialCount != 0) updates['partial_count'] = FieldValue.increment(partialCount);
-    if (partialAmount != 0) updates['partial_amount'] = FieldValue.increment(partialAmount);
-    
-    updates['updated_at'] = FieldValue.serverTimestamp();
-    batch.set(ref, updates, SetOptions(merge: true));
-  }
-
-  void _applyStatusChangeToSummary(WriteBatch batch, DocumentReference ref, String oldStatus, String newStatus, double amountPaid) {
-    int unpaidCount = 0; double unpaidAmount = 0;
-    int partialCount = 0; double partialAmount = 0;
-    int paidCount = 0; double paidAmount = 0;
-
-    if (oldStatus == 'UNPAID' && newStatus == 'PARTIAL') {
-      unpaidCount = -1;
-      partialCount = 1;
-      partialAmount = amountPaid;
-    } else if (oldStatus == 'UNPAID' && newStatus == 'PAID') {
-      unpaidCount = -1;
-      unpaidAmount = -amountPaid;
-      paidCount = 1;
-      paidAmount = amountPaid;
-    } else if (oldStatus == 'PARTIAL' && newStatus == 'PARTIAL') {
-      partialAmount = amountPaid;
-    } else if (oldStatus == 'PARTIAL' && newStatus == 'PAID') {
-      partialCount = -1;
-      paidCount = 1;
-      // We don't have the total amount here if it's partial to paid, 
-      // but amountPaid is the diff to reach fully paid. 
-      // Wait, paidAmount needs to increase by the total invoice amount eventually. 
-      // This is tricky. Let's simplify: unpaidAmount represents total of UNPAID invoices. 
-      // Wait, my summary tracks the sums. 
-      // If UNPAID -> PAID, unpaidAmount drops by invoice.amount, paidAmount increases by invoice.amount.
-      // If UNPAID -> PARTIAL, unpaidAmount drops by invoice.amount? No, partialAmount increases by invoice.amount - paidAmount.
-      // Let's just track the raw amounts in the summary instead of complex deltas?
-      // Actually, if we just do `unpaidAmount += -amountPaid` it is wrong if it changes status.
-      // Let's ignore amount logic for partial transitions in summary to avoid complexity, or we just rely on Recalculate if it drifts.
-      // But we can do it properly:
-    }
-  }
-
   // Create a new Payment.
   // If method is CASH (done by Kasir/Bendahara), automatically approve it and update invoice.
   // If method is TRANSFER (done by Wali), leave it PENDING.
@@ -87,13 +17,14 @@ class PaymentService {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     final batch = _db.batch();
 
+    // The payment document reference
     final paymentRef = _db
         .collection('schools')
         .doc(schoolId)
         .collection('transactions_year')
         .doc(payment.academicYearId)
         .collection('payments')
-        .doc(); 
+        .doc(); // Auto ID
 
     final paymentData = payment.toMap();
     paymentData['created_by'] = uid;
@@ -102,6 +33,7 @@ class PaymentService {
 
     batch.set(paymentRef, paymentData);
 
+    // If it's cash, it is automatically approved, so we update the invoice immediately
     if (payment.method == 'CASH' && payment.status == 'APPROVED') {
       final double newPaidAmount = invoice.paidAmount + payment.amount;
       String newStatus = invoice.status;
@@ -118,6 +50,8 @@ class PaymentService {
           .collection('transactions_year')
           .doc(invoice.academicYearId)
           .collection('invoices')
+          .doc(invoice.classId)
+          .collection('invoices_class_data')
           .doc(invoice.studentId)
           .collection('invoice_data')
           .doc(invoice.id);
@@ -128,29 +62,6 @@ class PaymentService {
         'updated_at': FieldValue.serverTimestamp(),
         'updated_by': uid,
       });
-
-      // Update Summary
-      final studentRef = _getStudentSummaryRef(schoolId, invoice.academicYearId, invoice.studentId);
-      final globalRef = _getGlobalSummaryRef(schoolId, invoice.academicYearId);
-      
-      int unpaidC = 0, paidC = 0, partialC = 0;
-      double unpaidA = 0, paidA = 0, partialA = 0;
-
-      if (invoice.status == 'UNPAID' && newStatus == 'PAID') {
-        unpaidC = -1; unpaidA = -invoice.amount;
-        paidC = 1; paidA = invoice.amount;
-      } else if (invoice.status == 'UNPAID' && newStatus == 'PARTIAL') {
-        unpaidC = -1; unpaidA = -invoice.amount;
-        partialC = 1; partialA = (invoice.amount - newPaidAmount);
-      } else if (invoice.status == 'PARTIAL' && newStatus == 'PAID') {
-        partialC = -1; partialA = -(invoice.amount - invoice.paidAmount);
-        paidC = 1; paidA = invoice.amount;
-      } else if (invoice.status == 'PARTIAL' && newStatus == 'PARTIAL') {
-        partialA = -payment.amount; // Just reduce the partial amount by payment
-      }
-
-      _incrementSummary(batch, studentRef, unpaidCount: unpaidC, unpaidAmount: unpaidA, paidCount: paidC, paidAmount: paidA, partialCount: partialC, partialAmount: partialA);
-      _incrementSummary(batch, globalRef, unpaidCount: unpaidC, unpaidAmount: unpaidA, paidCount: paidC, paidAmount: paidA, partialCount: partialC, partialAmount: partialA);
     }
 
     await batch.commit();
@@ -180,10 +91,8 @@ class PaymentService {
 
     batch.set(paymentRef, paymentData);
 
+    // If CASH, update all invoices immediately
     if (payment.method == 'CASH' && payment.status == 'APPROVED') {
-      int unpaidC = 0, paidC = 0, partialC = 0;
-      double unpaidA = 0, paidA = 0, partialA = 0;
-
       for (final invoice in invoices) {
         final invoiceRef = _db
             .collection('schools')
@@ -191,33 +100,18 @@ class PaymentService {
             .collection('transactions_year')
             .doc(invoice.academicYearId)
             .collection('invoices')
+            .doc(invoice.classId)
+            .collection('invoices_class_data')
             .doc(invoice.studentId)
             .collection('invoice_data')
             .doc(invoice.id);
 
         batch.update(invoiceRef, {
-          'paid_amount': invoice.amount, 
+          'paid_amount': invoice.amount, // Bulk is always fully paid
           'status': 'PAID',
           'updated_at': FieldValue.serverTimestamp(),
           'updated_by': uid,
         });
-
-        if (invoice.status == 'UNPAID') {
-          unpaidC -= 1; unpaidA -= invoice.amount;
-          paidC += 1; paidA += invoice.amount;
-        } else if (invoice.status == 'PARTIAL') {
-          partialC -= 1; partialA -= (invoice.amount - invoice.paidAmount);
-          paidC += 1; paidA += invoice.amount;
-        }
-      }
-
-      if (invoices.isNotEmpty) {
-        final invoice = invoices.first;
-        final studentRef = _getStudentSummaryRef(schoolId, invoice.academicYearId, invoice.studentId);
-        final globalRef = _getGlobalSummaryRef(schoolId, invoice.academicYearId);
-        
-        _incrementSummary(batch, studentRef, unpaidCount: unpaidC, unpaidAmount: unpaidA, paidCount: paidC, paidAmount: paidA, partialCount: partialC, partialAmount: partialA);
-        _incrementSummary(batch, globalRef, unpaidCount: unpaidC, unpaidAmount: unpaidA, paidCount: paidC, paidAmount: paidA, partialCount: partialC, partialAmount: partialA);
       }
     }
 
@@ -225,6 +119,7 @@ class PaymentService {
   }
 
   // Approve a pending transfer payment
+  // Approve a pending transfer payment (single or bulk)
   Future<void> approvePayment(
     String schoolId,
     Payment payment, [
@@ -236,6 +131,7 @@ class PaymentService {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     final batch = _db.batch();
 
+    // 1. Update Payment status to APPROVED
     final paymentRef = _db
         .collection('schools')
         .doc(schoolId)
@@ -254,10 +150,9 @@ class PaymentService {
     }
     batch.update(paymentRef, updateData);
 
-    int unpaidC = 0, paidC = 0, partialC = 0;
-    double unpaidA = 0, paidA = 0, partialA = 0;
-
     if (payment.invoiceIds != null && payment.invoiceIds!.isNotEmpty) {
+      // MULTIPLE OR SINGLE PAYMENT WITHOUT INVOICE OBJECT
+      // We iterate over the invoiceIds and use the corresponding amount in invoiceAmounts
       for (int i = 0; i < payment.invoiceIds!.length; i++) {
         final invId = payment.invoiceIds![i];
         final amountPaidForThisInvoice =
@@ -271,6 +166,8 @@ class PaymentService {
             .collection('transactions_year')
             .doc(payment.academicYearId)
             .collection('invoices')
+            .doc(payment.classId)
+            .collection('invoices_class_data')
             .doc(payment.studentId)
             .collection('invoice_data')
             .doc(invId);
@@ -294,22 +191,10 @@ class PaymentService {
             'updated_at': FieldValue.serverTimestamp(),
             'updated_by': uid,
           });
-
-          if (invData.status == 'UNPAID' && newStatus == 'PAID') {
-            unpaidC -= 1; unpaidA -= invData.amount;
-            paidC += 1; paidA += invData.amount;
-          } else if (invData.status == 'UNPAID' && newStatus == 'PARTIAL') {
-            unpaidC -= 1; unpaidA -= invData.amount;
-            partialC += 1; partialA += (invData.amount - newPaidAmount);
-          } else if (invData.status == 'PARTIAL' && newStatus == 'PAID') {
-            partialC -= 1; partialA -= (invData.amount - invData.paidAmount);
-            paidC += 1; paidA += invData.amount;
-          } else if (invData.status == 'PARTIAL' && newStatus == 'PARTIAL') {
-            partialA -= amountPaidForThisInvoice;
-          }
         }
       }
     } else if (invoice != null) {
+      // SINGLE PAYMENT
       final double newPaidAmount = invoice.paidAmount + payment.amount;
       String newStatus = invoice.status;
 
@@ -325,6 +210,8 @@ class PaymentService {
           .collection('transactions_year')
           .doc(invoice.academicYearId)
           .collection('invoices')
+          .doc(invoice.classId)
+          .collection('invoices_class_data')
           .doc(invoice.studentId)
           .collection('invoice_data')
           .doc(invoice.id);
@@ -335,27 +222,6 @@ class PaymentService {
         'updated_at': FieldValue.serverTimestamp(),
         'updated_by': uid,
       });
-
-      if (invoice.status == 'UNPAID' && newStatus == 'PAID') {
-        unpaidC -= 1; unpaidA -= invoice.amount;
-        paidC += 1; paidA += invoice.amount;
-      } else if (invoice.status == 'UNPAID' && newStatus == 'PARTIAL') {
-        unpaidC -= 1; unpaidA -= invoice.amount;
-        partialC += 1; partialA += (invoice.amount - newPaidAmount);
-      } else if (invoice.status == 'PARTIAL' && newStatus == 'PAID') {
-        partialC -= 1; partialA -= (invoice.amount - invoice.paidAmount);
-        paidC += 1; paidA += invoice.amount;
-      } else if (invoice.status == 'PARTIAL' && newStatus == 'PARTIAL') {
-        partialA -= payment.amount;
-      }
-    }
-
-    if (unpaidC != 0 || paidC != 0 || partialC != 0 || unpaidA != 0 || paidA != 0 || partialA != 0) {
-      final studentRef = _getStudentSummaryRef(schoolId, payment.academicYearId, payment.studentId);
-      final globalRef = _getGlobalSummaryRef(schoolId, payment.academicYearId);
-      
-      _incrementSummary(batch, studentRef, unpaidCount: unpaidC, unpaidAmount: unpaidA, paidCount: paidC, paidAmount: paidA, partialCount: partialC, partialAmount: partialA);
-      _incrementSummary(batch, globalRef, unpaidCount: unpaidC, unpaidAmount: unpaidA, paidCount: paidC, paidAmount: paidA, partialCount: partialC, partialAmount: partialA);
     }
 
     await batch.commit();
@@ -433,10 +299,12 @@ class PaymentService {
         .map((doc) => Payment.fromFirestore(doc))
         .toList();
 
+    // Filter by status locally
     final filtered = payments.where((p) {
       return p.status == 'APPROVED';
     }).toList();
 
+    // Sort descending (newest first)
     filtered.sort((a, b) => b.createdAt!.compareTo(a.createdAt!));
 
     return filtered;

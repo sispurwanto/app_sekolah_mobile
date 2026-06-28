@@ -7,56 +7,15 @@ import '../../../core/models/payment.dart';
 class InvoiceService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // Helper method to get the summary refs
-  DocumentReference _getStudentSummaryRef(String schoolId, String academicYearId, String studentId) {
-    return _db
-        .collection('schools')
-        .doc(schoolId)
-        .collection('transactions_year')
-        .doc(academicYearId)
-        .collection('invoices')
-        .doc(studentId);
-  }
-
-  DocumentReference _getGlobalSummaryRef(String schoolId, String academicYearId) {
-    return _db
-        .collection('schools')
-        .doc(schoolId)
-        .collection('transactions_year')
-        .doc(academicYearId)
-        .collection('invoice_summary')
-        .doc('global');
-  }
-
-  // Helper to increment summary stats atomically
-  void _incrementSummary(WriteBatch batch, DocumentReference ref, {
-    int unpaidCount = 0, double unpaidAmount = 0,
-    int paidCount = 0, double paidAmount = 0,
-    int partialCount = 0, double partialAmount = 0,
-    String? studentName, String? classId,
-  }) {
-    Map<String, dynamic> updates = {};
-    if (unpaidCount != 0) updates['unpaid_count'] = FieldValue.increment(unpaidCount);
-    if (unpaidAmount != 0) updates['unpaid_amount'] = FieldValue.increment(unpaidAmount);
-    if (paidCount != 0) updates['paid_count'] = FieldValue.increment(paidCount);
-    if (paidAmount != 0) updates['paid_amount'] = FieldValue.increment(paidAmount);
-    if (partialCount != 0) updates['partial_count'] = FieldValue.increment(partialCount);
-    if (partialAmount != 0) updates['partial_amount'] = FieldValue.increment(partialAmount);
-    
-    if (studentName != null) updates['student_name'] = studentName;
-    if (classId != null) updates['class_id'] = classId;
-    
-    updates['updated_at'] = FieldValue.serverTimestamp();
-
-    batch.set(ref, updates, SetOptions(merge: true));
-  }
-
   // Get stream of all invoices for Bendahara/Admin using Collection Group
   Stream<List<Invoice>> getAllInvoices(String schoolId, String academicYearId) {
     return _db
         .collectionGroup('invoice_data')
-        .where('school_id', isEqualTo: schoolId)
-        .where('academic_year_id', isEqualTo: academicYearId)
+        .where('school_id', isEqualTo: schoolId) // Filter by school
+        .where(
+          'academic_year_id',
+          isEqualTo: academicYearId,
+        ) // Filter by active academic year
         .orderBy('due_date', descending: false)
         .snapshots()
         .map((snapshot) {
@@ -89,6 +48,7 @@ class InvoiceService {
     DateTime startDate,
     DateTime endDate,
   ) async {
+    // 1. Kunci maksimal 31 hari
     if (endDate.difference(startDate).inDays > 31) {
       endDate = startDate.add(const Duration(days: 31));
     }
@@ -100,6 +60,7 @@ class InvoiceService {
       DateTime(endDate.year, endDate.month, endDate.day, 23, 59, 59),
     );
 
+    // 2. Fetch semua siswa aktif
     final studentsSnapshot = await _db
         .collection('schools')
         .doc(schoolId)
@@ -107,6 +68,7 @@ class InvoiceService {
         .where('status', isEqualTo: 'ACTIVE')
         .get();
 
+    // 3. Fetch semua pembayaran di rentang tanggal ini
     final paymentsSnapshot = await _db
         .collection('schools')
         .doc(schoolId)
@@ -117,6 +79,7 @@ class InvoiceService {
         .where('created_at', isLessThanOrEqualTo: endTimestamp)
         .get();
 
+    // 4. Filter pembayaran yang Lunas (lokal) dan parsing
     final parsedPayments = paymentsSnapshot.docs
         .map((d) => Payment.fromFirestore(d))
         .where((p) => p.status == 'APPROVED')
@@ -127,8 +90,10 @@ class InvoiceService {
           (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)),
     );
 
+    // 5. Cari student_id yang ADA pembayarannya di periode tersebut
     final paidStudentIds = parsedPayments.map((p) => p.studentId).toSet();
 
+    // 6. Buat daftar tunggakan untuk siswa yang TIDAK ADA di paidStudentIds
     List<Invoice> arrears = [];
     for (var doc in studentsSnapshot.docs) {
       final studentId = doc.id;
@@ -152,14 +117,18 @@ class InvoiceService {
       }
     }
 
+    // Sort by student name
     arrears.sort((a, b) => a.studentName.compareTo(b.studentName));
+
     return (payments: parsedPayments, arrears: arrears);
   }
 
-  // Get stream of invoices for a specific student in a specific academic year
+  // Get stream of invoices for a specific student in a specific academic year and class
+  // Path: schools/{schoolId}/transactions_year/{academicYearId}/invoices/{classId}/invoices_class_data/{studentId}/invoice_data
   Stream<List<Invoice>> getStudentInvoices(
     String schoolId,
     String academicYearId,
+    String classId,
     String studentId,
   ) {
     return _db
@@ -168,6 +137,8 @@ class InvoiceService {
         .collection('transactions_year')
         .doc(academicYearId)
         .collection('invoices')
+        .doc(classId)
+        .collection('invoices_class_data')
         .doc(studentId)
         .collection('invoice_data')
         .snapshots()
@@ -195,6 +166,7 @@ class InvoiceService {
   Future<List<Invoice>> fetchStudentInvoices(
     String schoolId,
     String academicYearId,
+    String classId,
     String studentId, {
     Source source = Source.serverAndCache,
   }) async {
@@ -204,6 +176,8 @@ class InvoiceService {
         .collection('transactions_year')
         .doc(academicYearId)
         .collection('invoices')
+        .doc(classId)
+        .collection('invoices_class_data')
         .doc(studentId)
         .collection('invoice_data')
         .get(GetOptions(source: source));
@@ -230,6 +204,7 @@ class InvoiceService {
   Future<List<Invoice>> fetchStudentInvoicesPaginated(
     String schoolId,
     String academicYearId,
+    String classId,
     String studentId, {
     required bool isPaid,
     int? limitCount,
@@ -240,6 +215,8 @@ class InvoiceService {
         .collection('transactions_year')
         .doc(academicYearId)
         .collection('invoices')
+        .doc(classId)
+        .collection('invoices_class_data')
         .doc(studentId)
         .collection('invoice_data');
 
@@ -248,6 +225,9 @@ class InvoiceService {
     } else {
       query = query.where('status', whereIn: ['UNPAID', 'PARTIAL']);
     }
+
+    // Hapus orderBy untuk menghindari error composite index
+    // query = query.orderBy('due_date', descending: false);
 
     final snapshot = await query.get();
     var invoices = snapshot.docs
@@ -258,11 +238,13 @@ class InvoiceService {
         )
         .toList();
 
+    // Sort locally by due_date
     invoices.sort(
       (a, b) =>
           (a.dueDate ?? DateTime.now()).compareTo(b.dueDate ?? DateTime.now()),
     );
 
+    // Apply limit locally
     if (limitCount != null && invoices.length > limitCount) {
       invoices = invoices.take(limitCount).toList();
     }
@@ -276,14 +258,36 @@ class InvoiceService {
       throw Exception('Student ID is required to create an invoice');
     if (invoice.academicYearId.isEmpty)
       throw Exception('Academic Year ID is required');
+    if (invoice.classId.isEmpty) throw Exception('Class ID is required');
 
     final uid = FirebaseAuth.instance.currentUser?.uid;
     final batch = _db.batch();
 
-    final studentSummaryRef = _getStudentSummaryRef(schoolId, invoice.academicYearId, invoice.studentId);
-    final globalSummaryRef = _getGlobalSummaryRef(schoolId, invoice.academicYearId);
-    
-    final docRef = studentSummaryRef.collection('invoice_data').doc();
+    final classInvoiceRef = _db
+        .collection('schools')
+        .doc(schoolId)
+        .collection('transactions_year')
+        .doc(invoice.academicYearId)
+        .collection('invoices')
+        .doc(invoice.classId);
+
+    batch.set(classInvoiceRef, {
+      'status': 'ACTIVE',
+      'updated_at': FieldValue.serverTimestamp(),
+      'updated_by': uid,
+    }, SetOptions(merge: true));
+
+    final studentInvoiceRef = classInvoiceRef
+        .collection('invoices_class_data')
+        .doc(invoice.studentId);
+
+    batch.set(studentInvoiceRef, {
+      'status': 'ACTIVE',
+      'updated_at': FieldValue.serverTimestamp(),
+      'updated_by': uid,
+    }, SetOptions(merge: true));
+
+    final docRef = studentInvoiceRef.collection('invoice_data').doc();
     final idToUse = invoice.id.isEmpty ? docRef.id : invoice.id;
 
     final invoiceData = invoice.toMap();
@@ -293,18 +297,15 @@ class InvoiceService {
     invoiceData['updated_at'] = FieldValue.serverTimestamp();
     invoiceData['updated_by'] = uid;
 
-    batch.set(studentSummaryRef.collection('invoice_data').doc(idToUse), invoiceData);
-
-    // Update summaries
-    _incrementSummary(batch, studentSummaryRef, 
-      unpaidCount: 1, unpaidAmount: invoice.amount,
-      studentName: invoice.studentName, classId: invoice.classId);
-    _incrementSummary(batch, globalSummaryRef, unpaidCount: 1, unpaidAmount: invoice.amount);
+    batch.set(
+      studentInvoiceRef.collection('invoice_data').doc(idToUse),
+      invoiceData,
+    );
 
     await batch.commit();
   }
 
-  // Update existing invoice (Be careful, if amount changes, summaries should change. For simplicity, manual edits should be avoided on amount if unpaid. If needed, you might need complex logic. For now, assuming basic update.)
+  // Update existing invoice
   Future<void> updateInvoice(String schoolId, Invoice invoice) async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     final data = invoice.toMap();
@@ -319,6 +320,8 @@ class InvoiceService {
         .collection('transactions_year')
         .doc(invoice.academicYearId)
         .collection('invoices')
+        .doc(invoice.classId)
+        .collection('invoices_class_data')
         .doc(invoice.studentId)
         .collection('invoice_data')
         .doc(invoice.id)
@@ -329,51 +332,22 @@ class InvoiceService {
   Future<void> deleteInvoice(
     String schoolId,
     String academicYearId,
+    String classId,
     String studentId,
     String invoiceId,
   ) async {
-    final docRef = _db
+    await _db
         .collection('schools')
         .doc(schoolId)
         .collection('transactions_year')
         .doc(academicYearId)
         .collection('invoices')
+        .doc(classId)
+        .collection('invoices_class_data')
         .doc(studentId)
         .collection('invoice_data')
-        .doc(invoiceId);
-
-    final snapshot = await docRef.get();
-    if (!snapshot.exists) return;
-    
-    final invoice = Invoice.fromFirestore(snapshot);
-    final batch = _db.batch();
-
-    batch.delete(docRef);
-
-    final studentSummaryRef = _getStudentSummaryRef(schoolId, academicYearId, studentId);
-    final globalSummaryRef = _getGlobalSummaryRef(schoolId, academicYearId);
-
-    // Revert summary amounts based on status
-    int unpaidCount = invoice.status == 'UNPAID' ? -1 : 0;
-    double unpaidAmount = invoice.status == 'UNPAID' ? -invoice.amount : 0;
-    
-    int partialCount = invoice.status == 'PARTIAL' ? -1 : 0;
-    double partialAmount = invoice.status == 'PARTIAL' ? -(invoice.amount - invoice.paidAmount) : 0;
-    
-    int paidCount = invoice.status == 'PAID' ? -1 : 0;
-    double paidAmount = invoice.status == 'PAID' ? -invoice.amount : 0;
-
-    _incrementSummary(batch, studentSummaryRef, 
-      unpaidCount: unpaidCount, unpaidAmount: unpaidAmount,
-      partialCount: partialCount, partialAmount: partialAmount,
-      paidCount: paidCount, paidAmount: paidAmount);
-
-    _incrementSummary(batch, globalSummaryRef, 
-      unpaidCount: unpaidCount, unpaidAmount: unpaidAmount,
-      partialCount: partialCount, partialAmount: partialAmount,
-      paidCount: paidCount, paidAmount: paidAmount);
-
-    await batch.commit();
+        .doc(invoiceId)
+        .delete();
   }
 
   // Generate Invoices for a specific student based on Fee Templates
@@ -384,8 +358,9 @@ class InvoiceService {
     required String studentId,
     required String studentName,
   }) async {
-    if (academicYearId.isEmpty) return;
+    if (classId.isEmpty || academicYearId.isEmpty) return;
 
+    // 1. Fetch all Fee Templates for this school
     final templatesSnapshot = await _db
         .collection('schools')
         .doc(schoolId)
@@ -396,29 +371,55 @@ class InvoiceService {
         .map((doc) => FeeTemplate.fromFirestore(doc))
         .toList();
 
+    // 2. Filter templates (Generic / No Class OR Specific to this class)
     final applicableTemplates = templates
-        .where((t) => t.classId == null || t.classId!.isEmpty || t.classId == classId)
+        .where(
+          (t) =>
+              t.classId == null || t.classId!.isEmpty || t.classId == classId,
+        )
         .toList();
 
     if (applicableTemplates.isEmpty) return;
 
+    // 3. Prepare batch write
     final batch = _db.batch();
     final uid = FirebaseAuth.instance.currentUser?.uid;
 
-    final studentSummaryRef = _getStudentSummaryRef(schoolId, academicYearId, studentId);
-    final globalSummaryRef = _getGlobalSummaryRef(schoolId, academicYearId);
-    final invoiceCollectionRef = studentSummaryRef.collection('invoice_data');
+    final classInvoiceRef = _db
+        .collection('schools')
+        .doc(schoolId)
+        .collection('transactions_year')
+        .doc(academicYearId)
+        .collection('invoices')
+        .doc(classId);
 
+    batch.set(classInvoiceRef, {
+      'status': 'ACTIVE',
+      'updated_at': FieldValue.serverTimestamp(),
+      'updated_by': uid,
+    }, SetOptions(merge: true));
+
+    final studentInvoiceRef = classInvoiceRef
+        .collection('invoices_class_data')
+        .doc(studentId);
+
+    batch.set(studentInvoiceRef, {
+      'status': 'ACTIVE',
+      'updated_at': FieldValue.serverTimestamp(),
+      'updated_by': uid,
+    }, SetOptions(merge: true));
+
+    final invoiceCollectionRef = studentInvoiceRef.collection('invoice_data');
+
+    // 4. Check existing invoices to prevent duplicates
     final existingInvoicesSnapshot = await invoiceCollectionRef.get();
     final existingTitles = existingInvoicesSnapshot.docs
         .map((doc) => doc.data()['title'] as String)
         .toSet();
 
-    int generatedCount = 0;
-    double generatedAmount = 0.0;
-
     for (var template in applicableTemplates) {
       if (template.frequency == 'MONTHLY') {
+        // Generate 12 months
         final months = [
           {'name': 'Juli', 'number': 7, 'yearOffset': 0},
           {'name': 'Agustus', 'number': 8, 'yearOffset': 0},
@@ -434,22 +435,31 @@ class InvoiceService {
           {'name': 'Juni', 'number': 6, 'yearOffset': 1},
         ];
 
+        // Extract base year from academicYearId if possible
         int baseYear = DateTime.now().year;
         final yearMatch = RegExp(r'(\d{4})').firstMatch(academicYearId);
-        if (yearMatch != null) baseYear = int.parse(yearMatch.group(1)!);
+        if (yearMatch != null) {
+          baseYear = int.parse(yearMatch.group(1)!);
+        }
 
         for (var month in months) {
           final invoiceTitle = '${template.title} - ${month['name']}';
           if (!existingTitles.contains(invoiceTitle)) {
             final docRef = invoiceCollectionRef.doc();
+
+            // Calc due date
             DateTime dueDate = DateTime.now();
             if (template.dueDateDay != null) {
-              dueDate = DateTime(baseYear + (month['yearOffset'] as int), month['number'] as int, template.dueDateDay!);
+              int targetYear = baseYear + (month['yearOffset'] as int);
+              int targetMonth = month['number'] as int;
+              int targetDay = template.dueDateDay!;
+              // handle invalid day
+              dueDate = DateTime(targetYear, targetMonth, targetDay);
             }
 
             batch.set(docRef, {
-              'student_id': studentId,
-              'student_name': studentName,
+              'studentId': studentId,
+              'studentName': studentName,
               'title': invoiceTitle,
               'amount': template.amount,
               'paid_amount': 0.0,
@@ -463,16 +473,16 @@ class InvoiceService {
               'updated_at': FieldValue.serverTimestamp(),
               'updated_by': uid,
             });
-            generatedCount++;
-            generatedAmount += template.amount;
           }
         }
       } else {
+        // ONCE / YEARLY
         if (!existingTitles.contains(template.title)) {
-          final docRef = invoiceCollectionRef.doc();
+          final docRef = invoiceCollectionRef.doc(); // Auto ID
+
           DateTime dueDate = template.exactDueDate ?? DateTime.now();
 
-          batch.set(docRef, {
+          final invoiceData = {
             'student_id': studentId,
             'student_name': studentName,
             'title': template.title,
@@ -487,20 +497,14 @@ class InvoiceService {
             'created_by': uid,
             'updated_at': FieldValue.serverTimestamp(),
             'updated_by': uid,
-          });
-          generatedCount++;
-          generatedAmount += template.amount;
+          };
+
+          batch.set(docRef, invoiceData);
         }
       }
     }
 
-    if (generatedCount > 0) {
-      _incrementSummary(batch, studentSummaryRef, 
-        unpaidCount: generatedCount, unpaidAmount: generatedAmount,
-        studentName: studentName, classId: classId);
-      _incrementSummary(batch, globalSummaryRef, unpaidCount: generatedCount, unpaidAmount: generatedAmount);
-    }
-
+    // 5. Commit batch
     await batch.commit();
   }
 
@@ -510,29 +514,33 @@ class InvoiceService {
     required String academicYearId,
     required FeeTemplate template,
   }) async {
-    if (academicYearId.isEmpty) throw Exception('Tahun Ajaran aktif belum diatur');
+    if (academicYearId.isEmpty)
+      throw Exception('Tahun Ajaran aktif belum diatur');
 
-    Query query = _db.collection('schools').doc(schoolId).collection('students').where('status', isEqualTo: 'ACTIVE');
+    // 1. Get all students that match the template class (or all active students if template class is empty)
+    Query query = _db
+        .collection('schools')
+        .doc(schoolId)
+        .collection('students')
+        .where('status', isEqualTo: 'ACTIVE');
+
     if (template.classId != null && template.classId!.isNotEmpty) {
       query = query.where('class_id', isEqualTo: template.classId);
     }
 
     final studentSnapshots = await query.get();
-    if (studentSnapshots.docs.isEmpty) return 0;
+    if (studentSnapshots.docs.isEmpty) return 0; // No students found
 
     final students = studentSnapshots.docs;
     final uid = FirebaseAuth.instance.currentUser?.uid;
 
     int totalDistributed = 0;
     List<Map<String, dynamic>> logData = [];
-    final globalSummaryRef = _getGlobalSummaryRef(schoolId, academicYearId);
 
+    // Process in chunks of 100 students to avoid exceeding Firestore batch limit of 500
     for (var i = 0; i < students.length; i += 100) {
       final chunk = students.skip(i).take(100).toList();
       final batch = _db.batch();
-      
-      int chunkGeneratedCount = 0;
-      double chunkGeneratedAmount = 0.0;
 
       for (var studentDoc in chunk) {
         final data = studentDoc.data() as Map<String, dynamic>;
@@ -543,11 +551,34 @@ class InvoiceService {
 
         if (classId.isEmpty || status != 'ACTIVE') continue;
 
-        final studentSummaryRef = _getStudentSummaryRef(schoolId, academicYearId, studentId);
-        int generatedCountForStudent = 0;
-        double generatedAmountForStudent = 0.0;
+        final classInvoiceRef = _db
+            .collection('schools')
+            .doc(schoolId)
+            .collection('transactions_year')
+            .doc(academicYearId)
+            .collection('invoices')
+            .doc(classId);
+
+        batch.set(classInvoiceRef, {
+          'status': 'ACTIVE',
+          'updated_at': FieldValue.serverTimestamp(),
+          'updated_by': uid,
+        }, SetOptions(merge: true));
+
+        final studentInvoiceRef = classInvoiceRef
+            .collection('invoices_class_data')
+            .doc(studentId);
+
+        batch.set(studentInvoiceRef, {
+          'status': 'ACTIVE',
+          'updated_at': FieldValue.serverTimestamp(),
+          'updated_by': uid,
+        }, SetOptions(merge: true));
+
+        int generatedCount = 0;
 
         if (template.frequency == 'MONTHLY') {
+          // Generate 12 months
           final months = [
             {'name': 'Juli', 'number': 7, 'yearOffset': 0},
             {'name': 'Agustus', 'number': 8, 'yearOffset': 0},
@@ -565,17 +596,33 @@ class InvoiceService {
 
           int baseYear = DateTime.now().year;
           final yearMatch = RegExp(r'(\d{4})').firstMatch(academicYearId);
-          if (yearMatch != null) baseYear = int.parse(yearMatch.group(1)!);
+          if (yearMatch != null) {
+            baseYear = int.parse(yearMatch.group(1)!);
+          }
 
           for (var month in months) {
             final invoiceTitle = '${template.title} - ${month['name']}';
-            final existingCheck = await studentSummaryRef.collection('invoice_data').where('title', isEqualTo: invoiceTitle).get();
+
+            // Note: In bulk generation we check existing query which is just for one title at a time.
+            // Since we process Monthly, we need to check if ANY invoice contains this title.
+            // Since we previously only queried `template.title`, we should query all invoices.
+            // However, querying ALL existing invoices per student is inefficient in the inner loop.
+            // But we already have a collection query. Let's just create them blindly unless we fetched all first.
+            // Actually, we must prevent duplicates. Let's just do a quick get for the specific title.
+            final existingCheck = await studentInvoiceRef
+                .collection('invoice_data')
+                .where('title', isEqualTo: invoiceTitle)
+                .get();
 
             if (existingCheck.docs.isEmpty) {
-              final docRef = studentSummaryRef.collection('invoice_data').doc();
+              final docRef = studentInvoiceRef.collection('invoice_data').doc();
+
               DateTime dueDate = DateTime.now();
               if (template.dueDateDay != null) {
-                dueDate = DateTime(baseYear + (month['yearOffset'] as int), month['number'] as int, template.dueDateDay!);
+                int targetYear = baseYear + (month['yearOffset'] as int);
+                int targetMonth = month['number'] as int;
+                int targetDay = template.dueDateDay!;
+                dueDate = DateTime(targetYear, targetMonth, targetDay);
               }
 
               batch.set(docRef, {
@@ -594,15 +641,18 @@ class InvoiceService {
                 'updated_at': FieldValue.serverTimestamp(),
                 'updated_by': uid,
               });
-              generatedCountForStudent++;
-              generatedAmountForStudent += template.amount;
+              generatedCount++;
             }
           }
         } else {
-          final existingInvoices = await studentSummaryRef.collection('invoice_data').where('title', isEqualTo: template.title).get();
+          // ONCE / YEARLY
+          final existingInvoices = await studentInvoiceRef
+              .collection('invoice_data')
+              .where('title', isEqualTo: template.title)
+              .get();
 
           if (existingInvoices.docs.isEmpty) {
-            final docRef = studentSummaryRef.collection('invoice_data').doc();
+            final docRef = studentInvoiceRef.collection('invoice_data').doc();
             DateTime dueDate = template.exactDueDate ?? DateTime.now();
 
             batch.set(docRef, {
@@ -621,29 +671,20 @@ class InvoiceService {
               'updated_at': FieldValue.serverTimestamp(),
               'updated_by': uid,
             });
-            generatedCountForStudent++;
-            generatedAmountForStudent += template.amount;
+            generatedCount++;
           }
         }
 
-        if (generatedCountForStudent > 0) {
+        if (generatedCount > 0) {
           totalDistributed++;
           logData.add({
-            'siswa': {'id': studentId, 'name': studentName},
-            'jml_item': generatedCountForStudent,
+            'siswa': {
+              'id': studentId,
+              'name': studentName,
+            },
+            'jml_item': generatedCount,
           });
-          
-          _incrementSummary(batch, studentSummaryRef, 
-            unpaidCount: generatedCountForStudent, unpaidAmount: generatedAmountForStudent,
-            studentName: studentName, classId: classId);
-            
-          chunkGeneratedCount += generatedCountForStudent;
-          chunkGeneratedAmount += generatedAmountForStudent;
         }
-      }
-      
-      if (chunkGeneratedCount > 0) {
-        _incrementSummary(batch, globalSummaryRef, unpaidCount: chunkGeneratedCount, unpaidAmount: chunkGeneratedAmount);
       }
 
       await batch.commit();
@@ -683,11 +724,14 @@ class InvoiceService {
         .snapshots();
   }
 
-  // Check if a student has any UNPAID invoices
-  Future<bool> hasUnpaidInvoices(
+  // Check if a student has any UNPAID invoices in a specific class
+  Future<bool> hasUnpaidInvoicesInClass(
     String schoolId,
     String studentId,
+    String classId,
   ) async {
+    if (classId.isEmpty) return false;
+
     final yearsSnap = await _db
         .collection('schools')
         .doc(schoolId)
@@ -696,138 +740,24 @@ class InvoiceService {
 
     for (var yearDoc in yearsSnap.docs) {
       final yearId = yearDoc.id;
-      final studentSummarySnap = await _db
+      final invoicesSnap = await _db
           .collection('schools')
           .doc(schoolId)
           .collection('transactions_year')
           .doc(yearId)
           .collection('invoices')
+          .doc(classId)
+          .collection('invoices_class_data')
           .doc(studentId)
+          .collection('invoice_data')
+          .where('status', isNotEqualTo: 'PAID')
+          .limit(1)
           .get();
 
-      if (studentSummarySnap.exists) {
-        final data = studentSummarySnap.data();
-        if (data != null && (data['unpaid_count'] ?? 0) > 0) {
-          return true;
-        }
+      if (invoicesSnap.docs.isNotEmpty) {
+        return true;
       }
     }
     return false;
-  }
-  
-  // Mengambil ringkasan tagihan untuk satu kelas (sangat efisien, 1 query)
-  Future<Map<String, Map<String, dynamic>>> fetchInvoiceSummaries(
-    String schoolId,
-    String academicYearId, {
-    String? classId,
-  }) async {
-    Query query = _db
-        .collection('schools')
-        .doc(schoolId)
-        .collection('transactions_year')
-        .doc(academicYearId)
-        .collection('invoices');
-
-    if (classId != null && classId.isNotEmpty) {
-      query = query.where('class_id', isEqualTo: classId);
-    }
-
-    final snapshot = await query.get();
-    final Map<String, Map<String, dynamic>> summaries = {};
-    
-    for (var doc in snapshot.docs) {
-      if (doc.id != 'global') {
-        summaries[doc.id] = doc.data() as Map<String, dynamic>;
-      }
-    }
-    
-    return summaries;
-  }
-
-  // SINKRONISASI ULANG SUMMARY (Fallback Net)
-  Future<void> recalculateSummaries(String schoolId, String academicYearId) async {
-    // 1. Dapatkan semua dokumen student summary
-    final summariesSnap = await _db
-        .collection('schools')
-        .doc(schoolId)
-        .collection('transactions_year')
-        .doc(academicYearId)
-        .collection('invoices')
-        .get();
-        
-    int globalUnpaidCount = 0;
-    double globalUnpaidAmount = 0;
-    int globalPaidCount = 0;
-    double globalPaidAmount = 0;
-    int globalPartialCount = 0;
-    double globalPartialAmount = 0;
-
-    for (var i = 0; i < summariesSnap.docs.length; i += 100) {
-      final chunk = summariesSnap.docs.skip(i).take(100).toList();
-      final batch = _db.batch();
-      
-      for (var studentDoc in chunk) {
-        if (studentDoc.id == 'global') continue;
-        
-        final invoicesSnap = await studentDoc.reference.collection('invoice_data').get();
-        
-        int unpaidCount = 0; double unpaidAmount = 0;
-        int paidCount = 0; double paidAmount = 0;
-        int partialCount = 0; double partialAmount = 0;
-        String studentName = studentDoc.data()['student_name'] ?? 'Unknown';
-        String classId = studentDoc.data()['class_id'] ?? '';
-        
-        for(var invDoc in invoicesSnap.docs) {
-          final data = invDoc.data();
-          final status = data['status'] as String;
-          final amount = (data['amount'] as num).toDouble();
-          final paidAmt = (data['paid_amount'] as num?)?.toDouble() ?? 0.0;
-          
-          if (status == 'UNPAID') {
-            unpaidCount++;
-            unpaidAmount += amount;
-          } else if (status == 'PAID') {
-            paidCount++;
-            paidAmount += amount;
-          } else if (status == 'PARTIAL') {
-            partialCount++;
-            partialAmount += (amount - paidAmt);
-          }
-        }
-        
-        batch.set(studentDoc.reference, {
-          'unpaid_count': unpaidCount,
-          'unpaid_amount': unpaidAmount,
-          'paid_count': paidCount,
-          'paid_amount': paidAmount,
-          'partial_count': partialCount,
-          'partial_amount': partialAmount,
-          'student_name': studentName,
-          'class_id': classId,
-          'updated_at': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-        
-        globalUnpaidCount += unpaidCount;
-        globalUnpaidAmount += unpaidAmount;
-        globalPaidCount += paidCount;
-        globalPaidAmount += paidAmount;
-        globalPartialCount += partialCount;
-        globalPartialAmount += partialAmount;
-      }
-      
-      await batch.commit();
-    }
-    
-    // Simpan global summary
-    final globalRef = _getGlobalSummaryRef(schoolId, academicYearId);
-    await globalRef.set({
-      'unpaid_count': globalUnpaidCount,
-      'unpaid_amount': globalUnpaidAmount,
-      'paid_count': globalPaidCount,
-      'paid_amount': globalPaidAmount,
-      'partial_count': globalPartialCount,
-      'partial_amount': globalPartialAmount,
-      'updated_at': FieldValue.serverTimestamp(),
-    });
   }
 }

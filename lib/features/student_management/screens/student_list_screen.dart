@@ -15,8 +15,10 @@ import '../../activities/screens/student_activity_screen.dart';
 import '../../grades/screens/parent_grade_screen.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/utils/dialog_utils.dart';
+import '../../master_data/services/academic_year_service.dart';
 import 'student_form_screen.dart';
 import '../../../core/widgets/empty_state_widget.dart';
+import '../../../core/utils/currency_utils.dart';
 
 class StudentListScreen extends StatefulWidget {
   final bool activeOnly;
@@ -36,6 +38,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
   Future<List<Student>>? _studentsFuture;
+  Map<String, Map<String, dynamic>> _studentSummaries = {};
 
   @override
   void initState() {
@@ -67,6 +70,18 @@ class _StudentListScreenState extends State<StudentListScreen> {
         _selectedClassFilter,
         statusFilter: _statusFilter,
       );
+    });
+
+    AcademicYearService().getActiveAcademicYear(schoolId).then((activeYear) {
+      if (activeYear != null) {
+        InvoiceService().fetchInvoiceSummaries(schoolId, activeYear.id, classId: _selectedClassFilter).then((summaries) {
+          if (mounted) {
+            setState(() {
+              _studentSummaries = summaries;
+            });
+          }
+        });
+      }
     });
   }
 
@@ -336,7 +351,30 @@ class _StudentListScreenState extends State<StudentListScreen> {
                                     Text(
                                       'Ortu: ${student.guardianName.isNotEmpty ? student.guardianName : "-"} | HP: ${student.phone.isNotEmpty ? student.phone : "-"}',
                                     ),
-                                    // Invoice stats removed to save reads
+                                    if (_studentSummaries.containsKey(student.id)) ...[
+                                      const SizedBox(height: 12),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.withOpacity(0.05),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: _buildStatItem('LUNAS', '${_studentSummaries[student.id]!['paid_count'] ?? 0}', Colors.green),
+                                            ),
+                                            Expanded(
+                                              child: _buildStatItem('DIANGSUR', '${_studentSummaries[student.id]!['partial_count'] ?? 0}', Colors.orange),
+                                            ),
+                                            Expanded(
+                                              child: _buildStatItem('BELUM LUNAS', '${_studentSummaries[student.id]!['unpaid_count'] ?? 0}', Colors.red),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                     const SizedBox(height: 12),
                                     // Action Buttons
                                     SingleChildScrollView(
@@ -522,7 +560,14 @@ class _StudentListScreenState extends State<StudentListScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 10, color: Colors.grey),
+            maxLines: 1,
+          ),
+        ),
         const SizedBox(height: 2),
         Text(
           value,

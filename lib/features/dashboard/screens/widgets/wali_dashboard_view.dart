@@ -12,9 +12,34 @@ import '../../../../core/utils/snackbar_utils.dart';
 import '../../../savings/screens/savings_screen.dart';
 import '../../../grades/screens/parent_grade_screen.dart';
 import '../../../grades/screens/parent_report_screen.dart';
+import '../../../master_data/services/academic_year_service.dart';
 
-class WaliDashboardView extends StatelessWidget {
+class WaliDashboardView extends StatefulWidget {
   const WaliDashboardView({super.key});
+
+  @override
+  State<WaliDashboardView> createState() => _WaliDashboardViewState();
+}
+
+class _WaliDashboardViewState extends State<WaliDashboardView> {
+  String? _activeYearId;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadActiveYear();
+  }
+
+  Future<void> _loadActiveYear() async {
+    final schoolId = context.read<SchoolProvider>().activeSchoolId ?? '';
+    if (schoolId.isEmpty) return;
+    final activeYear = await AcademicYearService().getActiveAcademicYear(schoolId);
+    if (mounted && activeYear != null) {
+      setState(() {
+        _activeYearId = activeYear.id;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -102,7 +127,48 @@ class WaliDashboardView extends StatelessWidget {
                                   'Kelas: ${student.classId} | NIS: ${student.nis}',
                                 ),
                               ),
-                              const Divider(),
+                              if (_activeYearId != null)
+                                StreamBuilder<DocumentSnapshot>(
+                                  stream: FirebaseFirestore.instance
+                                      .collection('schools')
+                                      .doc(schoolId)
+                                      .collection('transactions_year')
+                                      .doc(_activeYearId)
+                                      .collection('invoices')
+                                      .doc(childId)
+                                      .snapshots(),
+                                  builder: (context, sumSnap) {
+                                    if (!sumSnap.hasData || !sumSnap.data!.exists) {
+                                      return const SizedBox.shrink();
+                                    }
+                                    final summary = sumSnap.data!.data() as Map<String, dynamic>;
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 12.0),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.withOpacity(0.05),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: _buildStatItem('LUNAS', '${summary['paid_count'] ?? 0}', Colors.green),
+                                            ),
+                                            Expanded(
+                                              child: _buildStatItem('DIANGSUR', '${summary['partial_count'] ?? 0}', Colors.orange),
+                                            ),
+                                            Expanded(
+                                              child: _buildStatItem('BELUM LUNAS', '${summary['unpaid_count'] ?? 0}', Colors.red),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              const Divider(height: 1),
                               SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
                                 child: Row(
@@ -117,8 +183,7 @@ class WaliDashboardView extends StatelessWidget {
                                           MaterialPageRoute(
                                             builder: (c) => InvoiceListScreen(
                                               studentId: childId,
-                                              academicYearId:
-                                                  null, // Will automatically use active year in InvoiceListScreen
+                                              academicYearId: null,
                                               classId: student.classId,
                                             ),
                                           ),
@@ -182,28 +247,6 @@ class WaliDashboardView extends StatelessWidget {
                                       },
                                       Colors.green,
                                     ),
-                                    // const SizedBox(width: 8),
-                                    // _buildActionButton(
-                                    //   context,
-                                    //   Icons.library_books,
-                                    //   'Raport',
-                                    //   () {
-                                    //     Navigator.push(
-                                    //       context,
-                                    //       MaterialPageRoute(
-                                    //         builder: (c) => ParentReportScreen(
-                                    //           studentId: childId,
-                                    //           studentName: student.name,
-                                    //         ),
-                                    //       ),
-                                    //     );
-                                    //   },
-                                    //   Colors.orange,
-                                    // ),
-                                    // const SizedBox(width: 8),
-                                    // _buildActionButton(context, Icons.fact_check, 'Absensi', () {
-                                    //   SnackbarUtils.showErrorSnackbar('Modul Absensi sedang dalam pengembangan');
-                                    // }, Colors.purple),
                                   ],
                                 ),
                               ),
@@ -219,6 +262,31 @@ class WaliDashboardView extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, Color color) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            style: const TextStyle(fontSize: 10, color: Colors.grey),
+            maxLines: 1,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 

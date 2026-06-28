@@ -89,15 +89,12 @@ class _ArrearsScreenState extends State<ArrearsScreen> {
     try {
       final schoolId = context.read<SchoolProvider>().activeSchoolId!;
       
-      // Get all students in this class for this year
+      // Get all students in this class
       final studentsSnapshot = await _db
           .collection('schools')
           .doc(schoolId)
-          .collection('transactions_year')
-          .doc(_selectedYearId!)
-          .collection('invoices')
-          .doc(classId)
-          .collection('invoices_class_data')
+          .collection('students')
+          .where('class_id', isEqualTo: classId)
           .get();
 
       List<Map<String, dynamic>> allArrears = [];
@@ -112,11 +109,9 @@ class _ArrearsScreenState extends State<ArrearsScreen> {
             .collection('transactions_year')
             .doc(_selectedYearId!)
             .collection('invoices')
-            .doc(classId)
-            .collection('invoices_class_data')
             .doc(studentId)
             .collection('invoice_data')
-            .where('status', isNotEqualTo: 'PAID')
+            .where('status', whereIn: ['UNPAID', 'PARTIAL'])
             .get();
 
         for (var invoiceDoc in invoicesSnapshot.docs) {

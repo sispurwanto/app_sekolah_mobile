@@ -1,17 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../student_management/screens/student_list_screen.dart';
 import '../../../invoices/screens/payment_validation_screen.dart';
 import '../../../savings/screens/savings_report_screen.dart';
 import '../../../reports/screens/financial_report_screen.dart';
 import '../../../invoices/screens/invoice_distribution_log_screen.dart';
+import '../../../invoices/screens/financial_dashboard_screen.dart';
+import '../../../../core/providers/school_provider.dart';
+import '../../../master_data/services/academic_year_service.dart';
 
-class BendaharaDashboardView extends StatelessWidget {
+class BendaharaDashboardView extends StatefulWidget {
   final String role;
   const BendaharaDashboardView({super.key, required this.role});
 
   @override
+  State<BendaharaDashboardView> createState() => _BendaharaDashboardViewState();
+}
+
+class _BendaharaDashboardViewState extends State<BendaharaDashboardView> {
+  String? _activeYearId;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadActiveYear();
+  }
+
+  Future<void> _loadActiveYear() async {
+    final schoolId = context.read<SchoolProvider>().activeSchoolId ?? '';
+    if (schoolId.isEmpty) return;
+    final activeYear = await AcademicYearService().getActiveAcademicYear(schoolId);
+    if (mounted && activeYear != null) {
+      setState(() {
+        _activeYearId = activeYear.id;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final schoolId = context.watch<SchoolProvider>().activeSchoolId ?? '';
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -32,8 +63,8 @@ class BendaharaDashboardView extends StatelessWidget {
             children: [
               _buildMenuCard(
                 context,
-                title: role == 'BENDAHARA' ? 'Kasir' : 'Data Siswa',
-                icon: role == 'BENDAHARA' ? Icons.point_of_sale : Icons.people,
+                title: widget.role == 'BENDAHARA' ? 'Kasir' : 'Data Siswa',
+                icon: widget.role == 'BENDAHARA' ? Icons.point_of_sale : Icons.people,
                 color: Colors.blue,
                 onTap: () {
                   Navigator.push(
@@ -44,7 +75,7 @@ class BendaharaDashboardView extends StatelessWidget {
                   );
                 },
               ),
-              if (role != 'KEPALA_SEKOLAH')
+              if (widget.role != 'KEPALA_SEKOLAH')
                 _buildMenuCard(
                   context,
                   title: 'Validasi Pembayaran',
@@ -58,7 +89,31 @@ class BendaharaDashboardView extends StatelessWidget {
                       ),
                     );
                   },
+                  badgeStream: (schoolId.isNotEmpty && _activeYearId != null)
+                      ? FirebaseFirestore.instance
+                          .collection('schools')
+                          .doc(schoolId)
+                          .collection('transactions_year')
+                          .doc(_activeYearId)
+                          .collection('payments')
+                          .where('status', isEqualTo: 'PENDING')
+                          .snapshots()
+                      : null,
                 ),
+              _buildMenuCard(
+                context,
+                title: 'Dashboard Keuangan',
+                icon: Icons.dashboard,
+                color: Colors.redAccent,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const FinancialDashboardScreen(),
+                    ),
+                  );
+                },
+              ),
               _buildMenuCard(
                 context,
                 title: 'Laporan Tabungan',
@@ -114,6 +169,7 @@ class BendaharaDashboardView extends StatelessWidget {
     required IconData icon,
     required Color color,
     required VoidCallback onTap,
+    Stream<QuerySnapshot>? badgeStream,
   }) {
     return Card(
       elevation: 4,
@@ -126,7 +182,41 @@ class BendaharaDashboardView extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 32, color: color),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(icon, size: 32, color: color),
+                  if (badgeStream != null)
+                    Positioned(
+                      right: -8,
+                      top: -8,
+                      child: StreamBuilder<QuerySnapshot>(
+                        stream: badgeStream,
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+                          final count = snapshot.data!.docs.length;
+                          return Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Text(
+                              count > 99 ? '99+' : count.toString(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
               const SizedBox(height: 8),
               Text(
                 title,

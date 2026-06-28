@@ -76,7 +76,6 @@ class _InvoiceListScreenState extends State<InvoiceListScreen>
       _unpaidFuture = _invoiceService.fetchStudentInvoicesPaginated(
         _currentSchoolId,
         _currentYearId,
-        widget.classId!,
         widget.studentId!,
         isPaid: false,
       );
@@ -88,7 +87,6 @@ class _InvoiceListScreenState extends State<InvoiceListScreen>
       _paidFuture = _invoiceService.fetchStudentInvoicesPaginated(
         _currentSchoolId,
         _currentYearId,
-        widget.classId!,
         widget.studentId!,
         isPaid: true,
       );

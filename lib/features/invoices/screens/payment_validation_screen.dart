@@ -67,8 +67,6 @@ class _PaymentValidationScreenState extends State<PaymentValidationScreen> {
               .collection('transactions_year')
               .doc(payment.academicYearId)
               .collection('invoices')
-              .doc(payment.classId)
-              .collection('invoices_class_data')
               .doc(payment.studentId)
               .collection('invoice_data')
               .doc(payment.invoiceId)

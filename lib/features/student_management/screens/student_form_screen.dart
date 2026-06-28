@@ -113,14 +113,14 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
 
     if (isEditing && oldClassId.isNotEmpty && newClassId.isNotEmpty && oldClassId != newClassId) {
       setState(() => _isLoading = true);
-      final hasUnpaidInvoices = await InvoiceService().hasUnpaidInvoicesInClass(schoolId, studentId, oldClassId);
+      final hasUnpaidInvoices = await InvoiceService().hasUnpaidInvoices(schoolId, studentId);
       setState(() => _isLoading = false);
 
       if (hasUnpaidInvoices) {
         if (!mounted) return;
         final confirm = await DialogUtils.showConfirmationDialog(
-          title: 'Peringatan Pindah Kelas',
-          content: 'Siswa ini masih memiliki tagihan yang BELUM LUNAS di kelas lama. Jika dilanjutkan pindah kelas, Anda harus membuat tagihan baru untuk siswa ini di kelas barunya. Tagihan lama tetap ada (tidak dihapus).\n\nLanjutkan?',
+          title: 'Informasi Pindah Kelas',
+          content: 'Siswa ini masih memiliki tagihan yang BELUM LUNAS. Dengan sistem terbaru, seluruh riwayat tagihan akan otomatis mengikuti profil siswa ini ke kelas yang baru.\n\nLanjutkan pindah kelas?',
           confirmText: 'Lanjutkan',
           cancelText: 'Batal',
         );

@@ -190,7 +190,6 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
         await _invoiceService.deleteInvoice(
           schoolId,
           widget.invoice!.academicYearId,
-          widget.invoice!.classId,
           widget.invoice!.studentId,
           widget.invoice!.id,
         );

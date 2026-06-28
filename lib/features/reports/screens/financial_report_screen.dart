@@ -370,18 +370,29 @@ class _FinancialReportScreenState extends State<FinancialReportScreen>
                         if (p.invoiceIds != null &&
                             p.invoiceIds!.isNotEmpty &&
                             p.invoiceId == 'MULTIPLE')
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              top: 4.0,
-                              left: 4.0,
-                              bottom: 2.0,
+                          Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.only(top: 6.0, bottom: 4.0),
+                            padding: const EdgeInsets.all(8.0),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: Colors.grey.shade300),
                             ),
                             child: Text(
-                              '- ${p.invoiceTitles?.join('\n- ') ?? ''}',
+                              p.invoiceTitles != null
+                                  ? List.generate(p.invoiceTitles!.length, (index) {
+                                      final title = p.invoiceTitles![index];
+                                      final amount = (p.invoiceAmounts != null && index < p.invoiceAmounts!.length)
+                                          ? CurrencyUtils.formatRp(p.invoiceAmounts![index])
+                                          : '';
+                                      return '• $title - $amount';
+                                    }).join('\n')
+                                  : '',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.blueGrey.shade600,
-                                fontStyle: FontStyle.italic,
+                                color: Colors.blueGrey.shade700,
+                                height: 1.5,
                               ),
                             ),
                           ),
