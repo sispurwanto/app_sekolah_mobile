@@ -16,6 +16,7 @@ import '../../grades/screens/parent_grade_screen.dart';
 import '../../../core/utils/snackbar_utils.dart';
 import '../../../core/utils/dialog_utils.dart';
 import '../../master_data/services/academic_year_service.dart';
+import 'widgets/student_import_dialog.dart';
 import 'student_form_screen.dart';
 import '../../../core/widgets/empty_state_widget.dart';
 import '../../../core/utils/currency_utils.dart';
@@ -106,6 +107,22 @@ class _StudentListScreenState extends State<StudentListScreen> {
         title: Text(
           widget.activeOnly ? 'Daftar Siswa' : 'Siswa Lulus / Nonaktif',
         ),
+        actions: [
+          if (role == 'ADMIN' || role == 'SUPER_ADMIN')
+            IconButton(
+              icon: const Icon(Icons.file_upload),
+              tooltip: 'Import Excel',
+              onPressed: () async {
+                final result = await showDialog(
+                  context: context,
+                  builder: (context) => const StudentImportDialog(),
+                );
+                if (result == true) {
+                  _loadStudents();
+                }
+              },
+            ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(
             120.0,
