@@ -199,13 +199,6 @@ class _StudentFormScreenState extends State<StudentFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(isEditing ? 'Edit Siswa' : 'Tambah Siswa'),
-        actions: [
-          if (isEditing)
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: _delete,
-            ),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

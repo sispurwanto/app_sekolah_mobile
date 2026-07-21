@@ -28,17 +28,14 @@ class StudentService {
     String statusFilter = 'SEMUA',
     Source source = Source.serverAndCache,
   }) async {
-    final collectionName = (statusFilter == 'ACTIVE' || statusFilter == 'SEMUA')
-        ? 'students'
-        : 'students_graduated';
     var query = _db
         .collection('schools')
         .doc(schoolId)
-        .collection(collectionName);
+        .collection('students');
 
     // Base Query with status filter (if not ALL and not ACTIVE since ACTIVE is guaranteed in 'students' path)
     Query<Map<String, dynamic>> finalQuery = query;
-    if (statusFilter != 'SEMUA' && statusFilter != 'ACTIVE') {
+    if (statusFilter != 'SEMUA') {
       finalQuery = finalQuery.where('status', isEqualTo: statusFilter);
     }
 
@@ -64,15 +61,6 @@ class StudentService {
         .doc(studentId)
         .get();
 
-    if (!doc.exists) {
-      doc = await _db
-          .collection('schools')
-          .doc(schoolId)
-          .collection('students_graduated')
-          .doc(studentId)
-          .get();
-    }
-
     if (doc.exists) {
       return Student.fromFirestore(doc);
     }
@@ -81,18 +69,10 @@ class StudentService {
 
   // Get stream of a single student (useful for WALI)
   Stream<Student?> getStudentStream(String schoolId, String studentId) async* {
-    final doc = await _db
-        .collection('schools')
-        .doc(schoolId)
-        .collection('students')
-        .doc(studentId)
-        .get();
-    final collectionName = doc.exists ? 'students' : 'students_graduated';
-
     yield* _db
         .collection('schools')
         .doc(schoolId)
-        .collection(collectionName)
+        .collection('students')
         .doc(studentId)
         .snapshots()
         .map((snapshot) {
@@ -169,26 +149,22 @@ class StudentService {
   // Update student
   Future<void> updateStudent(String schoolId, Student student) async {
     final batch = _db.batch();
-    final isStatusActive = student.status == 'ACTIVE';
-    final targetCollection = isStatusActive ? 'students' : 'students_graduated';
-    final otherCollection = isStatusActive ? 'students_graduated' : 'students';
 
     final studentRef = _db
         .collection('schools')
         .doc(schoolId)
-        .collection(targetCollection)
+        .collection('students')
         .doc(student.id);
 
-    final otherRef = _db
-        .collection('schools')
-        .doc(schoolId)
-        .collection(otherCollection)
-        .doc(student.id);
+    final studentData = student.toMap();
+    if (student.status == 'INACTIVE' || student.status == 'GRADUATED') {
+      studentData['class_id'] = '';
+      studentData['school_id'] = '';
+    }
 
     // To handle guardian changes perfectly, we would need the old guardian id to remove the child from their map.
     // For simplicity, we just ensure the new guardian gets the child added.
-    batch.set(studentRef, student.toMap(), SetOptions(merge: true));
-    batch.delete(otherRef);
+    batch.set(studentRef, studentData, SetOptions(merge: true));
 
     if (student.guardianId.isNotEmpty) {
       final guardianRef = _db
@@ -242,14 +218,8 @@ class StudentService {
         .doc(schoolId)
         .collection('students')
         .doc(studentId);
-    final graduatedRef = _db
-        .collection('schools')
-        .doc(schoolId)
-        .collection('students_graduated')
-        .doc(studentId);
 
     batch.delete(studentRef);
-    batch.delete(graduatedRef);
 
     if (guardianId.isNotEmpty) {
       final guardianRef = _db
